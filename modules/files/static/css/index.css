@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f6f8fa;
+}
+
+/* Top Dashboard */
+.dashboard {
+  background-color: #222;
+  color: white;
+  padding: 1em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 0.5em;
+  padding: 1em;
+  background-color: #f0f0f0;
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.1) inset;
+}
+
+.controls input {
+  flex: 1;
+  padding: 0.6em;
+  font-size: 1em;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.controls button {
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  border: none;
+  border-radius: 6px;
+  background-color: #333;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.controls button:hover {
+  background-color: #555;
+}
+
+/* Main area */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.left-panel {
+  width: 80%;
+  background-color: #fff;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+}
+
+.right-panel {
+  width: 20%;
+  padding: 1em;
+  background-color: #eaeaea;
+}
+
+/* Fancy name cards */
+#people-list {
+  display: grid;
+  padding: 0;
+  margin: 0;
+}
+
+#people-list a {
+  display: block;
+  padding: 0.8em;
+  text-decoration: none;
+  color: black;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fafafa;
+  transition: background-color 0.3s;
+}
+
+#people-list a:hover {
+  background-color: #f0f0f0;
+}
+
+#people-list a:nth-child(even) {
+  background-color: #eee;
+}
+
+#search-input {
+  width: calc(100% - 16px);
+  height: 30px;
+  padding: 6px;
+  border: none
+}

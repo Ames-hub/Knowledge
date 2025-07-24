@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ profile.name }} – Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/files/css/profile.css">
+  <script src="/static/files/js/make_editable.js"></script>
+  <script src="/static/files/js/edit_note.js"></script>
+  <script src="/static/files/js/delete_note.js"></script>
+  <script src="/static/files/js/create_note.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="nav-bar">
+    <a href="/files/" class="back-button">← Back to Files</a>
+  </div>
+  <h1>{{ profile.name }}</h1>
+
+  <!-- Detail Grid -->
+  <div class="grid-box">
+    <div class="field">
+      <label>Central File ID</label>
+      <span id="field-cfid">{{ profile.cfid }}</span>
+    </div>
+    <div class="field">
+      <label>Name</label>
+      <span id="field-name" class="editable" onclick="makeEditable('field-name', '{{ profile.cfid }}')">{{ profile.name }}</span>
+    </div>
+    <div class="field">
+      <label>Age</label>
+      <span id="field-age" class="editable" onclick="makeEditable('field-age', '{{ profile.cfid }}')">{{ profile.age }}</span>
+    </div>
+    <div class="field">
+      <label>Pronouns</label>
+      <span id="field-pronouns" class="editable" onclick="makeEditable('field-pronouns', '{{ profile.cfid }}')">
+            {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="notes-section">
+    <h2 style="display: inline-block;">Notes</h2>
+    <button class="new-note-btn" onclick="createNewNote({{ profile.cfid }})">➕ New Note</button>
+    <div id="notes-list">
+      {% for note_id, note in profile.profile_notes.items() %}
+      <div class="note-entry" id="note-block-{{ note_id }}">
+        <div class="meta">{{ note.add_date }} — {{ note.author }}</div>
+        <div
+                id="note-{{ note_id }}"
+                class="editable-note"
+                tabindex="0"
+                data-note-id="{{ note_id }}"
+        >{{ note.note }}</div>
+        <button class="delete-note-btn" onclick="deleteNote('{{ note_id }}')">🗑️</button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

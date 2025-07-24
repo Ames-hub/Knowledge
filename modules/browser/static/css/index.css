@@ -1,0 +1,90 @@
+:root {
+    --bg-color: #f0f2f5;
+    --card-bg: #ffffff;
+    --card-shadow: rgba(0, 0, 0, 0.06);
+    --card-hover-shadow: rgba(0, 0, 0, 0.12);
+    --accent: #4f46e5; /* a nice indigo */
+    --text-color: #1f2937;
+    --text-muted: #6b7280;
+    --radius: 1.25rem;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    max-width: 960px;
+    width: 100%;
+    padding: 3rem 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+}
+
+.app-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px var(--card-shadow);
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    overflow: hidden;
+}
+
+.app-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px var(--card-hover-shadow);
+}
+
+.app-icon {
+    font-size: 2.75rem;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+    transition: transform 0.3s ease;
+}
+
+.app-card:hover .app-icon {
+    transform: scale(1.15);
+}
+
+.app-name {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.app-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+    body {
+        align-items: flex-start;
+        padding-top: 2rem;
+        height: auto;
+    }
+
+    .container {
+        grid-template-columns: 1fr 1fr;
+        padding: 2rem 1rem;
+    }
+}

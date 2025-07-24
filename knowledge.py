@@ -1,0 +1,68 @@
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from library.logbook import LogBookHandler
+from library.database import database
+from fastapi import Request, FastAPI
+import importlib
+import uvicorn
+import os
+
+fastapp = FastAPI()
+database.modernize()
+logbook = LogBookHandler('root')
+
+
+# noinspection PyUnusedLocal
+@fastapp.exception_handler(401)
+async def unauthorized_handler(request: Request, exc):
+    logbook.info(f"IP {request.client.host} Attempted to connect but was Unauthorized")
+    # A Basic web page with the entire purpose of redirecting the user away from the page.
+    content = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>REDIRECTING</title>
+</head>
+<body>
+<h1>You are being redirected after an unauthorized connection.</h1>
+<script>
+    window.location.href = "/login";
+</script>
+</body>
+    """
+    return HTMLResponse(content, status_code=401)
+
+fastapp.mount(
+    "/static/login",
+    StaticFiles(directory=os.path.join("modules", "login", "static")),
+    name="register_static"
+)
+
+modules_dir = "modules"
+
+for module_name in os.listdir(modules_dir):
+    module_path = os.path.join(modules_dir, module_name)
+
+    if os.path.isdir(module_path):
+        # 🔧 Mount static files if they exist
+        static_path = os.path.join(module_path, "static")
+        if os.path.isdir(static_path):
+            mount_path = f"/static/{module_name}"
+            fastapp.mount(mount_path, StaticFiles(directory=static_path), name=f"{module_name}_static")
+            logbook.info(f"[✓] Mounted static files for {module_name} at {mount_path}")
+
+        # 📦 Import and register router
+        routes_file = os.path.join(module_path, "routes.py")
+        if os.path.exists(routes_file):
+            try:
+                module = importlib.import_module(f"modules.{module_name}.routes")
+                if hasattr(module, "router"):
+                    fastapp.include_router(module.router)
+                    logbook.info(f"[✓] Loaded router from {module_name} module")
+                else:
+                    logbook.info(f"[!] No 'router' found in {module_name}.routes")
+            except Exception as err:
+                logbook.error(f"[✗] Failed to load {module_name}: {err}", exception=err)
+
+if __name__ == "__main__":
+    uvicorn.run("knowledge:fastapp", host="127.0.0.1", port=8080, reload=True)

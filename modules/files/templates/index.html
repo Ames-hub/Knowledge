@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Central Files</title>
+    <link rel="stylesheet" href="/static/files/css/index.css">
+</head>
+<body>
+
+<div class="dashboard">
+    <a href="/" style="color: white;text-decoration: none"><h1>Central Files</h1></a>
+</div>
+
+<div class="main">
+    <div class="left-panel">
+        <!-- Search box -->
+        <input type="text" id="search-input" placeholder="Search names..." oninput="filterNames()">
+
+        <div id="people-list">
+            <!-- Fancy name cards as <a> go here -->
+        </div>
+    </div>
+    <div class="right-panel">
+        <!-- This space is your canvas -->
+    </div>
+</div>
+
+<div class="controls">
+    <!--suppress HtmlFormInputWithoutLabel -->
+    <input type="text" id="name-input" placeholder="Enter name">
+    <button onclick="addName()">Add</button>
+    <button onclick="removeName()">Remove</button>
+</div>
+
+<script src="/static/files/js/people_manage.js"></script>
+<script src="/static/files/js/filter_names.js"></script>
+</body>
+</html>
