@@ -1,0 +1,5 @@
+data.sqlite
+.venv
+.idea
+*.pyc
+logs
