@@ -2,7 +2,6 @@ from filelock import FileLock
 import traceback
 import datetime
 import inspect
-import random
 import os
 
 class LogBookHandler:
@@ -31,7 +30,7 @@ class LogBookHandler:
 
     def _write_locked(self, logline):
         os.makedirs(os.path.dirname(self.logfile), exist_ok=True)
-        lock = FileLock(f"log-{str(random.randint(1, 10000))}.lock", timeout=10)
+        lock = FileLock(self.lockfile, timeout=10)
         with lock:
             try:
                 with open(self.logfile, "a") as logfile:
@@ -66,7 +65,7 @@ class LogBookHandler:
             # Format the passed exception instance
             trace = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
         elif exception:
-            # If exc_info is something truthy but not an exception, just str it
+            # If exc_info is truthy but not an exception, just str it
             trace = str(exception)
         else:
             trace = "No exception info provided."
