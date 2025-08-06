@@ -48,6 +48,19 @@ class database:
                 "note": "TEXT NOT NULL",
                 "add_date": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
                 "author": "TEXT NOT NULL",
+            },
+            "cf_contact_details": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "address": "TEXT NOT NULL",
+                "phone": "TEXT NOT NULL",
+                "email": "TEXT NOT NULL",
+            },
+            "bulletin_archives": {
+                "archive_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "title": "TEXT NOT NULL",
+                "content": "TEXT NOT NULL",
+                "owner": "TEXT NOT NULL",
+                "tags": "TEXT"
             }
         }
 

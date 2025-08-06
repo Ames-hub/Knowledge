@@ -1,0 +1,239 @@
+/* Page wrapper splits screen horizontally */
+#page-wrapper {
+    display: flex;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Left container takes 25%, styled for you to add content */
+#left-container {
+    width: 25%;
+    background-color: #eee;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* Editor container takes 75% */
+#editor_container {
+    width: 75%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Your existing styles (or keep them in index.css) */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9f9f9;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.toolbar select,
+.toolbar button,
+.toolbar a {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  color: #333;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.toolbar button:hover,
+.toolbar select:hover,
+.toolbar a:hover {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+#editor {
+  flex-grow: 1;
+  padding: 24px;
+  outline: none;
+  overflow-y: auto;
+  background-color: #ffffff;
+  max-width: 800px;
+  margin: 20px auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  width: 100%;
+}
+
+#editor[contenteditable="true"] {
+  border: none;
+}
+
+#meta-fields {
+  display: flex;
+  width: 98%;
+  margin: 10px auto 20px;
+  border: 1.5px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#meta-fields input {
+  font-size: 16px;
+  border: none;
+  height: 25px;
+  padding: 10px 12px;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.divider {
+  width: 1.5px;
+  background-color: #ccc;
+}
+
+#pdf-title {
+  border-right: 2px solid #bbb;
+}
+
+#pdf-title::placeholder,
+#pdf-tags::placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+#archive-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+}
+
+#archive-list li {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: background-color 0.2s;
+}
+
+#archive-list li:hover {
+  background-color: #e0f2f1;
+}
+
+#return_btn {
+  display: block;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+
+#mode-switch-bar {
+  transition: background-color 0.3s ease;
+}
+
+#new-doc-btn {
+  background-color: #007bff;
+  margin-top: 10px;
+  width: 100%;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#search-input {
+  width: 90%;
+  padding: 8px 12px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: 0.2s ease-in-out;
+}
+
+#search-input:focus {
+  outline: none;
+  border-color: #388E3C;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.6);
+}
+
+#toast-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 250px;
+  max-width: 300px;
+  padding: 12px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  position: relative;
+}
+
+.toast.error {
+  background-color: #f44336;
+}
+
+.toast.info {
+  background-color: #2196F3;
+}
+
+.toast.warn {
+  background-color: #FF9800;
+}
+
+.toast .close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  margin-left: 10px;
+  cursor: pointer;
+  padding: 0;
+}
+
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+      transform: translateX(-10px);
+  }
+  to {
+      opacity: 1;
+      transform: translateX(0);
+  }
+}

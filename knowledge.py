@@ -10,7 +10,7 @@ import os
 fastapp = FastAPI()
 database.modernize()
 logbook = LogBookHandler('root')
-
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 # noinspection PyUnusedLocal
 @fastapp.exception_handler(401)
@@ -65,4 +65,4 @@ for module_name in os.listdir(modules_dir):
                 logbook.error(f"[✗] Failed to load {module_name}: {err}", exception=err)
 
 if __name__ == "__main__":
-    uvicorn.run("knowledge:fastapp", host="127.0.0.1", port=8080, reload=True)
+    uvicorn.run("knowledge:fastapp", host="0.0.0.0" if DEBUG == False else "127.0.0.1", port=8080, reload=True)

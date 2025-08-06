@@ -1,7 +1,5 @@
 # Knowledge
 
-*Your digital central files and *
-
 ---
 
 ## What is Knowledge?

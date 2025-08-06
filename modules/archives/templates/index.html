@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Editor</title>
+    <link rel="stylesheet" href="/static/archives/css/index.css" />
+</head>
+<body>
+<div id="toast-container"></div>
+<div id="page-wrapper">
+    <div id="left-container">
+        <a id="return_btn" href="/">⟵ Return</a>
+        <button id="new-doc-btn" onclick="createNewDocument()">📝 New Document</button>
+        <input type="text" id="search-input" placeholder="Search by title or ID..." oninput="filterArchives()">
+        <h2>Saved Archives</h2>
+        <ul id="archive-list">
+            <li>Loading...</li>
+        </ul>
+    </div>
+    <div id="editor_container">
+        <div id="mode-switch-bar" style="cursor:pointer; padding: 10px; text-align: center; user-select: none; background-color: #4CAF50; color: white; font-weight: bold;">
+        Edit Mode
+        </div>
+        <!-- This is an additional save button that toggles its visibility when the above switch bar is clicked. -->
+        <button id="switchbar_save_btn" onclick="saveToServer()">💾 Save to Server</button>
+        <div class="toolbar">
+
+            <button onclick="execCmd('bold')"><b>B</b></button>
+            <button onclick="execCmd('italic')"><i>I</i></button>
+            <button onclick="execCmd('underline')"><u>U</u></button>
+            <button onclick="execCmd('strikeThrough')">S</button>
+
+            <label>
+                <select onchange="execCmdWithArg('formatBlock', this.value)">
+                    <option value="P">Paragraph</option>
+                    <option value="H1">Heading 1</option>
+                    <option value="H2">Heading 2</option>
+                    <option value="H3">Heading 3</option>
+                </select>
+            </label>
+
+            <label>
+                <select onchange="execCmdWithArg('fontName', this.value)">
+                    <option value="Arial">Arial</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Verdana">Verdana</option>
+                </select>
+            </label>
+
+            <label>
+                <select onchange="execCmdWithArg('fontSize', this.value)">
+                    <option value="1">Small</option>
+                    <option value="3" selected>Normal</option>
+                    <option value="5">Large</option>
+                    <option value="7">Huge</option>
+                </select>
+            </label>
+
+            <button onclick="execCmd('justifyLeft')">Left</button>
+            <button onclick="execCmd('justifyCenter')">Center</button>
+            <button onclick="execCmd('justifyRight')">Right</button>
+            <button onclick="execCmd('insertUnorderedList')">Bullets</button>
+            <button onclick="execCmd('insertOrderedList')">Numbering</button>
+            <button onclick="execCmd('undo')">Undo</button>
+            <button onclick="execCmd('redo')">Redo</button>
+            <button onclick="saveAsPDF()">📄 Save as PDF</button>
+            <button onclick="saveToServer()">💾 Save to Server</button>
+            <button id="destroy-btn" title="Permanently delete this document">🗑️ Delete</button>
+        </div>
+        <div id="meta-fields">
+            <input type="text" id="pdf-title" placeholder="Title">
+            <div class="divider"></div> <!-- This is the fake line -->
+            <input type="text" id="pdf-tags" placeholder="Tags">
+        </div>
+        <div id="editor" contenteditable="true">
+            <p>Start editing your document...</p>
+        </div>
+    </div>
+</div>
+
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/static/archives/js/index.js"></script>
+</body>
+</html>
