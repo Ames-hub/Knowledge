@@ -19,7 +19,7 @@ async def show_reg(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 @router.post("/api/authbook/register")
-async def register(data: RegisterData):
+async def register(request: Request, data: RegisterData):
     try:
         success = authbook.create_account(
             data.username,
@@ -28,5 +28,5 @@ async def register(data: RegisterData):
     except autherrors.ExistingUser:
         return JSONResponse({"success": False, "error": "That username is taken."}, status_code=400)
 
-    logbook.info(f"User {data.username} registered successfully")
+    logbook.info(f"User {data.username} registered successfully by {request.client.host}")
     return JSONResponse(content={'success': success}, status_code=201 if success is True else 500)

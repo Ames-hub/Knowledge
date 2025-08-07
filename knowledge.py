@@ -38,6 +38,13 @@ fastapp.mount(
     name="register_static"
 )
 
+@fastapp.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    image_path = "favicon.png"
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as image_file:
+            return HTMLResponse(content=image_file.read(), media_type="image/png")
+
 modules_dir = "modules"
 
 for module_name in os.listdir(modules_dir):

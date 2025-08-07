@@ -38,6 +38,25 @@ async function addName() {
     if (!name) return;
 
     try {
+        // Check for duplicate before creating
+        const dupeCheckResp = await fetch(`/files/dupecheck/${encodeURIComponent(name)}`);
+        if (dupeCheckResp.ok) {
+            const dupeData = await dupeCheckResp.json();
+            if (dupeData.exists) {
+                let proceed = confirm('A profile with this name already exists (cfids: ' + dupeData.cfids + ').\nProceed anyway?');
+                if (!proceed) {
+                    input.value = '';
+                    return;
+                }
+            }
+        } else if (dupeCheckResp.status !== 404) {
+            if (dupeCheckResp.status === 500) {
+                alert('Something went wrong while checking for duplicates.');
+                console.warn('Error checking for duplicates:', dupeCheckResp.statusText);
+                return;
+            }
+        }
+
         const response = await fetch('/api/files/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

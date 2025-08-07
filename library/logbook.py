@@ -56,7 +56,7 @@ class LogBookHandler:
         )
         self._write_locked(logline)
 
-    def error(self, message=None, exception=True, do_print=True):
+    def error(self, message=None, exception:Exception|bool=True, do_print=True):
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if exception is True:

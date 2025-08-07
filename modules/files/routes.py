@@ -56,6 +56,33 @@ class centralfiles:
             def __str__(self):
                 return self.message
 
+    @staticmethod
+    def dupe_check(name:str):
+        """
+        Returns if there is someone with the same data in the database.
+        """
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT cfid FROM cf_names WHERE name = ?",
+                (name,)
+            )
+            data = cursor.fetchall()
+
+            cfid_list = [item[0] for item in data]
+            return {
+                "exists": len(cfid_list) != 0,
+                "cfids": cfid_list
+            }
+        except sqlite3.OperationalError:
+            return {
+                "exists": False,
+                "error": "Database error occurred while checking for duplicates."
+            }
+        finally:
+            conn.close()
+
     class modify:
         def __init__(self, cfid):
             self.cfid = int(cfid)
@@ -393,6 +420,18 @@ class centralfiles:
 async def show_reg(request: Request, token: str = Depends(require_valid_token)):
     return templates.TemplateResponse("index.html", {"request": request})
 
+@router.get("/files/dupecheck/{name}", response_class=HTMLResponse)
+async def dupe_check(request: Request, name: str, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host}, User {authbook.token_owner(token)} Has checked for duplicates for cfid {name}")
+    result = centralfiles.dupe_check(str(name))
+    if result["exists"]:
+        return JSONResponse(content={"exists": True, "cfids": result["cfids"]}, status_code=200)
+    else:
+        if result.get("error", None) is None:
+            return JSONResponse(content={"exists": False}, status_code=404)
+        else:
+            return JSONResponse(content={"exists": -1, "error": result["error"]}, status_code=500)
+
 @router.get("/files/get/{cfid}")
 async def get_file(request: Request, cfid: int, token: str = Depends(require_valid_token)):
     logbook.info(f"IP {request.client.host} Has fetched the folder for cfid {cfid} under account {authbook.token_owner(token)}")
@@ -475,7 +514,7 @@ async def create_note(request: Request, data: NoteCreateData, token: str = Depen
 @router.get("/api/files/get_names", response_class=HTMLResponse)
 async def get_names(request: Request, token: str = Depends(require_valid_token)):
     logbook.info(f"IP {request.client.host} Has fetched all names under account {authbook.token_owner(token)}")
-    names, cfid_list = centralfiles.get_names()
+    names, cfid_list = centralfiles.get_names() # type: ignore
     data = {
         "names": names,
         "cfids": cfid_list
