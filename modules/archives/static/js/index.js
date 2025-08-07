@@ -1,5 +1,6 @@
 // noinspection JSDeprecatedSymbols
 
+// --- Exec Commands ---
 function execCmd(command) {
     document.execCommand(command, false, null);
 }
@@ -8,8 +9,7 @@ function execCmdWithArg(command, arg) {
     document.execCommand(command, false, arg);
 }
 
-let currentArchiveId = null; // null means new document
-
+// --- PDF Save ---
 function saveAsPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -26,6 +26,9 @@ function saveAsPDF() {
     doc.save(`${title}.pdf`);
 }
 
+// --- Server Save ---
+let currentArchiveId = null;
+
 function saveToServer() {
     const title = document.getElementById('pdf-title').value || 'Untitled Document';
     const content = document.getElementById('editor').innerHTML;
@@ -35,44 +38,35 @@ function saveToServer() {
         showToast('Tags should not contain spaces. Use commas to separate tags.', 'error');
         return;
     }
-    tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag); 
+
+    tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
 
     fetch('/api/archives/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            archive_id: currentArchiveId,
-            title: title,
-            content: content,
-            tags: tags
-        })
+        body: JSON.stringify({ archive_id: currentArchiveId, title, content, tags })
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-        if (data.archive_id) {
-            currentArchiveId = data.archive_id; // <-- update currentArchiveId
-        }
+        if (data.archive_id) currentArchiveId = data.archive_id;
         showToast('Document saved successfully!');
         loadArchiveList();
     })
-    .catch(error => {
-        console.error('Error:', error);
+    .catch(err => {
+        console.error('Error:', err);
         showToast('An error occurred while saving.');
     });
 }
 
-let allArchives = []; // Store all fetched archives for filtering
+// --- Archives ---
+let allArchives = [];
 
 function loadArchiveList() {
     fetch('/api/archives/get_all')
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-            if (Array.isArray(data.pdfs)) {
-                allArchives = data.pdfs;
-                renderArchiveList(allArchives);
-            } else {
-                document.getElementById('archive-list').innerHTML = '<li>No archives found.</li>';
-            }
+            allArchives = Array.isArray(data.pdfs) ? data.pdfs : [];
+            renderArchiveList(allArchives);
         })
         .catch(err => {
             console.error('Error fetching archive list:', err);
@@ -84,148 +78,32 @@ function loadArchiveById(id) {
     fetch('/api/archives/load', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id })
+        body: JSON.stringify({ id })
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-        const editor = document.getElementById('editor');
-        const titleInput = document.getElementById('pdf-title');
-        const tagsInput = document.getElementById('pdf-tags');
-
         if (data.content && data.title !== undefined) {
-            editor.innerHTML = data.content;
-            titleInput.value = data.title;
-            tagsInput.value = data.tags ? data.tags.join(',') : '';
-            currentArchiveId = id; // <-- save current archive ID
+            document.getElementById('editor').innerHTML = data.content;
+            document.getElementById('pdf-title').value = data.title;
+            document.getElementById('pdf-tags').value = data.tags?.join(',') || '';
+            currentArchiveId = id;
         } else {
             showToast('Invalid archive format', 'error');
         }
     })
-    .catch(error => {
-        console.error('Failed to load archive:', error);
+    .catch(err => {
+        console.error('Failed to load archive:', err);
         showToast('Error loading archive.', 'error');
     });
 }
 
-const modeSwitchBar = document.getElementById('mode-switch-bar');
-const editor = document.getElementById('editor');
-const toolbar = document.querySelector('.toolbar');
-const switchbarSaveBtn = document.getElementById('switchbar_save_btn');
-let isEditMode = true;
-
-function updateMode() {
-    if (isEditMode) {
-        editor.contentEditable = "true";
-        toolbar.style.display = "flex";
-        editor.style.backgroundColor = "#ffffff";
-        if (switchbarSaveBtn) switchbarSaveBtn.style.display = "none";
-        modeSwitchBar.textContent = "Edit Mode";
-        modeSwitchBar.style.backgroundColor = "#4CAF50";
-        setCookie('pdf_editor_mode', 'edit');
-    } else {
-        editor.contentEditable = "false";
-        toolbar.style.display = "none";
-        editor.style.backgroundColor = "#ffffff";
-        if (switchbarSaveBtn) switchbarSaveBtn.style.display = "inline-block";
-        modeSwitchBar.textContent = "View Mode";
-        modeSwitchBar.style.backgroundColor = "#999";
-        setCookie('pdf_editor_mode', 'view');
-    }
-}
-
-function setMode(editMode) {
-    if (editMode) {
-        editor.contentEditable = "true";
-        toolbar.style.display = "flex";
-        editor.style.backgroundColor = "#ffffff";
-        if (switchbarSaveBtn) switchbarSaveBtn.style.display = "none";
-
-        modeSwitchBar.style.backgroundColor = "#4CAF50";
-        modeSwitchBar.textContent = "Edit Mode";
-        setCookie('pdf_editor_mode', 'edit');
-    } else {
-        editor.contentEditable = "false";
-        toolbar.style.display = "none";
-        editor.style.backgroundColor = "#ffffff";
-        if (switchbarSaveBtn) switchbarSaveBtn.style.display = "inline-block";
-
-        modeSwitchBar.style.backgroundColor = "#2196F3";
-        modeSwitchBar.textContent = "View Mode";
-        setCookie('pdf_editor_mode', 'view');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Restore mode from cookie or default to edit mode
-  const savedMode = getCookie('pdf_editor_mode');
-  let editMode = savedMode !== 'view';
-  setMode(editMode);
-
-  modeSwitchBar.addEventListener('click', () => {
-    editMode = !editMode;
-    setMode(editMode);
-  });
-});
-
-function setCookie(name, value, days = 7) {
-  const d = new Date();
-  d.setTime(d.getTime() + days*24*60*60*1000);
-  document.cookie = `${name}=${value};path=/;expires=${d.toUTCString()}`;
-}
-
-function getCookie(name) {
-  const cookieArr = document.cookie.split(';');
-  for (let c of cookieArr) {
-    const [key, val] = c.trim().split('=');
-    if (key === name) return val;
-  }
-  return null;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadArchiveList();
-    createNewDocument(false); // Load new document on start
-    
-    const savedMode = getCookie('pdf_editor_mode');
-    isEditMode = savedMode !== 'view';
-    updateMode();
-
-    modeSwitchBar.addEventListener('click', () => {
-        isEditMode = !isEditMode;
-        updateMode();
-    });
-});
-
-document.addEventListener('keydown', function(e) {
-    // CTRL+S => Save to server
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault(); // prevent browser save dialog
-        saveToServer();
-        return false;
-    }
-
-    // CTRL+Z => Undo
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        document.execCommand('undo'); // built-in undo
-        return false;
-    }
-});
-
-function createNewDocument(alert=true) {
-    const editor = document.getElementById('editor');
-    const titleInput = document.getElementById('pdf-title');
-    const tagsInput = document.getElementById('pdf-tags');
-
-    editor.innerHTML = '<p>Start editing your document...</p>';
-    titleInput.value = '';
-    tagsInput.value = '';
-
-    currentArchiveId = null; // reset to null for a new document
+function createNewDocument(alertUser = true) {
+    document.getElementById('editor').innerHTML = '<p>Start editing your document...</p>';
+    document.getElementById('pdf-title').value = '';
+    document.getElementById('pdf-tags').value = '';
+    currentArchiveId = null;
     setMode(true);
-    if (alert) {
-        showToast('New document created. Start editing!');
-    }
+    if (alertUser) showToast('New document created. Start editing!');
 }
 
 function renderArchiveList(archives) {
@@ -251,29 +129,58 @@ function renderArchiveList(archives) {
 
 function filterArchives() {
     const query = document.getElementById('search-input').value.trim().toLowerCase();
-    
-    // Split query into parts by comma for multi-tag search
-    const searchParts = query.split(',').map(q => q.trim()).filter(q => q);
+    const parts = query.split(',').map(p => p.trim()).filter(Boolean);
 
     const filtered = allArchives.filter(doc => {
         const titleMatch = doc.title.toLowerCase().includes(query);
         const idMatch = String(doc.id).toLowerCase().includes(query);
-        
-        // Check tags
-        let tagsMatch = true;
-        if (doc.tags && searchParts.length > 0) {
-            // All search parts must match at least one tag
-            tagsMatch = searchParts.every(part =>
-                doc.tags.some(tag => tag.toLowerCase().includes(part))
-            );
-        }
-
+        const tagsMatch = parts.every(part =>
+            doc.tags?.some(tag => tag.toLowerCase().includes(part))
+        );
         return titleMatch || idMatch || tagsMatch;
     });
 
     renderArchiveList(filtered);
 }
 
+// --- Mode Switching ---
+const modeSwitchBar = document.getElementById('mode-switch-bar');
+const editor = document.getElementById('editor');
+const toolbar = document.querySelector('.toolbar');
+const switchbarSaveBtn = document.getElementById('switchbar_save_btn');
+let isEditMode = true;
+
+function setMode(editMode) {
+    editor.contentEditable = editMode ? "true" : "false";
+    toolbar.style.display = editMode ? "flex" : "none";
+    editor.style.backgroundColor = "#ffffff";
+
+    if (switchbarSaveBtn) {
+        switchbarSaveBtn.style.display = editMode ? "none" : "inline-block";
+    }
+
+    modeSwitchBar.textContent = editMode ? "Edit Mode" : "View Mode";
+    modeSwitchBar.style.backgroundColor = editMode ? "#4CAF50" : "#2196F3";
+
+    isEditMode = editMode;
+    setCookie('pdf_editor_mode', editMode ? 'edit' : 'view');
+}
+
+// --- Cookies ---
+function setCookie(name, value, days = 7) {
+    const d = new Date();
+    d.setTime(d.getTime() + days * 86400000);
+    document.cookie = `${name}=${value};path=/;expires=${d.toUTCString()}`;
+}
+
+function getCookie(name) {
+    return document.cookie
+        .split(';')
+        .map(c => c.trim().split('='))
+        .find(([k]) => k === name)?.[1] || null;
+}
+
+// --- Toast Notifications ---
 function showToast(message, type = 'success', duration = 3000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -287,19 +194,18 @@ function showToast(message, type = 'success', duration = 3000) {
 
     container.appendChild(toast);
 
-    // Auto-remove after timeout
     const autoRemove = setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(-10px)';
         setTimeout(() => toast.remove(), 300);
     }, duration);
 
-    // Cancel auto-remove if closed early
     toast.querySelector('.close-btn').addEventListener('click', () => {
         clearTimeout(autoRemove);
     });
 }
 
+// --- Document Destroy ---
 document.getElementById('destroy-btn').addEventListener('click', () => {
     if (!currentArchiveId) {
         showToast("This document hasn't been saved yet, nothing to destroy!", 'error');
@@ -314,12 +220,12 @@ document.getElementById('destroy-btn').addEventListener('click', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: currentArchiveId })
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
         if (data.success) {
             showToast("Document shredded", 'success');
-            createNewDocument(false); // start fresh
-            loadArchiveList(); // refresh the list
+            createNewDocument(false);
+            loadArchiveList();
         } else {
             showToast("Failed to delete document", 'error');
         }
@@ -328,4 +234,30 @@ document.getElementById('destroy-btn').addEventListener('click', () => {
         console.error(err);
         showToast("Error deleting document", 'error');
     });
+});
+
+// --- Init ---
+document.addEventListener('DOMContentLoaded', () => {
+    loadArchiveList();
+    createNewDocument(false);
+
+    const savedMode = getCookie('pdf_editor_mode');
+    setMode(savedMode === 'edit');
+
+    modeSwitchBar.addEventListener('click', () => {
+        setMode(!isEditMode);
+    });
+});
+
+// --- Keyboard Shortcuts ---
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveToServer();
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        document.execCommand('undo');
+    }
 });

@@ -1,101 +1,165 @@
-body {
+/* Reset and base styles */
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
   font-family: 'Segoe UI', sans-serif;
-  height: 100vh;
+  background-color: #f5f5f5;
+  overflow-x: hidden;
+}
+
+/* Dashboard/Header */
+.dashboard {
+  background-color: #1e1e2f;
+  color: white;
+  padding: 15px 10px;
+  text-align: center;
+  border-bottom: 3px solid #333;
+}
+
+.dashboard h1 {
+  font-size: 3rem;
+  word-break: break-word;
+}
+
+/* Main container */
+.main {
+  width: 100%;
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 0 10px;
+}
+
+/* Search input */
+#search-input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* People list */
+#people-list {
   display: flex;
   flex-direction: column;
-  background-color: #f6f8fa;
-}
-
-/* Top Dashboard */
-.dashboard {
-  background-color: #222;
-  color: white;
-  padding: 1em;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-/* Controls */
-.controls {
-  display: flex;
-  gap: 0.5em;
-  padding: 1em;
-  background-color: #f0f0f0;
-  box-shadow: 0 -2px 6px rgba(0,0,0,0.1) inset;
-}
-
-.controls input {
-  flex: 1;
-  padding: 0.6em;
-  font-size: 1em;
-  border-radius: 6px;
+  width: 100%;
   border: 1px solid #ccc;
-}
-
-.controls button {
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  border: none;
   border-radius: 6px;
-  background-color: #333;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.controls button:hover {
-  background-color: #555;
-}
-
-/* Main area */
-.main {
-  flex: 1;
-  display: flex;
   overflow: hidden;
 }
 
-.left-panel {
-  width: 80%;
-  background-color: #fff;
-  border-right: 1px solid #ccc;
-  overflow-y: auto;
-}
-
-.right-panel {
-  width: 20%;
-  padding: 1em;
-  background-color: #eaeaea;
-}
-
-/* Fancy name cards */
-#people-list {
-  display: grid;
-  padding: 0;
-  margin: 0;
-}
-
+/* Each person row */
 #people-list a {
   display: block;
-  padding: 0.8em;
+  padding: 15px 12px;
+  font-size: 16px;
   text-decoration: none;
-  color: black;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background-color: #fafafa;
-  transition: background-color 0.3s;
+  color: #222;
+  background-color: #fff;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease-in-out;
+  word-break: break-word;
+}
+
+#people-list a:nth-child(odd) {
+  background-color: #f9f9f9;
 }
 
 #people-list a:hover {
-  background-color: #f0f0f0;
+  background-color: #e6f0ff;
 }
 
-#people-list a:nth-child(even) {
-  background-color: #eee;
+/* Controls section */
+.controls {
+  width: 100%;
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 0 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
 }
 
-#search-input {
-  width: calc(100% - 16px);
-  height: 30px;
-  padding: 6px;
-  border: none
+.controls input[type="text"] {
+  flex: 1 1 150px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.controls button {
+  padding: 10px 14px;
+  font-size: 16px;
+  background-color: #3f51b5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.controls button:hover {
+    background-color: #303f9f;
+}
+
+@media screen and (max-width: 1250px) {
+  #search-input {
+    font-size: 35px;
+  }
+
+  .controls input[type="text"] {
+    flex: 1 1 100%;
+  }
+
+  .controls button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  #people-list a {
+    font-size: 40px;    
+  }
+
+  .controls button {
+    width: 100%;
+    height: 100px;
+    font-size: xx-large;
+  }
+
+  #name-input {
+    width: 100%;
+    height: 100px;
+    font-size: xx-large;
+  }
+}
+
+@media (max-width: 400px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controls button {
+    width: 100%;
+    height: 50px;
+  }
+
+  #name-input {
+    width: 100%;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  .dashboard h1 {
+    font-size: 6rem;
+  }
 }

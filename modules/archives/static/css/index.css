@@ -1,34 +1,34 @@
 /* Page wrapper splits screen horizontally */
 #page-wrapper {
-    display: flex;
-    height: 100vh;
-    margin: 0;
+  display: flex;
+  height: 100vh;
+  margin: 0;
 }
 
 /* Left container takes 25%, styled for you to add content */
 #left-container {
-    width: 25%;
-    background-color: #eee;
-    padding: 20px;
-    box-sizing: border-box;
-    overflow-y: auto;
-    min-height: 500px;
+  width: 25%;
+  background-color: #eee;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  min-height: 500px;
 }
 
 /* Editor container takes 75% */
 #editor_container {
-    width: 75%;
-    min-height: 500px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+  width: 75%;
+  min-height: 500px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Your existing styles (or keep them in index.css) */
 body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f9f9f9;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9f9f9;
 }
 
 .toolbar {
@@ -68,16 +68,18 @@ body {
 
 #editor {
   flex-grow: 1;
-  padding: 24px;
   outline: none;
   overflow-y: auto;
   background-color: #ffffff;
-  max-width: 800px;
-  margin: 20px auto;
   border: 1px solid #ddd;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  width: 100%;
+  width: 98%;
+  margin-left: 5px;
+  margin-right: 5px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 #editor[contenteditable="true"] {
@@ -252,8 +254,29 @@ body {
   #left-container,
   #editor_container {
     width: 100%;
-    min-height: 400px;
     height: fit-content;
+  }
+
+  #editor_container {
+    flex-direction: column;
+    height: auto;
+    min-height: auto;
+    display: flex;
+  }
+
+  #meta-fields {
+    flex-shrink: 0;
+    margin-top: 10px;
+  }
+
+  #editor {
+    min-height: 400px;
+    max-height: 40vh;
+    max-width: 456px;
+    overflow-y: auto;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
   }
 
   #left-container {
@@ -268,10 +291,6 @@ body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f9f9f9;
-    overflow-x: hidden;
-  }
-
-  html {
     overflow-x: hidden;
   }
 
@@ -291,4 +310,8 @@ body {
     border-radius: 4px;
     text-decoration: none;
   }
+}
+
+html {
+  overflow-x: hidden;
 }
