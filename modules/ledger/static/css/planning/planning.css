@@ -1,0 +1,274 @@
+/* --- Reset some defaults --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+body {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f4f4f9;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #0f172a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.sidebar h1 {
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.nav a.active,
+.nav a:hover {
+  background-color: #1f2937;
+}
+
+.main {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.planning-container {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+#splashtext {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+  color: #34495e;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid #3498db;
+  padding-left: 10px;
+}
+
+.expense-tracker {
+  margin-bottom: 2rem;
+}
+
+#expense-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.input-group {
+  flex: 1 1 200px; /* Allow flexibly shrinking and growing */
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  margin-bottom: 0.5rem;
+}
+
+.input-group input {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+#expense-form button {
+  flex: 1 1 100%;
+  padding: 0.75rem;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#expense-form button:hover {
+  background-color: #27ae60;
+}
+
+.expense-list {
+  margin-bottom: 2rem;
+  overflow-x: auto; /* Scroll if table is too wide */
+}
+
+#expense-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+#expense-table th,
+#expense-table td {
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 1px solid #ddd;
+}
+
+#expense-table thead th {
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+}
+
+#expense-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.remove-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 0.9rem;
+}
+
+.remove-btn:hover {
+  background-color: #c0392b;
+}
+
+#expense-table thead th:last-child,
+#expense-table tbody td:last-child {
+  text-align: center;
+  width: 100px;
+}
+
+.financial-target {
+  text-align: center;
+}
+
+.target-box,
+.total-expenses-box {
+  margin: 1rem auto;
+  padding: 1.5rem;
+  border-radius: 8px;
+  display: inline-block;
+  width: 90%;
+  max-width: 400px;
+}
+
+.target-box {
+  background-color: #ecf0f1;
+  border: 1px solid #bdc3c7;
+}
+
+.total-expenses-box {
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
+}
+
+.minimum-needed {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #e74c3c;
+  animation: pulse 1.5s infinite;
+}
+
+#total-annual-expenses {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+#info_sect {
+  margin-top: 2rem;
+}
+
+#canvas-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  #expense-form {
+    flex-direction: column;
+  }
+
+  .input-group,
+  #expense-form button {
+    flex: 1 1 100%;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  .minimum-needed,
+  #total-annual-expenses {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .planning-container {
+    padding: 1rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+  }
+
+  .minimum-needed,
+  #total-annual-expenses {
+    font-size: 1.5rem;
+  }
+
+  #canvas-container {
+    width: 90%;
+    height: auto;
+  }
+
+  #expense-table th,
+  #expense-table td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+}

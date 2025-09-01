@@ -184,3 +184,83 @@ async def del_account(request: Request, data: del_account_data, token: str = Dep
         except sqlite3.OperationalError:
             conn.rollback()
             return JSONResponse(content={"success": False, "error": "Database error occurred while deleting the account."}, status_code=500)
+
+@router.get("/ledger/planning")
+async def planning(request: Request, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the financial planning page.")
+    return templates.TemplateResponse(
+        request,
+        "planning.html",
+    )
+
+class expense_data(BaseModel):
+    name: str
+    amount: float
+    frequency: int
+    annualCost: float
+
+@router.post("/api/finances/fp/add_expense")
+async def add_fp_expense(request: Request, data: expense_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has added an expense to the FP No. 1.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO fp_expenses (name, amount, frequency, annual_cost) VALUES (?, ?, ?, ?)",
+                (data.name, data.amount, data.frequency, data.annualCost)
+            )
+            conn.commit()
+            return JSONResponse(content={"success": True}, status_code=200)
+        except sqlite3.OperationalError:
+            conn.rollback()
+            return JSONResponse(content={"success": False, "error": "Database error occurred while adding the expense."}, status_code=500)
+
+class del_expense_data(BaseModel):
+    name: str
+
+@router.post("/api/finances/fp/delete_expense")
+async def delete_fp_expense(request: Request, data: del_expense_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has deleted an expense from the FP No. 1.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM fp_expenses WHERE name = ?",
+                (data.name,)
+            )
+            conn.commit()
+            return JSONResponse(content={"success": True}, status_code=200)
+        except sqlite3.OperationalError:
+            conn.rollback()
+            return JSONResponse(content={"success": False, "error": "Database error occurred while deleting the expense."}, status_code=500)
+
+@router.get("/api/finances/fp/get_expenses")
+async def get_fp_expenses(request: Request, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the FP No. 1.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name, amount, frequency, annual_cost FROM fp_expenses"
+            )
+            data = cursor.fetchall()
+            parsed_data = []
+            for item in data:
+                parsed_data.append({
+                    "name": item[0],
+                    "amount": item[1],
+                    "frequency": item[2],
+                    "annual_cost": item[3]
+                })
+            return JSONResponse(parsed_data, status_code=200)
+        except sqlite3.OperationalError:
+            conn.rollback()
+            return JSONResponse(content={"error": "Database error occurred while fetching expenses."}, status_code=500)
+
+@router.get("/ledger/debts")
+async def debts(request: Request, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the debts record page.")
+    return templates.TemplateResponse(
+        request,
+        "debts.html",
+    )

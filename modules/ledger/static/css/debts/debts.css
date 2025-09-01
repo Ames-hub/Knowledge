@@ -1,0 +1,159 @@
+.debts-section {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-width: 900px;
+    margin: 2rem auto;
+}
+
+.debts-section h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+    color: #0f172a;
+    text-align: center;
+}
+
+.debts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+.debts-table th,
+.debts-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.debts-table thead {
+    background-color: #0f172a;
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.debts-table tbody tr:nth-child(even) {
+    background-color: #f5f5f5;
+}
+
+.debts-table tbody tr:hover {
+    background-color: #e0e7ff;
+}
+
+.status {
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    color: #fff;
+}
+
+.status.pending {
+    background-color: #3b82f6; /* blue */
+}
+
+.status.overdue {
+    background-color: #ef4444; /* red */
+}
+
+.main {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.debts-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #fff;
+}
+
+.btn.track-debt {
+    background-color: #10b981; /* green */
+}
+
+.btn.track-debt:hover {
+    background-color: #059669;
+}
+
+.btn.pay-debt {
+    background-color: #f59e0b; /* amber/orange */
+}
+
+.btn.pay-debt:hover {
+    background-color: #d97706;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(15, 23, 42, 0.7); /* semi-transparent overlay */
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+    margin-bottom: 1rem;
+    color: #0f172a;
+    text-align: center;
+}
+
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content label {
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.modal-content input,
+.modal-content select {
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 1rem;
+}
+
+.modal-content .btn {
+    margin-top: 1.25rem;
+}
+
+/* Close button */
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+}
