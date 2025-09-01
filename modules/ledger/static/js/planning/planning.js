@@ -14,7 +14,19 @@ form.addEventListener('submit', function(event) {
     const frequency = parseInt(document.getElementById('expense-frequency').value);
 
     if (name && !isNaN(amount) && !isNaN(frequency)) {
-        const annualCost = (365 / frequency) * amount;
+        let annualCost;
+        if (frequency === 1) {
+            annualCost = amount * 365;
+        } else if (frequency === 7) {
+            annualCost = amount * 52; // 52 weeks exactly
+        } else if (frequency === 30 || frequency === 31) {
+            annualCost = amount * 12;
+        } else if (frequency === 365) {
+            annualCost = amount;
+        } else {
+            // fallback for irregular intervals in days
+            annualCost = (365 / frequency) * amount;
+        }
 
         // Add the new expense's annual cost to the total
         totalAnnualCost += annualCost;
