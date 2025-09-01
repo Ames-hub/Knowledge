@@ -79,7 +79,7 @@ if __name__ == "__main__":
         config = uvicorn.Config(
             "knowledge:fastapp",
             host="0.0.0.0",
-            port=8015,
+            port=8020,
             loop="asyncio",
             lifespan="on",
             reload=True
