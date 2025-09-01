@@ -109,6 +109,44 @@ async def modify_finances(request: Request, data: finances_data, token: str = De
                 status_code=500
             )
 
+class transaction_delete(BaseModel):
+    transaction_id: int
+
+@router.post("/api/finances/del_transaction", response_class=JSONResponse)
+async def del_transaction(request: Request, data: transaction_delete, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has deleted a finance transaction.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "SELECT amount, is_expense, account_id FROM finance_transactions WHERE transaction_id = ?",
+                (data.transaction_id,)
+            )
+            db_data = cursor.fetchone()
+            amount = db_data[0]
+            is_expense = bool(db_data[1])
+            account_id = db_data[2]
+
+            # Update account balance
+            cursor.execute(
+                f"""
+                UPDATE finance_accounts SET balance = balance {"+" if not is_expense else "-"} ?
+                WHERE account_id = ?
+                """,
+                (amount, account_id)
+            )
+
+            cursor.execute(
+                "DELETE FROM finance_transactions WHERE transaction_id = ?",
+                (data.transaction_id,)
+            )
+            conn.commit()
+            return JSONResponse(content={"success": True}, status_code=200)
+        except sqlite3.OperationalError:
+            conn.rollback()
+            return JSONResponse(content={"success": False, "error": "Database error occurred while deleting the transaction."}, status_code=500)
+
 class make_account_data(BaseModel):
     account_name: str
 

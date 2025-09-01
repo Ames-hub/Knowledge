@@ -75,6 +75,32 @@ async function loadTransactions(accountId, accountRow) {
       const sign = txn.is_expense ? "- " : "+ ";
       li.textContent = `${sign}$${txn.amount} — ${txn.description} (${txn.date} ${txn.time})`;
 
+      // Add a delete button
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.className = "transaction-delete-btn";
+      delBtn.addEventListener("click", async () => {
+        try {
+          const res = await fetch("/api/finances/del_transaction", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ transaction_id: txn.transaction_id })
+          });
+
+          if (!res.ok) throw await res.json();
+          // Remove the item from the DOM
+          li.remove();
+
+          loadAccounts();
+
+        } catch (err) {
+          console.error("Failed to delete transaction:", err);
+          alert("Failed to delete transaction");
+        }
+      });
+
+      li.appendChild(delBtn);
+
       if (txn.is_expense) {
         outgoingList.appendChild(li);
       } else {

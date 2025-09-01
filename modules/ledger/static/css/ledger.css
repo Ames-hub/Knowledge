@@ -207,3 +207,10 @@ body {
 .outgoing-list li {
   color: #c92a2a; /* red text */
 }
+
+.transaction-delete-btn {
+  margin-left: 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  float: right
+}
