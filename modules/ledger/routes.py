@@ -131,7 +131,7 @@ async def del_transaction(request: Request, data: transaction_delete, token: str
             # Update account balance
             cursor.execute(
                 f"""
-                UPDATE finance_accounts SET balance = balance {"+" if not is_expense else "-"} ?
+                UPDATE finance_accounts SET balance = balance {"+" if is_expense else "-"} ?
                 WHERE account_id = ?
                 """,
                 (amount, account_id)
