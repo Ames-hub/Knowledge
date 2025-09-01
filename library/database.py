@@ -61,6 +61,25 @@ class database:
                 "content": "TEXT NOT NULL",
                 "owner": "TEXT NOT NULL",
                 "tags": "TEXT"
+            },
+            "finance_accounts": {
+                "account_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "account_name": "TEXT NOT NULL",
+                "balance": "REAL NOT NULL DEFAULT 0.0",
+            },
+            "finance_transactions": {
+                "transaction_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "account_id": "INTEGER NOT NULL REFERENCES finance_accounts(account_id)",
+                "amount": "REAL NOT NULL",
+                "is_expense": "BOOLEAN NOT NULL",
+                "description": "TEXT NOT NULL",
+                "date": "DATE NOT NULL DEFAULT CURRENT_DATE",
+                "time": "TIME NOT NULL DEFAULT CURRENT_TIME",
+            },
+            "transaction_receipts": {
+                "transaction_id": "INTEGER NOT NULL REFERENCES transactions(transaction_id)",
+                # A photo of the receipt
+                "receipt": "BLOB NOT NULL",
             }
         }
 

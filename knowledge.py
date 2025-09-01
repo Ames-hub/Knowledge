@@ -5,6 +5,7 @@ from library.database import database
 from fastapi import Request, FastAPI
 import importlib
 import uvicorn
+import asyncio
 import os
 
 fastapp = FastAPI()
@@ -44,6 +45,8 @@ async def favicon():
     if os.path.exists(image_path):
         with open(image_path, "rb") as image_file:
             return HTMLResponse(content=image_file.read(), media_type="image/png")
+    else:
+        raise FileNotFoundError("No favicon.png found")
 
 modules_dir = "modules"
 
@@ -72,4 +75,17 @@ for module_name in os.listdir(modules_dir):
                 logbook.error(f"[✗] Failed to load {module_name}: {err}", exception=err)
 
 if __name__ == "__main__":
-    uvicorn.run("knowledge:fastapp", host="0.0.0.0" if DEBUG == False else "127.0.0.1", port=8080, reload=True)
+    if __name__ == "__main__":
+        config = uvicorn.Config(
+            "knowledge:fastapp",
+            host="0.0.0.0",
+            port=8015,
+            loop="asyncio",
+            lifespan="on",
+            reload=True
+        )
+        server = uvicorn.Server(config)
+        try:
+            asyncio.run(server.serve())
+        except KeyboardInterrupt:
+            print("Interrupt signl detected, Stopping server and shutting down.")

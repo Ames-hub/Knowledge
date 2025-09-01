@@ -1,0 +1,209 @@
+/* --- Reset some defaults --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  color: #333;
+}
+
+/* --- Main content --- */
+.main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* --- Ledger cards --- */
+.ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+}
+
+.account-row {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.account-row:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+/* --- Account header --- */
+.account-name {
+  background-color: #f0f4f8;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --- Entry rows --- */
+.entry-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* --- Incoming/Outgoing cards --- */
+.incoming, .outgoing {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+}
+
+.incoming {
+  background-color: #e8faf0; /* soft green */
+  border-right: 1px solid #e0e0e0;
+}
+
+.outgoing {
+  background-color: #fff4f4; /* soft red */
+}
+
+.incoming span::before {
+  content: "⬆️";
+  margin-right: 0.3rem;
+}
+
+.outgoing span::before {
+  content: "⬇️";
+  margin-right: 0.3rem;
+}
+
+.incoming span, .outgoing span {
+  font-weight: 500;
+  color: #333;
+  min-width: 70px;
+}
+
+/* --- Inputs & buttons unified pill style --- */
+.input-group {
+  display: flex;
+  gap: 0; /* no gap to keep pill connected */
+}
+
+.incoming input,
+.outgoing input {
+  border-radius: 9999px 0 0 9999px;
+  border: 1px solid #ccc;
+  border-right: none;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.95rem;
+  width: 100px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.incoming input:focus,
+.outgoing input:focus {
+  border-color: #0077cc;
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 119, 204, 0.25);
+}
+
+.incoming button,
+.outgoing button {
+  border-radius: 0 9999px 9999px 0;
+  border: 1px solid #0077cc;
+  border-left: none;
+  padding: 0.55rem 1rem;
+  background-color: #0077cc;
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.incoming button:hover,
+.outgoing button:hover {
+  background-color: #005fa3;
+  transform: translateY(-1px);
+}
+
+.incoming input,
+.outgoing input,
+.incoming button,
+.outgoing button {
+  height: 40px; /* unified height for perfect pill */
+}
+
+.outgoing span,
+.incoming span {
+  margin-right: 10px;
+}
+
+/* --- Optional: subtle summary row at bottom of card --- */
+.account-summary {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* --- Transactions section --- */
+.transactions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #e0e0e0;
+  background-color: #fafbfc;
+}
+
+.transactions-column {
+  padding: 1rem 1.5rem;
+}
+
+.transactions-column h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+
+.transactions-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.transactions-column li {
+  font-size: 0.9rem;
+  color: #333;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.transactions-column li:hover {
+  background-color: #f0f4f8;
+}
+
+/* Different colors for clarity */
+.incoming-list li {
+  color: #1a7f37; /* green text */
+}
+
+.outgoing-list li {
+  color: #c92a2a; /* red text */
+}

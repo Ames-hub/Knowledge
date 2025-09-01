@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ledger</title>
+  <link rel="stylesheet" href="/static/ledger/css/ledger.css">
+  <link rel="stylesheet" href="/static/ledger/css/sidebar.css">
+  <link rel="stylesheet" href="/static/ledger/css/modal.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Ledger</h1>
+    <nav class="nav">
+      <a href="/"> ⬅️ Go Back</a>
+      <a href="/ledger" class="active">Accounts</a>
+    </nav>
+  </aside>
+
+  <!-- Make/Delete Account Modal -->
+  <div id="accountModal" class="modal">
+    <div class="modal-content">
+      <h3 id="accountModalTitle">Create New Account</h3>
+
+      <!-- Mode selector -->
+      <select id="accountAction">
+        <option value="create">Create</option>
+        <option value="delete">Delete</option>
+      </select>
+
+      <div id="createFields">
+        <label for="newAccountName">Account Name:</label>
+        <input type="text" id="newAccountName" placeholder="e.g. Savings, Travel Fund" />
+      </div>
+
+      <div id="deleteFields" style="display:none;">
+        <label for="deleteAccountSelect">Select Account to Delete:</label>
+        <select id="deleteAccountSelect"></select>
+      </div>
+
+      <div class="modal-actions">
+        <button id="accountConfirm">Confirm</button>
+        <button id="accountCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction popup (hidden by default) -->
+  <div id="transactionModal" class="modal">
+    <div class="modal-content">
+      <h3>Add Transaction</h3>
+      <p id="moneyText"></p>
+
+      <label>Description</label>
+      <input type="text" id="transactionDesc" placeholder="e.g. Groceries, Rent, Salary">
+
+      <div class="preset-options">
+        <button type="button" data-value="Fuel">Fuel</button>
+        <button type="button" data-value="Food">Food</button>
+        <button type="button" data-value="Rent">Rent</button>
+      </div>
+
+      <div class="preset-options">
+        <button type="button" data-value="Paycheck Money">Paid</button>
+        <button type="button" data-value="Gifted Money">Gift</button>
+      </div>
+
+      <div class="modal-actions">
+        <button id="cancelBtn">Cancel</button>
+        <button id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="main">
+    <button id="openAccountModal" class="make-account-btn">Manage Accounts</button>
+    <div class="ledger", id="ledgerContainer">
+      <div class="account-row">
+        <div class="account-name">Checking</div>
+        <div class="entry-row">
+          <div class="incoming">
+            <span>Incoming</span>
+            <div class="input-group">
+              <input type="number" placeholder="0.00">
+              <button>Submit</button>
+            </div>
+          </div>
+          <div class="outgoing">
+            <span>Outgoing</span>
+            <div class="input-group">
+              <input type="number" placeholder="0.00">
+              <button>Submit</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transactions -->
+        <div class="transactions">
+          <div class="transactions-column incoming-list">
+            <h4>Incoming Transactions</h4>
+            <ul>
+              <li>+ $500 — Salary</li>
+              <li>+ $200 — Refund</li>
+              <li>+ $150 — Gift</li>
+            </ul>
+          </div>
+          <div class="transactions-column outgoing-list">
+            <h4>Outgoing Transactions</h4>
+            <ul>
+              <li>- $100 — Groceries</li>
+              <li>- $60 — Gas</li>
+              <li>- $250 — Rent</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/static/ledger/js/accounts.js"></script>
+  <script src="/static/ledger/js/modal.js"></script>
+</body>
+</html>
