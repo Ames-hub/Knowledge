@@ -108,7 +108,8 @@ function updateTotals() {
 
 function renderPieChart(expenses) {
     const labels = expenses.map(exp => exp.name);
-    const data = expenses.map(exp => parseFloat(exp.amount));
+    // Use annual cost for the pie chart data
+    const data = expenses.map(exp => parseFloat(exp.annual_cost));
     const backgroundColors = [
         '#3498db', '#2ecc71', '#e74c3c', '#f1c40f',
         '#9b59b6', '#1abc9c', '#e67e22', '#34495e'
@@ -141,7 +142,7 @@ function renderPieChart(expenses) {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `${context.label}: $${context.parsed}`;
+                                return `${context.label}: $${context.parsed} annually`;
                             }
                         }
                     }
