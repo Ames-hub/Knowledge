@@ -15,9 +15,13 @@ async function loadAccounts() {
       const accountRow = document.createElement("div");
       accountRow.classList.add("account-row");
 
+      let total_expenses = await fetch(`/api/finances/account/total_expenses/${account.account_id}`);  // Returns HTMLResponse, not JSON
+      total_expenses = await total_expenses.text();
+      total_expenses = parseFloat(total_expenses);
+
       accountRow.innerHTML = `
         <div class="account-name">
-          ${account.account_name} — Balance: $${account.balance.toFixed(2)}
+          <p id='account_text'>${account.account_name} — Balance: $${account.balance.toFixed(2)}</p><p id='expenses_text'>Total Expenses: $${total_expenses.toFixed(2)}</p>
         </div>
         <div class="entry-row">
           <div class="incoming">

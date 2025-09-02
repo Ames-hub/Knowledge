@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Ledger</title>
     <link rel="stylesheet" href="/static/ledger/css/debts/debts.css">
-    <link rel="stylesheet" href="/static/ledger/css/sidebar.css">
+    <link rel="stylesheet" href="/static/ledger/css/ledger/sidebar.css">
 </head>
 <body>
 <aside class="sidebar">
@@ -24,20 +24,23 @@
         <span class="close" id="closeTrackModal">&times;</span>
         <h3>Track New Debt</h3>
         <form id="trackDebtForm">
-            <label>Creditor:</label>
-            <input type="text" name="creditor" required>
+            <label>Debtor (who owes):</label>
+            <input type="text" name="debtor" required>
+
+            <label>Debtee (who's owed):</label>
+            <input type="text" name="debtee" required>
 
             <label>Amount ($):</label>
             <input type="number" name="amount" min="0" step="0.01" required>
 
-            <label>Due Date:</label>
-            <input type="date" name="due_date" required>
+            <label>Start Date:</label>
+            <input type="date" name="start_date">
 
-            <label>Status:</label>
-            <select name="status" required>
-                <option value="Pending">Pending</option>
-                <option value="Overdue">Overdue</option>
-            </select>
+            <label>Due Date:</label>
+            <input type="date" name="due_date">
+
+            <label>Description:</label>
+            <textarea name="description" rows="3" placeholder="Optional notes about this debt..."></textarea>
 
             <button type="submit" class="btn track-debt">Add Debt</button>
         </form>
@@ -50,8 +53,17 @@
         <span class="close" id="closePayModal">&times;</span>
         <h3>Subtract from Debt</h3>
         <form id="payDebtForm">
-            <label>Creditor:</label>
-            <input type="text" name="creditor" required>
+            <label>Debtor (who owes):</label>
+            <input type="text" name="debtor" required>
+
+            <label>Debtee (who's owed):</label>
+            <input type="text" name="debtee" required>
+
+            <!-- Dropdown menu that shows which debts this person owes (the items, not the total) -->
+            <label>Select Debt to Pay Off:</label>
+            <select name="record_id" id="debtRecordSelect" required>
+                <option value="">-- Select a debt record --</option>
+            </select>
 
             <label>Amount to Subtract ($):</label>
             <input type="number" name="amount" min="0" step="0.01" required>
@@ -62,42 +74,26 @@
 </div>
 
 <main class="main">
-    <h1>WIP</h1>
     <section class="debts-section">
-        <h2>Outstanding Debts</h2>
+        <h2>Unpaid Debts</h2>
         <table class="debts-table">
             <thead>
-                <tr>
-                    <th>Creditor</th>
-                    <th>Amount ($)</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                </tr>
+              <tr>
+                <th>Debtor</th>
+                <th>Debtee</th>
+                <th>Amount ($)</th>
+                <th>Start Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+              </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>Bank of Australia</td>
-                    <td>3,200.00</td>
-                    <td>2025-09-30</td>
-                    <td><span class="status pending">Pending</span></td>
-                </tr>
-                <tr>
-                    <td>Credit Union</td>
-                    <td>1,500.00</td>
-                    <td>2025-10-15</td>
-                    <td><span class="status overdue">Overdue</span></td>
-                </tr>
-                <tr>
-                    <td>Car Loan Co.</td>
-                    <td>7,800.00</td>
-                    <td>2025-12-01</td>
-                    <td><span class="status pending">Pending</span></td>
-                </tr>
-            </tbody>
+              <tbody id="debtsTableBody">
+                <!-- Rows will be injected here -->
+              </tbody>
         </table>
         <div class="debts-actions">
-            <button class="btn track-debt" id="openTrackModal">➕ Track New Debt</button>
-            <button class="btn pay-debt" id="openPayModal">➖ Subtract from Debt</button>
+            <button class="btn track-debt" id="openTrackModal">Track New Debt</button>
+            <button class="btn pay-debt" id="openPayModal">Subtract from Debt</button>
         </div>
     </section>
 </main>

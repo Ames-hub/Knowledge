@@ -49,7 +49,6 @@ body {
   font-weight: 600;
   font-size: 1.2rem;
   border-bottom: 1px solid #e0e0e0;
-  display: flex;
   align-items: center;
   gap: 0.5rem;
 }
@@ -212,5 +211,86 @@ body {
   margin-left: 10px;
   font-size: 0.8rem;
   cursor: pointer;
-  float: right
+  float: right;
+}
+
+#account_text {
+  position: relative;
+  float: left;
+}
+
+#expenses_text {
+  position: relative;
+  float: right;
+}
+
+/* --- Mobile-first responsive --- */
+@media (max-width: 768px) {
+  /* Stack incoming/outgoing input fields vertically */
+  .entry-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: none;
+  }
+
+  #account_text,
+  #expenses_text {
+    font-size: medium;
+  }
+
+  .incoming, .outgoing {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Make input group vertical */
+  .input-group {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .incoming input,
+  .outgoing input,
+  .incoming button,
+  .outgoing button {
+    width: 100%;  /* full width for mobile */
+    border-radius: 10px;
+    height: 38px;
+  }
+
+  /* Stack transactions vertically */
+  .transactions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-top: none;
+    background-color: #fafbfc;
+  }
+
+  .transactions-column {
+    padding: 0.5rem 1rem;
+  }
+
+  .transactions-column h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .transactions-column li {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.5rem;
+  }
+  
+  /* Reduce card padding and spacing */
+  .account-row {
+    border-radius: 10px;
+    padding: 0.5rem 0;
+  }
+
+  .account-name {
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+  }
 }

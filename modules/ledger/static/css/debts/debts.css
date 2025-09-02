@@ -141,6 +141,7 @@
     padding: 0.5rem;
     border-radius: 6px;
     border: 1px solid #cbd5e1;
+    background-color: white;
     font-size: 1rem;
 }
 
@@ -156,4 +157,14 @@
     font-size: 1.5rem;
     font-weight: bold;
     cursor: pointer;
+}
+
+/* Hide start/end date columns on mobile */
+@media (max-width: 968px) {
+    .debts-table th:nth-child(4),
+    .debts-table th:nth-child(5),
+    .debts-table td:nth-child(4),
+    .debts-table td:nth-child(5) {
+        display: none;
+    }
 }

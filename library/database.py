@@ -92,10 +92,17 @@ class database:
                 "debtor": "TEXT NOT NULL",
                 "debtee": "TEXT NOT NULL",
                 "amount": "REAL NOT NULL",
-                "start_date": "DATE NOT NULL",
-                "end_date": "DATE NOT NULL",
-                "description": "TEXT NOT NULL"
-            }
+                "start_date": "DATE NOT NULL DEFAULT CURRENT_DATE",
+                "end_date": "DATE",
+            },
+            "debt_records": {
+                "record_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "debt_id": "INTEGER NOT NULL REFERENCES debts(debt_id)",
+                "start_date": "DATE NOT NULL DEFAULT CURRENT_DATE",
+                "amount": "REAL NOT NULL",
+                "description": "TEXT NOT NULL",
+                "paid_off": "BOOLEAN NOT NULL DEFAULT FALSE",
+            },
         }
 
         for table_name, columns in table_dict.items():
