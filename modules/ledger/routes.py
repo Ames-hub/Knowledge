@@ -318,14 +318,18 @@ class debts:
                 parsed_data = {}
                 for item in data:
                     start_datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S.%f")
-                    end_datetime_obj = datetime.datetime.strptime(item[5], "%Y-%m-%d %H:%M:%S.%f")
+                    if item[5] is not None:
+                        end_datetime_obj = datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S.%f")
+                        end_value = end_datetime_obj.strftime("%Y-%m-%d")
+                    else:
+                        end_value = None
                     parsed_data[item[0]] = {
                         "debt_id": item[0],
                         "debtor": item[1],
                         "debtee": item[2],
                         "amount": item[3],
                         "start_date": start_datetime_obj.strftime("%Y-%m-%d"),
-                        "end_date": end_datetime_obj.strftime("%Y-%m-%d"),
+                        "end_date": end_value,
                     }
                 return parsed_data
             except sqlite3.OperationalError as err:
@@ -347,14 +351,18 @@ class debts:
                     return None
 
                 start_datetime_obj = datetime.datetime.strptime(data[4], "%Y-%m-%d %H:%M:%S.%f")
-                end_datetime_obj = datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S.%f")
+                if data[5] is not None:
+                    end_datetime_obj = datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S.%f")
+                    end_value = end_datetime_obj.strftime("%Y-%m-%d")
+                else:
+                    end_value = None
                 return {
                     "debt_id": data[0],
                     "debtor": data[1],
                     "debtee": data[2],
                     "amount": data[3],
                     "start_date": start_datetime_obj.strftime("%Y-%m-%d"),
-                    "end_date": end_datetime_obj.strftime("%Y-%m-%d"),
+                    "end_date": end_value,
                 }
             except sqlite3.OperationalError as err:
                 logbook.error(f"Database error occurred while fetching debt data: {err}", exception=err)
