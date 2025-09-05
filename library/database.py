@@ -7,7 +7,7 @@ logbook = LogBookHandler('DB Manager')
 
 class database:
     @staticmethod
-    def modernize():
+    def modernize() -> None:
         """
         This function is used to modernise the database to the current version. It will check if the tables exist, and
         if they don't, it will create them. If the tables do exist, it will check if the columns are up to date, and if

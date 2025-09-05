@@ -33,6 +33,13 @@ async def unauthorized_handler(request: Request, exc):
     """
     return HTMLResponse(content, status_code=401)
 
+@fastapp.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    logbook.info(f"IP {request.client.host} Attempted to connect but was Not Found")
+    with open("modules/404.html", "r") as file:
+        content = file.read()
+    return HTMLResponse(content, status_code=404)
+
 fastapp.mount(
     "/static/login",
     StaticFiles(directory=os.path.join("modules", "login", "static")),
