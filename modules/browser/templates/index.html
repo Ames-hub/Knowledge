@@ -4,29 +4,29 @@
   <meta charset="UTF-8" />
   <title>App Browser</title>
   <link rel="stylesheet" href="/static/browser/css/index.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <!-- TODO: Change layout to support phone better -->
-<h2 id="splash_text" style="text-align: center;top: 20px;position: absolute">Hello, ...</h2>
-<div class="container">
-  <a href="/files" class="app-card">
-    <div class="app-icon">📁</div>
-    <div class="app-name">Central Files</div>
-  </a>
-  <a href="/archives" class="app-card">
-    <div class="app-icon">📢</div>
-    <div class="app-name">Bulletin</div>
-  </a>
-  <a href="/logs" class="app-card">
-    <div class="app-icon">💿</div>
-    <div class="app-name">App Logs</div>
-  </a>
-  <a href="/ledger" class="app-card">
-    <div class="app-icon">📒</div>
-    <div class="app-name">Ledger</div>
-  </a>
-</div>
+<h2 id="splash_text">Hello, ...</h2>
+  <div id="container">
+    <a href="/files" class="app-card">
+      <div class="app-icon">📁</div>
+      <div class="app-name">Central Files</div>
+    </a>
+    <a href="/archives" class="app-card">
+      <div class="app-icon">📢</div>
+      <div class="app-name">Bulletin</div>
+    </a>
+    <a href="/logs" class="app-card">
+      <div class="app-icon">💿</div>
+      <div class="app-name">App Logs</div>
+    </a>
+    <a href="/ledger" class="app-card">
+      <div class="app-icon">📒</div>
+      <div class="app-name">Ledger</div>
+    </a>
+  </div>
 <script src="/static/browser/js/splashtext.js"></script>
 <script src="/static/login/js/checklogin.js"></script>
 </body>

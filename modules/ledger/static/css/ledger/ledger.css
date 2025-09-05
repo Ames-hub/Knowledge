@@ -224,6 +224,12 @@ body {
   float: right;
 }
 
+@media screen and (max-width: 1000px) {
+  .expense_type_txt {
+    display: none;
+  }
+}
+
 /* --- Mobile-first responsive --- */
 @media (max-width: 768px) {
   /* Stack incoming/outgoing input fields vertically */

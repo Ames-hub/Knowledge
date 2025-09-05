@@ -319,7 +319,7 @@ class debts:
                 for item in data:
                     start_datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S.%f")
                     if item[5] is not None:
-                        end_datetime_obj = datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S.%f")
+                        end_datetime_obj = datetime.datetime.strptime(item[5], "%Y-%m-%d %H:%M:%S.%f")
                         end_value = end_datetime_obj.strftime("%Y-%m-%d")
                     else:
                         end_value = None

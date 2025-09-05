@@ -25,14 +25,14 @@ async function loadAccounts() {
         </div>
         <div class="entry-row">
           <div class="incoming">
-            <span>Incoming</span>
+            <span class="expense_type_txt">Incoming</span>
             <div class="input-group">
               <input type="number" placeholder="0.00">
               <button data-account="${account.account_id}" data-type="incoming">Submit</button>
             </div>
           </div>
           <div class="outgoing">
-            <span>Outgoing</span>
+            <span class="expense_type_txt">Outgoing</span>
             <div class="input-group">
               <input type="number" placeholder="0.00">
               <button data-account="${account.account_id}" data-type="outgoing">Submit</button>

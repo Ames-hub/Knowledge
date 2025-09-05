@@ -1,5 +1,5 @@
 data.sqlite
-.venv
+venv
 .idea
 *.pyc
 logs
