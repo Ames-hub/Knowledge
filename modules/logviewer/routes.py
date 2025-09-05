@@ -34,6 +34,8 @@ async def list_logs(
     logs_data = {}
 
     for log_file in os.listdir(logs_dir):
+        if ".lock" in log_file:
+            continue  # skip lock files
         full_path = os.path.join(logs_dir, log_file)
         if not os.path.isfile(full_path):
             continue
