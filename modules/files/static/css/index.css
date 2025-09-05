@@ -111,6 +111,22 @@ body {
     background-color: #303f9f;
 }
 
+#back-btn-container {
+  background-color: #1e1e2f;
+  padding: 10px;
+  z-index: 2;
+  text-align: center;
+  width: 10%;
+  margin: 0 auto;
+  border-radius: 0px 0px 10px 10px;
+  position: relative;
+  top: -5px;
+}
+
+#back-btn {
+  color: white;
+}
+
 @media screen and (max-width: 1250px) {
   #search-input {
     font-size: 35px;
