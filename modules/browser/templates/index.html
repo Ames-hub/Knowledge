@@ -1,39 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>App Browser</title>
-  <link rel="stylesheet" href="/static/browser/css/index.css" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/browser/css/index.css">
+  <meta name="description" content="Module-based app browser — clean, keyboard-friendly, responsive." />
 </head>
 <body>
-<!-- TODO: Change layout to support phone better -->
-<h2 id="splash_text">Hello, ...</h2>
-  <div id="scrollsection">
-    <div id="container">
-      <a href="/files" class="app-card">
-        <div class="app-icon">📁</div>
-        <div class="app-name">Central Files</div>
-      </a>
-      <a href="/archives" class="app-card">
-        <div class="app-icon">📢</div>
-        <div class="app-name">Bulletin</div>
-      </a>
-      <a href="/logs" class="app-card">
-        <div class="app-icon">💿</div>
-        <div class="app-name">App Logs</div>
-      </a>
-      <a href="/ledger" class="app-card">
-        <div class="app-icon">📒</div>
-        <div class="app-name">Ledger</div>
-      </a>
-      <a href="/battleplans" class="app-card">
-        <div class="app-icon">📔</div>
-        <div class="app-name">Battle Plans</div>
-      </a>
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <h1 id="brand" class="brand" aria-label="App Browser">App Browser</h1>
+
+      <div class="controls">
+        <label class="search" for="app-search">
+          <svg class="icon-search" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <input id="app-search" type="search" placeholder="Search apps..." aria-label="Search apps" />
+        </label>
+
+        <button id="theme-toggle" class="icon-btn" aria-label="Toggle color theme" title="Toggle color theme">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/></svg>
+        </button>
+      </div>
     </div>
-  </div>
-  <script src="/static/browser/js/splashtext.js"></script>
-<script src="/static/login/js/checklogin.js"></script>
+  </header>
+
+  <main id="main" class="main" role="main">
+    <p id="splash_text" class="splash" aria-live="polite">Starting up, Welcome to "Knowledge"</p>
+
+    <!-- Desktop grid & mobile horizontal scroll container -->
+    <section id="scrollsection" class="scrollsection" aria-label="Applications">
+      <div id="container" class="container" role="list">
+        <!-- App cards: keep hrefs and icon paths as you have them -->
+        <a href="/files"     class="app-card" role="listitem" aria-label="Open Central Files" tabindex="0">
+          <div class="app-icon"><img src="/static/browser/icons/files.svg" alt="" aria-hidden="true" /></div>
+          <div class="app-name">Central Files</div>
+        </a>
+
+        <a href="/archives"  class="app-card" role="listitem" aria-label="Open Bulletin" tabindex="0">
+          <div class="app-icon"><img src="/static/browser/icons/archives.svg" alt="" aria-hidden="true" /></div>
+          <div class="app-name">Bulletin</div>
+        </a>
+
+        <a href="/logs"      class="app-card" role="listitem" aria-label="Open App Logs" tabindex="0">
+          <div class="app-icon"><img src="/static/browser/icons/logs.svg" alt="" aria-hidden="true" /></div>
+          <div class="app-name">App Logs</div>
+        </a>
+
+        <a href="/ledger"    class="app-card" role="listitem" aria-label="Open Ledger" tabindex="0">
+          <div class="app-icon"><img src="/static/browser/icons/ledger.svg" alt="" aria-hidden="true" /></div>
+          <div class="app-name">Ledger</div>
+        </a>
+
+        <a href="/battleplans" class="app-card" role="listitem" aria-label="Open Battle Plans" tabindex="0">
+          <div class="app-icon"><img src="/static/browser/icons/battleplans.svg" alt="" aria-hidden="true" /></div>
+          <div class="app-name">Battle Plans</div>
+        </a>
+
+        <a href="/ftp"       class="app-card" role="listitem" aria-label="Open FTP Server" tabindex="0">
+          <div class="app-icon"><img src="/static/browser/icons/ftp.svg" alt="" aria-hidden="true" /></div>
+          <div class="app-name">FTP Server</div>
+        </a>
+
+        <!-- Example of additional card to show responsiveness -->
+        <a href="/settings"  class="app-card muted" role="listitem" aria-label="Open Settings" tabindex="0">
+          <div class="app-icon"><img src="/static/browser/icons/settings.svg" alt="" aria-hidden="true" /></div>
+          <div class="app-name">Settings</div>
+        </a>
+      </div>
+    </section>
+    <div id="logout-container">
+      <button id="logout-btn">End Session</button>
+    </div>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <small>Tip: use <kbd>Tab</kbd> to focus cards, <kbd>Enter</kbd> to open. Mobile: swipe horizontally.</small>
+  </footer>
+
+  <script src="/static/browser/js/browser.js"></script>
 </body>
 </html>

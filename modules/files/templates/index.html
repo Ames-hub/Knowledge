@@ -1,34 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Central Files</title>
-    <link rel="stylesheet" href="/static/files/css/index.css">
+  <meta charset="UTF-8">
+  <title>Central Files</title>
+  <link rel="stylesheet" href="/static/files/css/index.css">
 </head>
 <body>
 
-<div class="dashboard"><h1>Central Files</h1></div>
-<div id="back-btn-container">
-    <a id="back-btn" href="/">Back</a>
-</div>
+  <!-- Header -->
+  <header class="dashboard">
+    <h1>Central Files</h1>
+  </header>
 
-<div class="main">
-        <!-- Search box -->
-        <input type="text" id="search-input" placeholder="Search names..." oninput="filterNames()">
+  <!-- Back Button -->
+  <div id="back-btn-container">
+    <a id="back-btn" href="/">← Back</a>
+  </div>
 
-        <div id="people-list">
-            <!-- Fancy name cards as <a> go here -->
-        </div>
-</div>
+  <!-- Main Content -->
+  <main class="main">
 
-<div class="controls">
-    <!--suppress HtmlFormInputWithoutLabel -->
+    <!-- Search -->
+    <div class="search-container">
+      <input type="text" id="search-input" placeholder="Search people..." oninput="filterNames()">
+    </div>
+
+    <!-- People List -->
+    <div id="people-list">
+      <!-- Dynamic name cards populate here -->
+    </div>
+  </main>
+
+  <!-- Controls -->
+  <section class="controls">
     <input type="text" id="name-input" placeholder="Enter name">
     <button onclick="addName()">Add</button>
-    <button onclick="removeName()">Remove</button>
-</div>
+    <button class="danger" onclick="removeName()">Remove</button>
+  </section>
 
-<script src="/static/files/js/people_manage.js"></script>
-<script src="/static/files/js/filter_names.js"></script>
+  <script src="/static/files/js/people_manage.js"></script>
+  <script src="/static/files/js/filter_names.js"></script>
 </body>
 </html>

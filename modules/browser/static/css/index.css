@@ -1,60 +1,332 @@
-#splash_text {
-  text-align: center;
+/* index.css — complete stylesheet for the redesigned app browser */
+
+/* Variables + base
+   Tweak these to change theme quickly
+*/
+:root{
+  --bg: #f6f8fa;
+  --panel: #ffffff;
+  --muted: #6b7280;
+  --accent: #0ea5e9;
+  --accent-2: #2563eb;
+  --text: #0f1724;
+  --glass: rgba(255,255,255,0.6);
+  --radius: 12px;
+  --card-shadow: 0 6px 20px rgba(15,23,36,0.08);
+  --card-shadow-sm: 0 4px 12px rgba(15,23,36,0.06);
+  --focus: 3px solid rgba(14,165,233,0.18);
+  --max-width: 1100px;
+  --gap: 20px;
+  --mobile-snap-gap: 14px;
+  --transition: 230ms cubic-bezier(.2,.9,.2,1);
 }
 
-#container {
-  position: relative;
-  top: 20px;
+:root.theme-dark{
+  --bg: #071027;
+  --panel: #071827;
+  --muted: #9aa6b2;
+  --accent: #7dd3fc;
+  --accent-2: #60a5fa;
+  --text: #e6eef8;
+  --glass: rgba(7,24,39,0.4);
+  --card-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  --card-shadow-sm: 0 6px 18px rgba(0,0,0,0.45);
+  --focus: 3px solid rgba(125,211,252,0.12);
+}
+
+/* Accessibility: prefer reduced motion */
+@media (prefers-reduced-motion: reduce){
+  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+/* Basic reset */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html,body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 92%, transparent));
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.3;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Topbar */
+.topbar {
+  width: 100%;
+  backdrop-filter: blur(6px) saturate(1.05);
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35));
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  padding: 12px 16px;
+}
+:root.theme-dark .topbar {
+  background: linear-gradient(180deg, rgba(7,24,39,0.6), rgba(7,24,39,0.4));
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.topbar-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
   align-items: center;
-  gap: 25px;
+  gap: 12px;
+  justify-content: space-between;
 }
 
+.brand {
+  font-family: Poppins, Inter, sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* Controls */
+.controls {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.search {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  background: var(--glass);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+:root.theme-dark .search { border: 1px solid rgba(255,255,255,0.03); }
+.search input{
+  border: none;
+  outline: none;
+  background: transparent;
+  min-width: 160px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.icon-search { width: 18px; height: 18px; opacity: 0.9; fill: none; stroke: currentColor; }
+
+/* Icon button for theme toggle */
+.icon-btn {
+  display:inline-grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: transform var(--transition);
+}
+.icon-btn:active { transform: scale(.98); }
+.icon-btn svg { width:20px; height:20px; color:var(--muted); }
+
+/* Main content */
+.main {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 18px auto;
+  padding: 0 16px;
+  flex: 1 0 auto;
+}
+
+/* Splash text styling */
+.splash {
+  margin: 6px 0 16px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+/* Scrollsection container: grid on desktop, horizontal snap on mobile */
+.scrollsection {
+  width: 100%;
+  overflow: visible;
+}
+
+/* Desktop / tablet grid */
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--gap);
+  padding-bottom: 10px;
+}
+
+/* Card */
 .app-card {
-  position: relative;
-  width: 150px;
-  height: 100px;
-  text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  margin-bottom: 20px;
-}
-
-.app-icon {
-  font-size: 40px;
-  margin-top: 10px;
-}
-
-.app-name {
-  font-size: 16px;
-  margin-top: 15px;
-  font-weight: bold;
-  color: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   text-decoration: none;
+  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 92%, transparent));
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 18px 12px;
+  min-height: 112px;
+  box-shadow: var(--card-shadow);
+  transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+  border: 1px solid rgba(0,0,0,0.03);
+  user-select: none;
+}
+:root.theme-dark .app-card { border: 1px solid rgba(255,255,255,0.02); }
+
+.app-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 40px rgba(2,6,23,0.12);
+}
+.app-card:active { transform: translateY(-2px) scale(.998); }
+.app-card[hidden] { display: none !important; opacity: 0; transform: scale(.98); }
+
+/* Icon size */
+.app-icon {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:64px;
+  height:64px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2));
+  box-shadow: var(--card-shadow-sm);
+}
+:root.theme-dark .app-icon {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+}
+.app-icon img, .app-icon svg { width:40px; height:40px; display:block; }
+
+/* Name */
+.app-name {
+  font-weight:600;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align:center;
+  line-height:1;
 }
 
+/* Muted / secondary card (e.g. settings) */
+.app-card.muted { opacity: 0.92; transform: none; }
+.app-card.muted .app-icon { filter: saturate(.85) brightness(.95); }
+
+/* Focus states: visible for keyboard users, subtle for mouse users */
+:root.using-mouse .app-card:focus { outline: none; box-shadow: var(--card-shadow); }
+.app-card:focus {
+  outline: none;
+  box-shadow: 0 12px 32px rgba(2,6,23,0.12);
+  border-radius: calc(var(--radius) - 1px);
+}
+.app-card:focus-visible {
+  box-shadow: 0 10px 30px rgba(2,6,23,0.12), var(--focus);
+}
+
+/* Footer */
+.footer{
+  max-width: var(--max-width);
+  margin: 10px auto 28px;
+  padding: 0 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* MOBILE: change layout into horizontal pages with snap */
 @media screen and (max-width: 600px) {
-  #container {
-    flex-direction: column;
+  .main { padding: 0 10px; margin-top: 6px; }
+  .splash { font-size: 0.95rem; margin-left: 4px; margin-bottom: 10px; }
+
+  /* Make the container a horizontal scroller of cards — each card sized like a full column/page */
+  .container {
+    display: flex;
+    gap: var(--mobile-snap-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
   }
-  #splash_text {
-    font-size: 2rem;
-  }
+
   .app-card {
-    width: 90%;
-    height: fit-content;
-    padding: 10px;
-    background-color: white;
+    min-width: calc(100% - 48px); /* card takes most of viewport to feel like a page */
+    flex: 0 0 auto;
+    scroll-snap-align: center;
+    padding: 22px;
+    height: calc(60vh - 40px);
+    justify-content: center;
+    gap: 14px;
   }
-  .app-icon {
-    font-size: 40px;
+
+  /* Make icons bigger on mobile */
+  .app-icon { width: 96px; height: 96px; border-radius: 18px; }
+  .app-icon img, .app-icon svg { width:56px; height:56px; }
+
+  /* Ensure the scroll area has comfortable padding */
+  .container::before, .container::after {
+    content: "";
+    flex: 0 0 16px;
   }
-  .app-name {
-    font-size: 18px;
+
+  /* Hide scrollbar on supported browsers but keep scrolling functional */
+  .container {
+    scrollbar-width: none;
   }
-  #scrollsection {
-    background-color: rgb(233, 233, 233);
-    max-height: 500px;
-    overflow-y: auto;
-  }
+  .container::-webkit-scrollbar { display:none; }
+
+  /* Make the footer small and fixed-ish for mobile */
+  .footer { font-size: 0.82rem; margin-top: 8px; }
+}
+
+/* Tiny screens */
+@media screen and (max-width: 400px) {
+  .brand { font-size: 0.98rem; }
+  .search input { min-width: 110px; }
+}
+
+/* Utility kbd style used in footer tip */
+kbd{
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:6px;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+  font-family: Inter, monospace;
+  font-size:0.8rem;
+  color:var(--text);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset;
+}
+:root.theme-dark kbd {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+#logout-btn {
+  display: inline-block;
+  width: 30%;
+  background-color: #ef4444; /* red tone for danger */
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  text-decoration: none; /* in case it's an <a> */
+}
+
+#logout-btn:hover {
+  background-color: #dc2626; /* deeper red */
+  transform: translateY(-2px);
+}
+
+#logout-btn:active {
+  background-color: #b91c1c;
+  transform: translateY(0);
+}
+
+#logout-container {
+  display: flex;             /* make flex container */
+  justify-content: center;   /* center horizontally */
+  margin: 30px 0 10px;       /* vertical spacing above/below */
 }

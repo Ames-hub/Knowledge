@@ -23,6 +23,10 @@ class database:
                 'password': 'TEXT NOT NULL',
                 'arrested': 'BOOLEAN NOT NULL DEFAULT FALSE',
             },
+            'revoked_tokens': {
+                'token': 'TEXT NOT NULL PRIMARY KEY',
+                'revoked_at': 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+            },
             'user_sessions': {
                 'username': 'TEXT',
                 'token': 'TEXT NOT NULL PRIMARY KEY',

@@ -145,8 +145,10 @@ async function loadFullBP({ day, month }, do_alert=true) {
   } catch (err) {
     console.error(err);
     if (do_alert) toast("Failed to load full battle plan");
-    taskList.innerHTML = `<p class="small">There doesn't seem to be a BP For today.<br>How about we get started?</p>`;
-    if (bpIndicator) bpIndicator.textContent = "BP not found";
+
+    let NoBPText = "There doesn't seem to be a BP For today.<br>How about we get started?<br><br>Click the button 'New Battle Plan' in the sidebar to create one for today! 😊<br>On mobile, click the button in the bottom left to expand the sidebar!";
+    taskList.innerHTML = `<p class='small'>${NoBPText}</p>`;
+    if (bpIndicator) bpIndicator.textContent = "No active Battle Plan";
   }
 }
 
