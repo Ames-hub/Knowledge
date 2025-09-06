@@ -83,7 +83,7 @@ async function loadFullBP({ day, month }, do_alert=true) {
     if (!res.ok) throw new Error("Failed to fetch full battle plan");
     const bpData = await res.json();
 
-    if (bpIndicator) bpIndicator.textContent = `BattlePlan: ${bpData.date || fullDateStr} - ${getTodayDateName()}`;
+    if (bpIndicator) bpIndicator.textContent = `BattlePlan: ${bpData.date || fullDateStr}`;
 
     await loadQuotas(bpData.date || fullDateStr);
     await updateQuotaStatus(bpData.date || fullDateStr);
