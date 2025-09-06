@@ -497,3 +497,12 @@ helpBtn.addEventListener("click", () => {
 helpClose.addEventListener("click", () => {
   helpModal.classList.add("hidden");
 });
+
+const btn = document.getElementById("theme-toggle-btn");
+btn.addEventListener("click", () => {
+  const theme = document.body.dataset.theme === "light" ? "dark" : "light";
+  document.body.dataset.theme = theme;
+  localStorage.setItem("theme", theme);
+});
+// on page load
+document.body.dataset.theme = localStorage.getItem("theme") || "dark";

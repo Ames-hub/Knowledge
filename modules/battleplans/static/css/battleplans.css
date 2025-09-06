@@ -409,3 +409,93 @@ button:focus, input:focus {
 #bp-help-modal .modal-content::-webkit-scrollbar-track {
   background: rgba(255,255,255,0.02);
 }
+
+/* ---------- Light Theme ---------- */
+body[data-theme="light"] {
+  --bg: #f7f8fa;            /* soft off-white */
+  --panel: #ffffff;          /* white panels */
+  --muted: #6b7280;          /* muted gray text */
+  --accent: #3b82f6;         /* blue-ish accent */
+  --accent-2: #60a5fa;       /* lighter blue hover */
+  --text: #111827;           /* dark text */
+  --danger: #ef4444;         /* red for warnings */
+  --glass: rgba(0,0,0,0.03); /* very subtle overlay */
+  --shadow: 0 4px 12px rgba(0,0,0,0.08); /* soft shadow */
+}
+
+/* Sidebar */
+body[data-theme="light"] #bplist {
+  background: var(--panel);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Battle plan items */
+body[data-theme="light"] .bp-item {
+  background: #f0f4ff;       /* light bluish background */
+  border: 1px solid #d1d5db; /* soft gray border */
+  color: var(--text);
+}
+
+body[data-theme="light"] .bp-item:hover {
+  background: #e0e7ff;       /* slightly deeper hover */
+}
+
+/* Editor area */
+body[data-theme="light"] #bp-editor-container {
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+/* Buttons */
+body[data-theme="light"] #controls button {
+  background: #f3f4f6;       /* light gray button background */
+  border: 1px solid #d1d5db;
+  color: var(--text);
+}
+body[data-theme="light"] #controls button:first-child {
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  border: 1px solid #3b82f6;
+  color: #ffffff;
+}
+
+/* Task items */
+body[data-theme="light"] .task-item {
+  background: #f9fafb;       /* very light gray */
+  border: 1px solid #e5e7eb;
+  color: var(--text);
+}
+
+/* Delete hover */
+body[data-theme="light"] .delete-task-btn:hover {
+  color: var(--danger);
+}
+
+/* Modals */
+body[data-theme="light"] #bp-warning-modal .modal-content,
+body[data-theme="light"] #bp-help-modal .modal-content {
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+/* Input fields */
+body[data-theme="light"] input,
+body[data-theme="light"] #task-input,
+body[data-theme="light"] #quota-info input {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: var(--text);
+}
+
+/* Scrollbars */
+body[data-theme="light"] #plans-container::-webkit-scrollbar-thumb,
+body[data-theme="light"] #task-list::-webkit-scrollbar-thumb,
+body[data-theme="light"] #bp-help-modal .modal-content::-webkit-scrollbar-thumb {
+  background: rgba(59,130,246,0.15);
+}
+
+/* Light theme background gradient */
+body[data-theme="light"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8fa 100%);
+}
