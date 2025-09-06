@@ -8,6 +8,10 @@ import uvicorn
 import asyncio
 import os
 
+#==============CONFIG==============#
+WEB_PORT = 8020
+#============END CONFIG============#
+
 fastapp = FastAPI()
 database.modernize()
 logbook = LogBookHandler('root')
@@ -93,7 +97,7 @@ if __name__ == "__main__":
         config = uvicorn.Config(
             "knowledge:fastapp",
             host="0.0.0.0",
-            port=8020,
+            port=WEB_PORT,
             loop="asyncio",
             lifespan="on",
             reload=True
