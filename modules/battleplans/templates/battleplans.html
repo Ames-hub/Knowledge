@@ -21,12 +21,18 @@
   </div>
   <main id="bp-editor-container">
     <div id="controls">
-      <h3>Buttons Non-Functional</h3>
-      <button id="save-btn">Save to Server</button>
       <button id="clear-btn">Clear BP</button>
-      <button id="save-btn">Import incomplete</button>
+      <button id="import-btn">Import yesterday's</button>
+      <button id="help-btn">Help</button>
     </div>
 
+    <div id="quota-info">
+      <label for="quota-needed">Need quota for today</label>
+      <input id="quota-needed" type="number" min="0" step="0.1" value="0" placeholder="Quota for today.">
+      <label for="quota-done">Quota reached today</label>
+      <input id="quota-done"   type="number" min="0" step="0.1" value="0" placeholder="Quota made today.">
+      <span id="quota-status">Production over last 7 days: </span>
+    </div>
     <form id="new-task-form">
       <input type="text" id="task-input" placeholder="What task needs to be done?">
       <button type="submit" id="add-task-btn">Add Task</button>
@@ -37,6 +43,56 @@
       <!-- Tasks will be dynamically added here -->
     </ul>
   </main>
+  <div id="bp-warning-modal" class="hidden">
+    <div class="modal-content">
+      <h2>Careful</h2>
+      <p>
+        You are editing a Battle Plan for a day other than today.<br>
+        Make sure that’s really what you intend.
+      </p>
+      <div class="modal-actions">
+        <button id="bp-warning-cancel">Cancel</button>
+        <button id="bp-warning-confirm">I Understand</button>
+      </div>
+    </div>
+  </div>
+  <div id="bp-help-modal" class="hidden">
+    <div class="modal-content">
+      <h3>What is a Battle Plan?</h3>
+      <p>
+        A Battle Plan is, basically, a to-do list for your workday,
+        including what metrics you need to hit to do well.
+        <br><br>
+        The idea is that you write what you need to do, and when it needs to happen by, 
+        and then you do it. And Additionally, in tracking the quota you need to hit, you plan
+        your BP around hitting that goal. In addition to anything else irrelevant that you may need to do.
+        <br><br>
+        Note: This is a interpretation of the concept,
+        and I do not claim that this is how Scientology says it should be done.
+        This is merely how I do it for my own productivity.
+      </p>
+      <h3>Why "Battle plan"?</h3>
+      <p>
+        This specific concept of a to-do list originates from
+        Scientology text, titled "Battle Plans" by L. Ron Hubbard
+        and its name has its roots in early colloquial Scientology terminology.
+        <br><br>
+        Presumably, this is because you are "battling" the day to get it all done.
+        <br><br>
+        Additionally, this slang term was not intended to be taken literally, no matter how apt it is.
+        Nor was the word made by L. Ron Hubbard. It is merely a term that stuck, especially after he
+        addressed Battle Plans in his writings regarding Church policy about productivity.
+      </p>
+      <h3>Must I use the quotas?</h3>
+      <p>
+        No, But it may be useful. Even if you don't think you have a quota to hit, you still have several
+        tasks to complete, right? Maybe your quota can be "I need to get all 7 of my tasks done today"
+        (By setting "Need quota for today" to 7, and "Quota reached today" to 0 at the start of the day).
+      </p>
+      <button id="bp-help-close">Close</button>
+    </div>
+  </div>
+  
   <script src="/static/register/js/toast.js"></script>
   <script src="/static/battleplans/js/battleplans.js"></script>
 </body>

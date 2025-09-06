@@ -111,7 +111,18 @@ class database:
                 "task_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "date": "DATE NOT NULL REFERENCES battleplans(date)",
                 "task": "TEXT NOT NULL",
-                "is_done": "BOOLEAN NOT NULL DEFAULT FALSE"
+                "is_done": "BOOLEAN NOT NULL DEFAULT FALSE",
+                "owner": "TEXT NOT NULL",
+            },
+            "bp_quotas_done": {  # How much DID get done of a certain production metric, such as 'doors produced'
+                "date": "DATE NOT NULL REFERENCES battleplans(date) PRIMARY KEY",
+                "amount_done": "REAL NOT NULL",
+                "owner": "TEXT NOT NULL"
+            },
+            "bp_quotas": {  # How much you want to get done of a certain production metric, such as 'doors produced'
+                "date": "DATE NOT NULL REFERENCES battleplans(date) PRIMARY KEY",
+                "amount": "REAL NOT NULL",
+                "owner": "TEXT NOT NULL"
             }
         }
 
