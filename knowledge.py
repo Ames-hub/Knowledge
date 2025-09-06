@@ -33,6 +33,7 @@ async def unauthorized_handler(request: Request, exc):
     """
     return HTMLResponse(content, status_code=401)
 
+# noinspection PyUnusedLocal
 @fastapp.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     logbook.info(f"IP {request.client.host} Attempted to connect but was Not Found")
@@ -60,6 +61,8 @@ modules_dir = "modules"
 for module_name in os.listdir(modules_dir):
     module_path = os.path.join(modules_dir, module_name)
 
+    if os.path.isfile(module_path) or module_name == "__pycache__":
+        continue
     if os.path.isdir(module_path):
         # 🔧 Mount static files if they exist
         static_path = os.path.join(module_path, "static")
@@ -67,6 +70,8 @@ for module_name in os.listdir(modules_dir):
             mount_path = f"/static/{module_name}"
             fastapp.mount(mount_path, StaticFiles(directory=static_path), name=f"{module_name}_static")
             logbook.info(f"[✓] Mounted static files for {module_name} at {mount_path}")
+        else:
+            raise FileNotFoundError(f"No static directory found in {module_name}")
 
         # 📦 Import and register router
         routes_file = os.path.join(module_path, "routes.py")
@@ -80,6 +85,8 @@ for module_name in os.listdir(modules_dir):
                     logbook.info(f"[!] No 'router' found in {module_name}.routes")
             except Exception as err:
                 logbook.error(f"[✗] Failed to load {module_name}: {err}", exception=err)
+        else:
+            raise FileNotFoundError(f"No routes.py found in {module_name}")
 
 if __name__ == "__main__":
     if __name__ == "__main__":

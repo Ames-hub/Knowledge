@@ -103,6 +103,16 @@ class database:
                 "description": "TEXT NOT NULL",
                 "paid_off": "BOOLEAN NOT NULL DEFAULT FALSE",
             },
+            "battleplans": {
+                "date": "DATE NOT NULL DEFAULT CURRENT_DATE PRIMARY KEY",
+                "owner": "TEXT NOT NULL",
+            },
+            "bp_tasks": {
+                "task_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "date": "DATE NOT NULL REFERENCES battleplans(date)",
+                "task": "TEXT NOT NULL",
+                "is_done": "BOOLEAN NOT NULL DEFAULT FALSE"
+            }
         }
 
         for table_name, columns in table_dict.items():

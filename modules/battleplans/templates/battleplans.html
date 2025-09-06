@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Plans</title>
+    <link rel="stylesheet" href="/static/battleplans/css/battleplans.css">
+    <link rel="stylesheet" href="/static/register/css/toast.css">
+</head>
+<body>
+  <div id="toggle-bplist-btn" aria-expanded="false" title="Battle Plans tab">☰</div>
+
+  <div id="bplist">
+    <h1>Battle Plans</h1>
+    <button id="back-btn">Go Back</button>
+    <button id="add-plan-btn">New Battle Plan</button>
+    <input type="text" id="search-bar" placeholder="Search...">
+    <div id="plans-container">
+      <!-- Battle plans will be dynamically added here -->
+    </div>
+  </div>
+  <main id="bp-editor-container">
+    <div id="controls">
+      <h3>Buttons Non-Functional</h3>
+      <button id="save-btn">Save to Server</button>
+      <button id="clear-btn">Clear BP</button>
+      <button id="save-btn">Import incomplete</button>
+    </div>
+
+    <form id="new-task-form">
+      <input type="text" id="task-input" placeholder="What task needs to be done?">
+      <button type="submit" id="add-task-btn">Add Task</button>
+    </form>
+
+    <h2 id="bp-indicator">Daily Battle Plans</h2>
+    <ul id="task-list">
+      <!-- Tasks will be dynamically added here -->
+    </ul>
+  </main>
+  <script src="/static/register/js/toast.js"></script>
+  <script src="/static/battleplans/js/battleplans.js"></script>
+</body>
+</html>

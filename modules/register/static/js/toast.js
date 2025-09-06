@@ -31,5 +31,5 @@ function toast(message, type = 'default') {
     // Remove toast after animation
     setTimeout(() => {
         toastElement.remove();
-    }, 3000);
+    }, 6000);
 }

@@ -12,4 +12,4 @@ logbook = LogBookHandler("browser routes")
 # noinspection PyUnusedLocal
 @router.get("/", response_class=HTMLResponse)
 async def show_reg(request: Request, token: str = Depends(require_valid_token)):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
