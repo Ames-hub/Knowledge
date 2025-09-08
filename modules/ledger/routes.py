@@ -1,4 +1,4 @@
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.auth import require_valid_token
@@ -8,7 +8,9 @@ from library.auth import authbook
 from pydantic import BaseModel
 import datetime
 import sqlite3
+import magic
 import os
+import io
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
@@ -65,6 +67,27 @@ async def get_total_expenses(account_id:int):
             conn.rollback()
             return None
 
+@router.get("/api/finances/account/total_income/{account_id}")
+async def get_total_expenses(account_id:int):
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT SUM(amount) FROM finance_transactions WHERE is_expense = false AND account_id = ?",
+                (account_id,)
+            )
+            data = cursor.fetchone()
+            try:
+                amount = data[0]
+            except TypeError:
+                amount = None
+            if amount is None:
+                return 0
+            return HTMLResponse(f"{data[0]}", status_code=200)
+        except sqlite3.OperationalError:
+            conn.rollback()
+            return None
+
 @router.get("/api/finances/load_transactions/{account_id}")
 async def load_transactions(account_id: int):
     with sqlite3.connect(DB_PATH) as conn:
@@ -101,13 +124,17 @@ class finances_data(BaseModel):
     amount: float
     description: str
     is_expense: bool
+    receipt_bytes: list = None
 
 @router.post("/api/finances/modify", response_class=JSONResponse)
 async def modify_finances(request: Request, data: finances_data, token: str = Depends(require_valid_token)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has modified finances.")
+
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cur = conn.cursor()
+
+            # Insert transaction
             cur.execute(
                 """
                 INSERT INTO finance_transactions (account_id, amount, is_expense, description)
@@ -115,20 +142,92 @@ async def modify_finances(request: Request, data: finances_data, token: str = De
                 """,
                 (data.account_id, data.amount, data.is_expense, data.description)
             )
+
+            # Update account balance
             cur.execute(
                 f"""
                 UPDATE finance_accounts SET balance = balance {"+" if not data.is_expense else "-"} ? WHERE account_id = ?
                 """,
                 (data.amount, data.account_id)
             )
+
+            # Add the receipt if it exists
+            if data.receipt_bytes:
+                transaction_id = cur.lastrowid
+                receipt_bytes = bytes(data.receipt_bytes)
+
+                # Detect MIME type from the actual bytes
+                mime = magic.Magic(mime=True)
+                receipt_type = mime.from_buffer(receipt_bytes) or "application/octet-stream"
+
+                cur.execute(
+                    """
+                    INSERT INTO transaction_receipts (transaction_id, receipt, receipt_mimetype)
+                    VALUES (?, ?, ?)
+                    """,
+                    (transaction_id, receipt_bytes, receipt_type)
+                )
+
             conn.commit()
             return JSONResponse(content={"success": True}, status_code=200)
-        except sqlite3.OperationalError:
+
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while modifying finances: {err}", exception=err)
             conn.rollback()
             return JSONResponse(
                 content={"success": False, "error": "Database error occurred while modifying finances."},
                 status_code=500
             )
+
+@router.get("/api/finances/get_receipt/{transaction_id}")
+async def get_receipt(transaction_id: int):
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT receipt FROM transaction_receipts WHERE transaction_id = ?",
+                (transaction_id,)
+            )
+            data = cursor.fetchone()
+
+            if data is None or data[0] is None:
+                return JSONResponse(
+                    content={"error": "Receipt not found."},
+                    status_code=404
+                )
+
+            receipt_bytes = data[0]
+            return StreamingResponse(io.BytesIO(receipt_bytes), media_type="image/png")
+    except sqlite3.OperationalError:
+        return JSONResponse(
+            content={"error": "Database error occurred while fetching receipt."},
+            status_code=500
+        )
+
+@router.get("/api/transactions/get_receipt_mime/{transaction_id}")
+async def get_receipt_mime(transaction_id: int):
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT receipt_mimetype FROM transaction_receipts WHERE transaction_id = ?",
+                (transaction_id,)
+            )
+            data = cursor.fetchone()
+            if data is None or data[0] is None:
+                return HTMLResponse(
+                    content="",  # It can handle this
+                    status_code=404
+                )
+            return HTMLResponse(
+                data[0],
+                status_code=200
+            )
+    except sqlite3.OperationalError:
+        return HTMLResponse(
+            "",  # It can handle this
+            status_code=500
+        )
 
 class transaction_delete(BaseModel):
     transaction_id: int

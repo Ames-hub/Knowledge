@@ -38,22 +38,11 @@ body {
 }
 
 .account-row:hover {
-  transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 
-/* --- Account header --- */
-.account-name {
-  background-color: #f0f4f8;
-  padding: 1rem 1.5rem;
-  font-weight: 600;
-  font-size: 1.2rem;
-  border-bottom: 1px solid #e0e0e0;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 /* --- Entry rows --- */
+
 .entry-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -214,14 +203,25 @@ body {
   float: right;
 }
 
-#account_text {
-  position: relative;
-  float: left;
+/* --- Account header --- */
+.account-name {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f0f4f8;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 0.5rem;
 }
 
-#expenses_text {
+#account_text,
+#expenses_text,
+#balance_text {
   position: relative;
-  float: right;
+  float: none; /* Remove float */
+  left: unset; /* Remove left offset */
 }
 
 @media screen and (max-width: 1000px) {

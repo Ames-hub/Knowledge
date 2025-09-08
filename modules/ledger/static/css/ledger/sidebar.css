@@ -83,11 +83,15 @@ body {
   .nav {
     flex-direction: row;
     gap: 0.75rem;
+    overflow-x: auto;      /* Enable horizontal scrolling */
+    white-space: nowrap;   /* Prevent wrapping */
+    scrollbar-width: thin; /* Optional: thinner scrollbar for Firefox */
   }
 
   .nav a {
     padding: 0.5rem 0.75rem;
     border-radius: 0.25rem;
     font-size: 0.9rem;
+    flex-shrink: 0;        /* Prevent links from shrinking */
   }
 }

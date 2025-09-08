@@ -83,7 +83,7 @@
 }
 
 /* Make account modal */
-.make-account-btn {
+.ledger-btn {
   background: #2e7d32;
   color: white;
   padding: 0.5em 1em;
@@ -128,4 +128,36 @@
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 1rem;
+}
+
+#receiptInput {
+  padding: 0.6rem;
+  border: 1px dashed #aaa;
+  border-radius: 8px;
+  background: #fafafa;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #666;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+#receiptInput:hover {
+  border-color: #0077cc;
+  background: #f0f8ff;
+}
+
+#receiptInput::file-selector-button {
+  background: #0077cc;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-weight: 500;
+  margin-right: 0.5rem;
+  transition: background 0.2s;
+}
+
+#receiptInput::file-selector-button:hover {
+  background: #005fa3;
 }

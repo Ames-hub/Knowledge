@@ -80,10 +80,11 @@ class database:
                 "date": "DATE NOT NULL DEFAULT CURRENT_DATE",
                 "time": "TIME NOT NULL DEFAULT CURRENT_TIME",
             },
-            "transaction_receipts": {  # TODO: Make saving this possible
+            "transaction_receipts": {
                 "transaction_id": "INTEGER NOT NULL REFERENCES transactions(transaction_id)",
                 # A photo of the receipt
                 "receipt": "BLOB NOT NULL",
+                "receipt_mimetype": "TEXT NOT NULL",
             },
             "fp_expenses": {
                 "name": "TEXT NOT NULL PRIMARY KEY",

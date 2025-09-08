@@ -56,8 +56,17 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     return;
   }
 
+  // Grab the file
+  const receiptInput = document.getElementById("receiptInput");
+  let receiptBytes = null;
+
+  if (receiptInput.files && receiptInput.files[0]) {
+    const file = receiptInput.files[0];
+    receiptBytes = await file.arrayBuffer(); // get raw bytes
+    receiptBytes = Array.from(new Uint8Array(receiptBytes)); // convert to array of numbers
+  }
+
   try {
-    // Send to backend for persistence
     const response = await fetch("/api/finances/modify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -65,13 +74,14 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
         account_id: parseInt(accountId),
         amount: parseFloat(amount),
         description: desc,
-        is_expense: type === "outgoing"
+        is_expense: type === "outgoing",
+        receipt_bytes: receiptBytes // include this in the payload
       })
     });
 
     if (!response.ok) throw await response.json();
 
-    // If successful, add transaction visually too
+    // Add transaction visually
     const accountRow = document.querySelector(
       `.account-row .incoming button[data-account="${accountId}"]`
     ).closest(".account-row");
@@ -90,11 +100,9 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     );
     amountInput.value = "";
     document.getElementById("transactionDesc").value = "";
+    receiptInput.value = "";
 
-    // Optionally refresh account balances
-    if (typeof loadAccounts === "function") {
-      loadAccounts();
-    }
+    if (typeof loadAccounts === "function") loadAccounts();
 
     alert("Transaction saved!");
   } catch (err) {
@@ -102,7 +110,6 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     alert("Error saving transaction: " + (err.message || "Something went wrong."));
   }
 
-  // Close modal
   modal.style.display = "none";
 });
 

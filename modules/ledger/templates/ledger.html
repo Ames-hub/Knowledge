@@ -19,6 +19,19 @@
     </nav>
   </aside>
 
+  <!-- View Transaction Modal -->
+  <div id="viewTransactionModal" class="modal">
+    <div class="modal-content">
+      <h3 id="viewTransactionTitle">Transaction Details</h3>
+      <p id="viewTransactionDesc"></p>
+      <div id="viewReceiptContainer"></div>
+      <div class="modal-actions">
+        <button id="viewCancelBtn">Close</button>
+        <button id="viewDeleteBtn" style="background:#cc0000; color:white;">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Make/Delete Account Modal -->
   <div id="accountModal" class="modal">
     <div class="modal-content">
@@ -63,9 +76,16 @@
       </div>
 
       <div class="preset-options">
-        <button type="button" data-value="Paycheck Money">Paid</button>
+        <button type="button" data-value="Pay-check Money">Paid</button>
         <button type="button" data-value="Gifted Money">Gift</button>
       </div>
+
+      <div class="preset-options">
+        <button type="button" data-value="Other">Other</button>
+      </div>
+
+      <label>Digital Receipt / Photo</label>
+      <input type="file" id="receiptInput" accept="*">
 
       <div class="modal-actions">
         <button id="cancelBtn">Cancel</button>
@@ -75,7 +95,8 @@
   </div>
 
   <main class="main">
-    <button id="openAccountModal" class="make-account-btn">Manage Accounts</button>
+    <button id="openAccountModal" class="ledger-btn">Manage Accounts</button>
+    <input id="LookbackSetting" class="ledger" type="number"> 
     <div class="ledger", id="ledgerContainer">
       <div class="account-row">
         <div class="account-name">Checking</div>
