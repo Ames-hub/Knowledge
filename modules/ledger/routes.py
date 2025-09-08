@@ -83,7 +83,11 @@ async def get_total_expenses(account_id:int):
                 amount = None
             if amount is None:
                 return 0
-            return HTMLResponse(f"{data[0]}", status_code=200)
+
+            amount = data[0]
+            # Round-down the decimal points to 2
+            amount = round(amount, 2)
+            return HTMLResponse(f"{amount}", status_code=200)
         except sqlite3.OperationalError:
             conn.rollback()
             return None
