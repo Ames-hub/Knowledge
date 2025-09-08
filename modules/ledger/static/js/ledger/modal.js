@@ -58,12 +58,12 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 
   // Grab the file
   const receiptInput = document.getElementById("receiptInput");
-  let receiptBytes = null;
+  let receiptBytes = [];
 
   if (receiptInput.files && receiptInput.files[0]) {
     const file = receiptInput.files[0];
-    receiptBytes = await file.arrayBuffer(); // get raw bytes
-    receiptBytes = Array.from(new Uint8Array(receiptBytes)); // convert to array of numbers
+    const buffer = await file.arrayBuffer(); // get raw bytes
+    receiptBytes = Array.from(new Uint8Array(buffer)); // convert to array of numbers
   }
 
   try {
