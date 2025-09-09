@@ -106,4 +106,4 @@ if __name__ == "__main__":
         try:
             asyncio.run(server.serve())
         except KeyboardInterrupt:
-            print("Interrupt signl detected, Stopping server and shutting down.")
+            print("Interrupt sign detected, Stopping server and shutting down.")
