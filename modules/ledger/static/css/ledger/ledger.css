@@ -157,6 +157,8 @@ body {
 
 .transactions-column {
   padding: 1rem 1.5rem;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .transactions-column h4 {
