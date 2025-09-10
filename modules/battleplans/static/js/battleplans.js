@@ -214,7 +214,7 @@ newTaskForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/bps/task/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bp_id: currentBPId, text })
+      body: JSON.stringify({ date: currentBPDate, text })
     });
     if (!res.ok) throw new Error("Failed to add task");
     const newTask = await res.json();
@@ -413,7 +413,7 @@ function getCurrentBPDate() { return currentBPDate || getTodayStr(); }
 clearBtn.addEventListener("click", async () => {
   if (!currentBPId) return;
   try {
-    const res = await fetch("/api/bps/clear", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bp_id: currentBPId }) });
+    const res = await fetch("/api/bps/clear", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: currentBPDate }) });
     if (!res.ok) throw new Error("Failed to clear BP");
 
     taskList.innerHTML = "";

@@ -135,6 +135,21 @@ class task_state_data(BaseModel):
     task_id: str
     state: bool
 
+@router.get("/api/bps/task/delete/{task_id}")
+async def delete_task(request: Request, task_id: str, token: str = Depends(require_valid_token)):
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} ({owner}) is deleting task {task_id}.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM bp_tasks WHERE task_id = ?", (int(task_id),))
+            conn.commit()
+            return JSONResponse({"success": True}, status_code=200)
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error while deleting task: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse({"success": False, "error": "Database error occurred while deleting task."}, status_code=500)
+
 @router.post("/api/bps/task/set_status", response_class=JSONResponse)
 async def set_task_status(request: Request, data: task_state_data, token: str = Depends(require_valid_token)):
     owner = authbook.token_owner(token)
@@ -178,6 +193,7 @@ class add_task_data(BaseModel):
 async def add_task(request: Request, data: add_task_data, token: str = Depends(require_valid_token)):
     owner = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({owner}) is adding task to battleplan for {data.date}.")
+    data.date = dateformatenforcer(data.date)
     date_obj = datetime.datetime.strptime(data.date, "%d-%m-%Y")
 
     if not get_bp_exists(date_obj, owner):
@@ -424,22 +440,18 @@ async def yesterday_import(request: Request, data: yesterday_import_bp_data, tok
                     (quota['bp_id'], date_today.strftime("%d-%m-%Y"), quota['owner'], quota['name'])
                 )
                 data = cursor.fetchone()
-                print(data)
                 if data:
-                    print("C")
                     continue
                 try:
                     cursor.execute(
                         "INSERT INTO bp_quotas (bp_id, bp_date, planned_amount, done_amount, owner, name) VALUES (?, ?, ?, ?, ?, ?)",
                         (today_bp_id, date_today.strftime("%d-%m-%Y"), quota['planned_amount'], quota['done_amount'], quota['owner'], quota['name'])
                     )
-                    print("A", quota['name'])
                 except sqlite3.IntegrityError:
                     cursor.execute(
                         "UPDATE bp_quotas SET bp_id = ?, bp_date = ?, planned_amount = ?, done_amount = ?, owner = ?, name = ? WHERE bp_id = ? AND owner = ?",
                         (today_bp_id, date_today.strftime("%d-%m-%Y"), quota['planned_amount'], quota['done_amount'], quota['owner'], quota['name'])
                     )
-                    print("B", quota['name'])
 
             conn.commit()
             return JSONResponse({"success": True}, status_code=200)
