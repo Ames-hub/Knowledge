@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/ftp/css/ftp.css"
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back">&larr; Back</a>
+
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search files and folders...">
+  </div>
+
+  <div class="breadcrumbs" id="breadcrumbs"></div>
+
+  <div class="drop-zone" id="drop-zone">
+    <h2>Drag & Drop Files Here</h2>
+    <p>or click the button below to browse files</p>
+    <button onclick="fileInput.click()">Browse Files</button>
+    <input type="file" id="file-input" multiple>
+  </div>
+
+  <div class="file-grid" id="file-grid"></div>
+</div>
+
+<!-- Context Menu -->
+<div id="context-menu" class="context-menu">
+  <div id="rename">Rename</div>
+  <div id="delete">Delete</div>
+</div>
+
+<script src="/static/ftp/js/files.js"></script>
+</body>
+</html>
