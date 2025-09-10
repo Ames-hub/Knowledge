@@ -224,6 +224,29 @@ class quota_make(BaseModel):
     bp_id: int
     quota_name: str
 
+class quota_delete(BaseModel):
+    quota_id: int
+
+@router.post("/api/bps/quota/delete")
+async def delete_quota(request: Request, data: quota_delete, token: str = Depends(require_valid_token)):
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} ({owner}) is deleting the quota {data.quota_id}.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                DELETE FROM bp_quotas WHERE quota_id = ? AND owner = ?
+                """,
+                (data.quota_id, owner,)
+            )
+            conn.commit()
+            return JSONResponse({"success": True}, status_code=200)
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error while deleting quota: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse({"success": False, "error": "Database error occurred while deleting quota."}, status_code=500)
+
 @router.post("/api/bps/quota/create")
 async def create_quota(request: Request, data: quota_make, token: str = Depends(require_valid_token)):
     owner = authbook.token_owner(token)

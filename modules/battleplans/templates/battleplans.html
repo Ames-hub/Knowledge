@@ -31,6 +31,7 @@
       <button id="import-btn">Import yesterday's</button>
       <button id="help-btn">Help</button>
       <button id="add-quota-btn">Add Quota</button>
+      <button id="delete-quota-btn">Delete Quota</button>
     </div>
 
     <!-- Quota section -->
@@ -115,6 +116,22 @@
     </div>
   </div>
 
+  <div id="delete-quota-modal" class="hidden">
+    <div class="modal-content">
+      <h3>Delete Quota</h3>
+      <form id="delete-quota-form">
+        <label for="quota-to-delete">Select quota to delete:</label>
+        <select id="quota-to-delete" required>
+          <!-- Options will be dynamically filled -->
+        </select>
+
+        <div style="margin-top:16px; display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" id="delete-quota-cancel">Cancel</button>
+          <button type="submit" id="delete-quota-confirm">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
   <!-- JS -->
   <script src="/static/register/js/toast.js"></script>
   <script src="/static/battleplans/js/battleplans.js"></script>

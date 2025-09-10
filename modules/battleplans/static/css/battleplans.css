@@ -668,3 +668,87 @@ body[data-theme="light"] .quota-done {
 #add-quota-cancel { background: var(--muted); color:#000; }
 #add-quota-confirm { background: var(--accent); color:#03202a; }
 
+/* === Delete Quota Modal === */
+#delete-quota-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+}
+
+#delete-quota-modal.hidden {
+  display: none !important;
+}
+
+/* modal content wrapper */
+#delete-quota-modal .modal-content {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  text-align: center;
+  overflow-y: auto;
+}
+
+/* style the quota being deleted */
+#delete-quota-modal #quota-to-delete {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  background: linear-gradient(180deg, rgba(125,211,252,0.03), rgba(255,255,255,0.015));
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* modal buttons */
+#delete-quota-modal button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#delete-quota-cancel {
+  background: var(--muted);
+  color: #000;
+}
+
+#delete-quota-confirm {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Light theme overrides */
+body[data-theme="light"] #delete-quota-modal .modal-content {
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+body[data-theme="light"] #delete-quota-modal #quota-to-delete {
+  background: #f0f4ff;
+  border: 1px solid #d1d5db;
+  color: var(--text);
+}
+
+body[data-theme="light"] #delete-quota-cancel {
+  background: #6b7280;
+  color: #fff;
+}
+
+body[data-theme="light"] #delete-quota-confirm {
+  background: #ef4444;
+  color: #fff;
+}

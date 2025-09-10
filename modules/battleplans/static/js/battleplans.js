@@ -507,3 +507,141 @@ addQuotaForm.addEventListener('submit', async (e) => {
     alert('Error creating quota on server.');
   }
 });
+
+const deleteQuotaBtn = document.getElementById('delete-quota-btn');
+const deleteQuotaModal = document.getElementById('delete-quota-modal');
+const deleteQuotaCancel = document.getElementById('delete-quota-cancel');
+const deleteQuotaForm = document.getElementById('delete-quota-form');
+const quotaToDeleteSelect = document.getElementById('quota-to-delete');
+
+// Open Delete Quota modal
+deleteQuotaBtn.addEventListener('click', async () => {
+  if (!currentBPId) return toast("No active BattlePlan", "error");
+
+  // Load today's quotas for dropdown
+  try {
+    const res = await fetch(`/api/bps/quota/list/${encodeURIComponent(currentBPDate)}`);
+    if (!res.ok) throw new Error("Failed to fetch quotas");
+    const quotas = await res.json();
+
+    quotaToDeleteSelect.innerHTML = "";
+    quotas.forEach(q => {
+      const option = document.createElement("option");
+      option.value = q.quota_id;
+      option.textContent = q.name;
+      quotaToDeleteSelect.appendChild(option);
+    });
+
+    deleteQuotaModal.classList.remove('hidden');
+    quotaToDeleteSelect.focus();
+  } catch (err) {
+    console.error(err);
+    toast("Failed to load quotas", "error");
+  }
+});
+
+// Close modal
+deleteQuotaCancel.addEventListener('click', () => {
+  deleteQuotaModal.classList.add('hidden');
+});
+
+// Handle deletion
+deleteQuotaForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const quotaId = quotaToDeleteSelect.value;
+  if (!quotaId) return;
+
+  try {
+    const res = await fetch('/api/bps/quota/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quota_id: quotaId })
+    });
+
+    if (!res.ok) throw new Error('Failed to delete quota');
+
+    toast("Quota deleted", "success");
+    deleteQuotaModal.classList.add('hidden');
+    await loadQuotas(currentBPId, currentBPDate);
+  } catch (err) {
+    console.error(err);
+    toast("Failed to delete quota", "error");
+  }
+});
+
+// ==================== Search Functionality ====================
+const searchBar = document.getElementById("search-bar");
+let allBattlePlans = []; // We'll store all plans here for filtering
+
+// Function to filter and display battle plans based on search term
+function filterBattlePlans(searchTerm) {
+  const filteredPlans = allBattlePlans.filter(plan => 
+    plan.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  // Clear the container
+  plansContainer.innerHTML = "";
+  
+  // Add filtered plans or show message if no results
+  if (filteredPlans.length === 0 && searchTerm) {
+    plansContainer.innerHTML = `<p class="small">No battle plans found matching "${searchTerm}"</p>`;
+    return;
+  }
+  
+  // Display filtered plans
+  filteredPlans.forEach(({name, dateObj}) => {
+    const btn = document.createElement("button");
+    btn.className = "bp-item";
+    btn.innerHTML = `
+      <p class="bp-text">${name}</p>
+      <div class="bp-date">
+        <span class="bp-month">${dateObj.month}</span><br>
+        <span class="bp-day">${dateObj.day}</span>
+      </div>
+    `;
+    btn.addEventListener("click", () => loadFullBP(dateObj));
+    plansContainer.appendChild(btn);
+  });
+}
+
+// Modify the loadBattlePlans function to store all plans
+async function loadBattlePlans() {
+  try {
+    const res = await fetch("/api/bps/list");
+    if (!res.ok) throw new Error("Failed to fetch battle plans");
+    const data = await res.json();
+
+    // Store all plans for searching
+    allBattlePlans = Object.entries(data).map(([planName, dateObj]) => ({
+      name: planName,
+      dateObj
+    }));
+    
+    // Initially show all plans
+    filterBattlePlans("");
+  } catch (err) {
+    console.error(err);
+    plansContainer.innerHTML = `<p class="small">Failed to load battle plans.</p>`;
+  }
+}
+
+// Add event listener for search input
+searchBar.addEventListener("input", (e) => {
+  filterBattlePlans(e.target.value);
+});
+
+// Add a clear button inside the search bar (optional but nice UX)
+searchBar.insertAdjacentHTML('afterend', '<button id="clear-search" style="display:none;">×</button>');
+const clearSearchBtn = document.getElementById("clear-search");
+
+clearSearchBtn.addEventListener("click", () => {
+  searchBar.value = "";
+  filterBattlePlans("");
+  clearSearchBtn.style.display = "none";
+  searchBar.focus();
+});
+
+searchBar.addEventListener("input", (e) => {
+  clearSearchBtn.style.display = e.target.value ? "block" : "none";
+  filterBattlePlans(e.target.value);
+});
