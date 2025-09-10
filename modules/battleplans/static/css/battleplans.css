@@ -179,7 +179,7 @@ body {
 /* form for adding tasks */
 #new-task-form {
   display:flex;
-  gap: 8px;
+  gap:8px;
   align-items:center;
   width:100%;
 }
@@ -283,21 +283,66 @@ body {
   #bp-editor-container { width: calc(100% - 24px); padding: 16px; border-radius: 12px; }
 }
 
-/* Full-screen modal for small screens */
-@media (max-width: 520px) {
-  #bp-help-modal .modal-content {
+/* === UNIVERSAL MODAL CENTERING === */
+#bp-help-modal,
+#bp-warning-modal,
+#add-quota-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+#bp-help-modal.hidden,
+#bp-warning-modal.hidden,
+#add-quota-modal.hidden { display: none !important; }
+
+#bp-help-modal .modal-content,
+#bp-warning-modal .modal-content,
+#add-quota-modal .modal-content {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 20px;
+  max-width: 600px;
+  max-height: 90vh;
+  width: 90%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* Optional scrollbar styling for modals */
+#bp-help-modal .modal-content::-webkit-scrollbar,
+#bp-warning-modal .modal-content::-webkit-scrollbar,
+#add-quota-modal .modal-content::-webkit-scrollbar { width: 8px; }
+#bp-help-modal .modal-content::-webkit-scrollbar-thumb,
+#bp-warning-modal .modal-content::-webkit-scrollbar-thumb,
+#add-quota-modal .modal-content::-webkit-scrollbar-thumb { background: rgba(125,211,252,0.25); border-radius: 4px; }
+#bp-help-modal .modal-content::-webkit-scrollbar-track,
+#bp-warning-modal .modal-content::-webkit-scrollbar-track,
+#add-quota-modal .modal-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+
+/* Fullscreen for smallest screens */
+@media (max-width: 520px){
+  #bp-help-modal .modal-content,
+  #bp-warning-modal .modal-content,
+  #add-quota-modal .modal-content {
     width: 100vw;
     height: 100vh;
     max-width: none;
     max-height: none;
     border-radius: 0;
     padding: 20px;
-    box-sizing: border-box;
-    overflow-y: auto;
   }
 }
 
-/* accessibility focus states */
+/* ---------- accessibility focus states ---------- */
 button:focus, input:focus {
   outline: 3px solid rgba(125,211,252,0.14);
   outline-offset: 2px;
@@ -622,3 +667,4 @@ body[data-theme="light"] .quota-done {
 }
 #add-quota-cancel { background: var(--muted); color:#000; }
 #add-quota-confirm { background: var(--accent); color:#03202a; }
+
