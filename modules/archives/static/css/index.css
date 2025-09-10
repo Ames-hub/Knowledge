@@ -297,7 +297,7 @@ body {
   #return_btn {
     display: none; /* Hide return button on mobile */
   }
-  
+
   #return_btn_mobile {
     display: block;
     top: 10px;

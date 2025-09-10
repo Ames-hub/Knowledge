@@ -109,7 +109,8 @@ class database:
                 "paid_off": "BOOLEAN NOT NULL DEFAULT FALSE",
             },
             "battleplans": {
-                "date": "DATE NOT NULL DEFAULT CURRENT_DATE PRIMARY KEY",
+                "bp_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "date": "DATE NOT NULL DEFAULT CURRENT_DATE",
                 "owner": "TEXT NOT NULL",
             },
             "bp_tasks": {
@@ -119,15 +120,14 @@ class database:
                 "is_done": "BOOLEAN NOT NULL DEFAULT FALSE",
                 "owner": "TEXT NOT NULL",
             },
-            "bp_quotas_done": {  # How much DID get done of a certain production metric, such as 'doors produced'
-                "date": "DATE NOT NULL REFERENCES battleplans(date) PRIMARY KEY",
-                "amount_done": "REAL NOT NULL",
-                "owner": "TEXT NOT NULL"
-            },
-            "bp_quotas": {  # How much you want to get done of a certain production metric, such as 'doors produced'
-                "date": "DATE NOT NULL REFERENCES battleplans(date) PRIMARY KEY",
-                "amount": "REAL NOT NULL",
-                "owner": "TEXT NOT NULL"
+            "bp_quotas": {
+                "quota_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "bp_id": "INT NOT NULL",
+                "bp_date": "DATE NOT NULL",
+                "planned_amount": "REAL NOT NULL DEFAULT 0.0",
+                "done_amount": "REAL NOT NULL DEFAULT 0.0",
+                "owner": "TEXT NOT NULL",
+                "name": "TEXT NOT NULL"
             }
         }
 
