@@ -417,9 +417,16 @@ async def yesterday_import(request: Request, data: yesterday_import_bp_data, tok
             # Fetch yesterday's tasks
             cursor.execute(
                 "SELECT task_id, task, is_done FROM bp_tasks WHERE date = ? AND owner = ? AND is_done = ?",
-                (date_yesterday.strftime("%Y-%m-%d"), owner, False)
+                (date_yesterday.strftime("%d-%m-%Y"), owner, False)
             )
-            tasks = cursor.fetchall() or []
+            task_data = cursor.fetchall()
+            tasks = []
+            for task in task_data:
+                tasks.append({
+                    "task_id": task[0],
+                    "task": task[1],
+                    "is_done": task[2]
+                })
 
             # Fetch yesterday's quota
             cursor.execute(
@@ -448,7 +455,7 @@ async def yesterday_import(request: Request, data: yesterday_import_bp_data, tok
             for task in tasks:
                 cursor.execute(
                     "INSERT INTO bp_tasks (date, task, is_done, owner) VALUES (?, ?, ?, ?)",
-                    (date_today.strftime("%Y-%m-%d"), task[1], task[2], owner)
+                    (date_today.strftime("%d-%m-%Y"), task['task'], task['is_done'], owner)
                 )
 
             # Insert or update quota

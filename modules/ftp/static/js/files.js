@@ -62,19 +62,126 @@ function renderFiles(data) {
         currentPath.push(item.name);
         fetchFolder(currentPath);
       } else if (item.type === 'file') {
-        // trigger download request
         const filePath = '/' + currentPath.concat(item.name).join('/');
         window.location.href = `/api/ftp/download?path=${encodeURIComponent(filePath)}`;
       }
     });
 
-    // right-click context menu
+    // Right-click context menu for individual files/folders
     div.addEventListener('contextmenu', e => {
       e.preventDefault();
       selectedItem = item;
+
+      // Build menu dynamically
+      let menuHTML = '';
+      if (item.type === 'file' && item.name.match(/\.(txt|json|js|md)$/i)) {
+        menuHTML += '<div id="edit">Edit</div>';
+      }
+      menuHTML += '<div id="rename">Rename</div>';
+      menuHTML += '<div id="delete">Delete</div>';
+
+      contextMenu.innerHTML = menuHTML;
       contextMenu.style.top = e.pageY + 'px';
       contextMenu.style.left = e.pageX + 'px';
       contextMenu.style.display = 'block';
+
+      // Edit
+      const editBtn = document.getElementById('edit');
+      if (editBtn) {
+        editBtn.addEventListener('click', async () => {
+          contextMenu.style.display = 'none';
+          const filePath = '/' + currentPath.concat(item.name).join('/');
+          const res = await fetch('/api/ftp/read-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: filePath })
+          });
+          const data = await res.json();
+          if (!data.success) return alert('Failed to read file: ' + data.error);
+
+          // Create overlay
+          const overlay = document.createElement('div');
+          overlay.classList.add('editor-overlay');
+          overlay.innerHTML = `
+            <div class="editor-modal">
+              <h3>Editing: ${item.name}</h3>
+              <textarea id="editor-textarea" style="width:100%; height:300px;">${data.content}</textarea>
+              <div class="editor-buttons">
+                <button id="editor-save">Save</button>
+                <button id="editor-cancel">Cancel</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+
+          // Stop clicks inside modal from closing it
+          overlay.querySelector('.editor-modal').addEventListener('click', e => e.stopPropagation());
+
+          // Cancel button
+          document.getElementById('editor-cancel').addEventListener('click', () => overlay.remove());
+
+          // Save button
+          document.getElementById('editor-save').addEventListener('click', async () => {
+            const content = document.getElementById('editor-textarea').value;
+            const saveRes = await fetch('/api/ftp/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ path: filePath, content })
+            });
+            const saveData = await saveRes.json();
+            if (!saveData.success) return alert('Save failed: ' + saveData.error);
+
+            overlay.remove();
+            fetchFolder(currentPath);
+          });
+        });
+      }
+
+      // Rename
+      document.getElementById('rename').addEventListener('click', async () => {
+        contextMenu.style.display = 'none';
+        const newName = prompt('Enter new name:', item.name);
+        if (!newName || newName === item.name) return;
+
+        const filePath = '/' + currentPath.concat(item.name).join('/');
+        const res = await fetch('/api/ftp/rename', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: filePath, new_name: newName })
+        });
+        const data = await res.json();
+        if (!data.success) return alert('Rename failed: ' + data.error);
+
+        // Update local state
+        if (item.type === 'folder') {
+          const folder = currentFolderData.folders.find(f => f.name === item.name);
+          if (folder) folder.name = newName;
+        } else {
+          const file = currentFolderData.files.find(f => f.name === item.name);
+          if (file) file.name = newName;
+        }
+        renderFiles(currentFolderData);
+      });
+
+      // Delete
+      document.getElementById('delete').addEventListener('click', async () => {
+        contextMenu.style.display = 'none';
+        const filePath = '/' + currentPath.concat(item.name).join('/');
+        const res = await fetch('/api/ftp/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: filePath })
+        });
+        const data = await res.json();
+        if (!data.success) return alert('Delete failed: ' + data.error);
+
+        if (item.type === 'folder') {
+          currentFolderData.folders = currentFolderData.folders.filter(f => f.name !== item.name);
+        } else {
+          currentFolderData.files = currentFolderData.files.filter(f => f.name !== item.name);
+        }
+        renderFiles(currentFolderData);
+      });
     });
 
     fileGrid.appendChild(div);
@@ -114,24 +221,61 @@ function applySearch() {
 }
 searchInput.addEventListener('input', applySearch);
 
-// Context menu actions
-document.getElementById('rename').addEventListener('click', () => {
-  const newName = prompt('Enter new name:', selectedItem.name);
-  if (newName) {
-    selectedItem.name = newName;
-    renderFiles(currentFolderData);
+// Right-click on empty grid for creating new folders/files
+fileGrid.addEventListener('contextmenu', e => {
+  if (!e.target.closest('.file-item')) {
+    e.preventDefault();
+    selectedItem = null;
+    contextMenu.innerHTML = `
+      <div id="create-folder">Create Folder</div>
+      <div id="create-file">Create File</div>
+    `;
+    contextMenu.style.top = e.pageY + 'px';
+    contextMenu.style.left = e.pageX + 'px';
+    contextMenu.style.display = 'block';
+
+    document.getElementById('create-folder').addEventListener('click', async () => {
+      const folderName = prompt('Enter folder name:');
+      if (!folderName) return contextMenu.style.display = 'none';
+      try {
+        const path = '/' + currentPath.join('/');
+        const res = await fetch('/api/ftp/create-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path, name: folderName })
+        });
+        const data = await res.json();
+        if (!data.success) return alert('Create folder failed: ' + data.error);
+        fetchFolder(currentPath);
+      } catch (err) {
+        console.error('Create folder failed', err);
+        alert('Create folder failed due to network error');
+      } finally {
+        contextMenu.style.display = 'none';
+      }
+    });
+
+    document.getElementById('create-file').addEventListener('click', async () => {
+      const fileName = prompt('Enter file name:');
+      if (!fileName) return contextMenu.style.display = 'none';
+      try {
+        const path = '/' + currentPath.join('/');
+        const res = await fetch('/api/ftp/create-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path, name: fileName })
+        });
+        const data = await res.json();
+        if (!data.success) return alert('Create file failed: ' + data.error);
+        fetchFolder(currentPath);
+      } catch (err) {
+        console.error('Create file failed', err);
+        alert('Create file failed due to network error');
+      } finally {
+        contextMenu.style.display = 'none';
+      }
+    });
   }
-  contextMenu.style.display = 'none';
-});
-document.getElementById('delete').addEventListener('click', () => {
-  // In a real app you'd call DELETE API here
-  if (selectedItem.type === 'folder') {
-    currentFolderData.folders = currentFolderData.folders.filter(f => f.name !== selectedItem.name);
-  } else {
-    currentFolderData.files = currentFolderData.files.filter(f => f.name !== selectedItem.name);
-  }
-  renderFiles(currentFolderData);
-  contextMenu.style.display = 'none';
 });
 
 // Hide context menu on click elsewhere
@@ -139,7 +283,7 @@ document.addEventListener('click', () => {
   contextMenu.style.display = 'none';
 });
 
-// Drag & Drop uploads
+// ==================== Drag & Drop uploads ====================
 dropZone.addEventListener('dragover', e => {
   e.preventDefault();
   dropZone.classList.add('dragover');
@@ -194,5 +338,84 @@ async function uploadFiles(files) {
   }
 }
 
-// Initial fetch
+// ==================== Delete ====================
+document.getElementById('delete').addEventListener('click', async () => {
+  if (!selectedItem) return;
+
+  const filePath = '/' + currentPath.concat(selectedItem.name).join('/');
+  try {
+    const res = await fetch("/api/ftp/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: filePath })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert("Delete failed: " + data.error);
+      return;
+    }
+
+    // Update local state and re-render
+    if (selectedItem.type === 'folder') {
+      currentFolderData.folders = currentFolderData.folders.filter(f => f.name !== selectedItem.name);
+    } else {
+      currentFolderData.files = currentFolderData.files.filter(f => f.name !== selectedItem.name);
+    }
+    renderFiles(currentFolderData);
+  } catch (err) {
+    console.error("Delete failed", err);
+    alert("Delete failed due to network error");
+  } finally {
+    contextMenu.style.display = 'none';
+    selectedItem = null;
+  }
+});
+
+// ==================== Rename ====================
+document.getElementById('rename').addEventListener('click', async () => {
+  if (!selectedItem) return;
+
+  const newName = prompt('Enter new name:', selectedItem.name);
+  if (!newName || newName === selectedItem.name) {
+    contextMenu.style.display = 'none';
+    return;
+  }
+
+  const filePath = '/' + currentPath.concat(selectedItem.name).join('/');
+  try {
+    const res = await fetch("/api/ftp/rename", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: filePath, new_name: newName })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      alert("Rename failed: " + data.error);
+      return;
+    }
+
+    // Update local state and re-render
+    if (selectedItem.type === 'folder') {
+      const folder = currentFolderData.folders.find(f => f.name === selectedItem.name);
+      if (folder) folder.name = newName;
+    } else {
+      const file = currentFolderData.files.find(f => f.name === selectedItem.name);
+      if (file) file.name = newName;
+    }
+    renderFiles(currentFolderData);
+  } catch (err) {
+    console.error("Rename failed", err);
+    alert("Rename failed due to network error");
+  } finally {
+    contextMenu.style.display = 'none';
+    selectedItem = null;
+  }
+});
+
+// ==================== Hide context menu on click elsewhere ====================
+document.addEventListener('click', () => {
+  contextMenu.style.display = 'none';
+});
+
+// ==================== Initial fetch ====================
 fetchFolder(currentPath);

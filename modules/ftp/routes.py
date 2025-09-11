@@ -1,3 +1,5 @@
+import re
+
 from fastapi.responses import HTMLResponse, FileResponse
 from library.auth import require_valid_token, authbook
 from fastapi import APIRouter, Request, Depends
@@ -133,3 +135,141 @@ async def download_ftp(request: Request, path: str, token: str = Depends(require
         return JSONResponse(content={"success": False, "error": "File not found."}, status_code=404)
 
     return FileResponse(file_path, filename=os.path.basename(file_path))
+
+class delete_data(BaseModel):
+    path: str
+
+@router.post("/api/ftp/delete")
+async def delete_ftp(request: Request, data: delete_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is deleting file/folder {data.path}.")
+    file_path, jail_real = resolve_path(data.path)
+
+    if os.path.commonpath([jail_real, file_path]) != jail_real:
+        return JSONResponse({"success": False, "error": "Path escapes jail."}, status_code=400)
+
+    if not os.path.exists(file_path):
+        return JSONResponse({"success": False, "error": "File/folder not found."}, status_code=404)
+
+    try:
+        if os.path.isdir(file_path):
+            import shutil
+            shutil.rmtree(file_path)
+        else:
+            os.remove(file_path)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+class rename_data(BaseModel):
+    path: str
+    new_name: str
+
+def validate_path(path):
+    is_valid = re.match(r"^[a-zA-Z0-9_\-. ]+$", path)
+    if is_valid:
+        return path
+    else:
+        raise ValueError("Invalid path.")
+
+@router.post("/api/ftp/rename")
+async def rename_ftp(request: Request, data: rename_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is renaming file/folder {data.path} to {data.new_name}.")
+    file_path, jail_real = resolve_path(data.path)
+
+    if os.path.commonpath([jail_real, file_path]) != jail_real:
+        return JSONResponse({"success": False, "error": "Path escapes jail."}, status_code=400)
+
+    if not os.path.exists(file_path):
+        return JSONResponse({"success": False, "error": "File/folder not found."}, status_code=404)
+
+    # Verify it's a valid file name
+    data.new_name = validate_path(data.new_name)
+
+    new_path = os.path.join(os.path.dirname(file_path), data.new_name)
+    try:
+        os.rename(file_path, new_path)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+class mk_folder_data(BaseModel):
+    path: str
+    name: str
+
+@router.post("/api/ftp/create-folder")
+async def create_folder(request: Request, data: mk_folder_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is creating folder {data.path}.")
+    file_path, jail_real = resolve_path(data.path)
+
+    if os.path.commonpath([jail_real, file_path]) != jail_real:
+        return JSONResponse({"success": False, "error": "Path escapes jail."}, status_code=400)
+    if not os.path.exists(os.path.dirname(file_path)):
+        return JSONResponse({"success": False, "error": "Directory not found."}, status_code=404)
+
+    try:
+        os.mkdir(os.path.join(file_path, data.name))
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+class mk_file_data(BaseModel):
+    path: str
+    name: str
+
+@router.post("/api/ftp/create-file")
+async def create_file(request: Request, data: mk_file_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is creating file {data.path}.")
+    file_path, jail_real = resolve_path(data.path)
+
+    if os.path.commonpath([jail_real, file_path]) != jail_real:
+        return JSONResponse({"success": False, "error": "Path escapes jail."}, status_code=400)
+    if not os.path.exists(os.path.dirname(file_path)):
+        return JSONResponse({"success": False, "error": "folder not found."}, status_code=404)
+
+    try:
+        with open(os.path.join(file_path, data.name), "w") as f:
+            f.write("")
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+class read_file_data(BaseModel):
+    path: str
+
+@router.post("/api/ftp/read-file")
+async def read_file(request: Request, data: read_file_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is reading file {data.path}.")
+    file_path, jail_real = resolve_path(data.path)
+
+    if os.path.commonpath([jail_real, file_path]) != jail_real:
+        return JSONResponse({"success": False, "error": "Path escapes jail."}, status_code=400)
+    if not os.path.exists(file_path):
+        return JSONResponse({"success": False, "error": "File not found."}, status_code=404)
+
+    try:
+        with open(file_path, "r") as f:
+            content = f.read()
+        return JSONResponse({"success": True, "content": content})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+class save_file_data(BaseModel):
+    path: str
+    content: str
+
+@router.post("/api/ftp/save")
+async def save_file(request: Request, data: save_file_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is the saving file {data.path}.")
+    file_path, jail_real = resolve_path(data.path)
+
+    if os.path.commonpath([jail_real, file_path]) != jail_real:
+        return JSONResponse({"success": False, "error": "Path escapes jail."}, status_code=400)
+    if not os.path.exists(os.path.dirname(file_path)):
+        return JSONResponse({"success": False, "error": "Directory not found."}, status_code=404)
+
+    try:
+        with open(file_path, "w") as f:
+            f.write(data.content)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
