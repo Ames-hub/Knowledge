@@ -248,10 +248,22 @@ def calculate_mind_class_estimation(cfid):
             conn.rollback()
             return None, None
 
-    dyn_1 = data[0] if data[0] is not None else 0
-    dyn_2 = data[1] if data[1] is not None else 0
-    dyn_3 = data[2] if data[2] is not None else 0
-    dyn_4 = data[3] if data[3] is not None else 0
+    try:
+        dyn_1 = data[0]
+    except TypeError:
+        dyn_1 = 0
+    try:
+        dyn_2 = data[1]
+    except TypeError:
+        dyn_2 = 0
+    try:
+        dyn_3 = data[2]
+    except TypeError:
+        dyn_3 = 0
+    try:
+        dyn_4 = data[3]
+    except TypeError:
+        dyn_4 = 0
 
     dynamics_score = (dyn_1 + dyn_2 + dyn_3 + dyn_4)
     if dynamics_score <= 5:

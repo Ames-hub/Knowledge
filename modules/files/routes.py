@@ -375,12 +375,13 @@ class centralfiles:
                 except sqlite3.OperationalError as err:
                     logbook.error(f"Error getting actual_class and apparent_class for cfid {cfid}: {err}", exception=err)
                     conn.rollback()
-                    actual_class, apparent_class = -1, -1
+                    actual_class, apparent_class = 0, 0
                 except TypeError:
                     update_mind_class_estimation(cfid)
-                    actual_class, apparent_class = -1, -1
+                    actual_class, apparent_class = 0, 0
 
             mind_class_map = {
+                0: "Undetermined",
                 1: "Class A",
                 2: "Class B",
                 3: "Class C",
