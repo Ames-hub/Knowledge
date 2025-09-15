@@ -37,26 +37,46 @@ if (window.innerWidth < 900) setOpenState(false);
 else setOpenState(true);
 
 // ==================== Battle Plans List ====================
+// Default sort order: set to true if you want latest-first
+const sortDescending = true;
+
+let allBattlePlans = []; // for filtering
+
+function parseMonthIndex(monthName) {
+  if (!monthName) return 0;
+  const m = monthName.toString().trim().toLowerCase();
+  const short = m.slice(0, 3);
+  const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const idx = months.indexOf(short);
+  return idx === -1 ? 0 : idx;
+}
+
 async function loadBattlePlans() {
   try {
     const res = await fetch("/api/bps/list");
     if (!res.ok) throw new Error("Failed to fetch battle plans");
     const data = await res.json();
 
-    plansContainer.innerHTML = "";
-    Object.entries(data).forEach(([planName, dateObj]) => {
-      const btn = document.createElement("button");
-      btn.className = "bp-item";
-      btn.innerHTML = `
-        <p class="bp-text">${planName}</p>
-        <div class="bp-date">
-          <span class="bp-month">${dateObj.month}</span><br>
-          <span class="bp-day">${dateObj.day}</span>
-        </div>
-      `;
-      btn.addEventListener("click", () => loadFullBP(dateObj));
-      plansContainer.appendChild(btn);
+    // Store all plans for searching
+    allBattlePlans = Object.entries(data).map(([planName, dateObj]) => {
+      // parse day, month and optional year safely
+      const dayNum = parseInt(String(dateObj.day || "").replace(/^0+/, "") || "1", 10);
+      const yearNum = dateObj.year ? parseInt(dateObj.year, 10) : new Date().getFullYear();
+      const monthIdx = parseMonthIndex(dateObj.month || "");
+      const realDate = new Date(yearNum, monthIdx, isNaN(dayNum) ? 1 : dayNum);
+      return {
+        name: planName,
+        dateObj,
+        realDate,
+        timestamp: realDate.getTime(),
+      };
     });
+
+    // Sort by date (numeric). Ascending by default; flip if sortDescending true.
+    allBattlePlans.sort((a, b) => sortDescending ? b.timestamp - a.timestamp : a.timestamp - b.timestamp);
+
+    // Initially show all plans
+    filterBattlePlans("");
   } catch (err) {
     console.error(err);
     plansContainer.innerHTML = `<p class="small">Failed to load battle plans.</p>`;
@@ -571,7 +591,6 @@ deleteQuotaForm.addEventListener('submit', async (e) => {
 
 // ==================== Search Functionality ====================
 const searchBar = document.getElementById("search-bar");
-let allBattlePlans = []; // We'll store all plans here for filtering
 
 // Function to filter and display battle plans based on search term
 function filterBattlePlans(searchTerm) {
@@ -588,7 +607,7 @@ function filterBattlePlans(searchTerm) {
     return;
   }
   
-  // Display filtered plans
+  // Display filtered plans (already sorted in allBattlePlans)
   filteredPlans.forEach(({name, dateObj}) => {
     const btn = document.createElement("button");
     btn.className = "bp-item";
@@ -602,27 +621,6 @@ function filterBattlePlans(searchTerm) {
     btn.addEventListener("click", () => loadFullBP(dateObj));
     plansContainer.appendChild(btn);
   });
-}
-
-// Modify the loadBattlePlans function to store all plans
-async function loadBattlePlans() {
-  try {
-    const res = await fetch("/api/bps/list");
-    if (!res.ok) throw new Error("Failed to fetch battle plans");
-    const data = await res.json();
-
-    // Store all plans for searching
-    allBattlePlans = Object.entries(data).map(([planName, dateObj]) => ({
-      name: planName,
-      dateObj
-    }));
-    
-    // Initially show all plans
-    filterBattlePlans("");
-  } catch (err) {
-    console.error(err);
-    plansContainer.innerHTML = `<p class="small">Failed to load battle plans.</p>`;
-  }
 }
 
 // Add event listener for search input

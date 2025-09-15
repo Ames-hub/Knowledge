@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
 
-            if (response.status === 400) {
+            if (response.status === 400 || response.status == 403) {
                 toast(data['error']);
                 return
             }

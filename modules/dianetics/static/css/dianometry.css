@@ -1,0 +1,360 @@
+:root {
+  --radius: 14px;
+  --transition: 0.25s ease;
+  --font-main: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+/* DARK THEME */
+[data-theme="dark"] {
+  --bg: #0f1724;
+  --panel: rgba(28, 37, 57, 0.6);
+  --card: rgba(31, 42, 64, 0.6);
+  --text: #e6eef8;
+  --muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-glow: #60a5fa;
+  --danger: #ef4444;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --blur: 14px;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+/* LIGHT THEME */
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --panel: rgba(226, 232, 240, 0.6);
+  --card: rgba(255, 255, 255, 0.6);
+  --text: #1e293b;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-glow: #3b82f6;
+  --danger: #dc2626;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --blur: 14px;
+  --border: rgba(0, 0, 0, 0.08);
+}
+
+/* Base page */
+body {
+  background: var(--bg);
+  font-family: var(--font-main);
+  font-size: 15px;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  height: 100vh;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Main */
+#main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  width: 87dvw;
+}
+
+/* Chart container */
+.chart-container {
+  background: var(--panel);
+  backdrop-filter: blur(var(--blur));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin: 20px 0;
+  overflow-x: auto;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  height: 600px;
+  overflow-y: auto;
+}
+
+.chart-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hubbard-chart {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.hubbard-chart th,
+.hubbard-chart td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.hubbard-chart th {
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+.hubbard-chart thead th {
+  background: rgba(255, 255, 255, 0.12);
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.hubbard-chart td.selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Preclear selector */
+#preclear-selector-container {
+  background: var(--panel);
+  backdrop-filter: blur(var(--blur));
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  max-width: 500px;
+  margin-bottom: 2rem;
+}
+
+#preclear-selector-container label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+#preclear-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: 8px;
+  background: var(--card);
+  backdrop-filter: blur(var(--blur));
+  color: var(--text);
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#preclear-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
+  outline: none;
+}
+
+/* Info card */
+#preclear-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--card);
+  backdrop-filter: blur(var(--blur));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+#preclear-info p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+#preclear-info strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Footer text */
+.copyright {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#dynamic-strength-selector {
+  background-color: var(--panel);
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  color: var(--text);
+}
+
+#dynamic-strength-selector h2 {
+  margin-bottom: 15px;
+  font-size: 1.4em;
+  text-align: center;
+  color: var(--accent);
+}
+
+.dynamic-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 5px 10px;
+  background-color: var(--card);
+  border-radius: 8px;
+}
+
+.dynamic-option label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.dynamic-option select {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--muted);
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+#apply-dynamics-btn {
+  display: block;
+  margin: 15px auto 0;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius);
+  background-color: var(--accent);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#apply-dynamics-btn:hover {
+  background-color: blue;
+}
+
+#shutoffs_chart {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: var(--panel);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+#shutoffs_chart h2 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.shutoff-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.shutoff-option label {
+  font-weight: 500;
+}
+
+.shutoff-option input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+#mindclass_estimation {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: var(--panel);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+#mindclass_estimation h2 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.estimation-content p {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.estimation-content span {
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* Mobile-friendly adjustments */
+@media (max-width: 768px) {
+  .hubbard-chart,
+  .hubbard-chart thead,
+  .hubbard-chart tbody,
+  .hubbard-chart th,
+  .hubbard-chart td,
+  .hubbard-chart tr {
+    display: block;
+    width: 100%;
+  }
+
+  /* Hide table headers */
+  .hubbard-chart thead {
+    display: none;
+  }
+
+  /* Each row becomes its own card */
+  .hubbard-chart tr {
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  /* Category cell stays at the top of the card */
+  .hubbard-chart .category-cell {
+    background: var(--panel);
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    position: static;
+    width: 100%;
+    display: block;
+  }
+
+  /* Tone values show stacked with labels */
+  .hubbard-chart td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hubbard-chart td:last-child {
+    border-bottom: none;
+  }
+
+  /* Use data-label to simulate header labels */
+  .hubbard-chart td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 1rem;
+    flex: 0 0 70px;
+  }
+}

@@ -3,4 +3,5 @@ venv
 .idea
 *.pyc
 logs
-modules/ftp/userfiles/*
+ftp_user_files/*
+settings.json

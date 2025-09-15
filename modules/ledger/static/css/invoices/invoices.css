@@ -1,0 +1,535 @@
+/* ====== Base Layout ====== */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* ====== Sections ====== */
+.items-section, .invoice-section, .past-invoices-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.items-section h2, .invoice-section h2, .past-invoices-section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.invoice-section {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* ====== Item List ====== */
+#item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#item-list li {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+#item-list li:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+/* ====== Invoice Table ====== */
+#invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+#invoice-table th, #invoice-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#invoice-table thead {
+  background: #f1f5f9;
+}
+
+#invoice-table tfoot td {
+  font-weight: 600;
+  border-top: 2px solid #94a3b8;
+}
+
+/* ====== Buttons ====== */
+button {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+button:active {
+  background: #1e40af;
+}
+
+button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* Remove buttons in invoice table */
+#invoice-table button {
+  background: #ef4444;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+#invoice-table button:hover {
+  background: #dc2626;
+}
+
+/* ====== Past Invoices List ====== */
+#past-invoices {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#past-invoices li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  transition: background 0.2s ease;
+}
+
+#past-invoices li:hover {
+  background: #f1f5f9;
+}
+
+#past-invoices li strong {
+  font-weight: 600;
+  color: #1e293b;
+  margin-right: 0.5rem;
+}
+
+#past-invoices li span {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+/* Buttons inside past invoices */
+#past-invoices button {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#past-invoices .pdf-btn {
+  background: #16a34a;
+}
+
+#past-invoices .pdf-btn:hover {
+  background: #15803d;
+}
+
+.mark-paid-btn {
+  background: #16a34a;
+}
+
+.mark-paid-btn:hover {
+  background: #15803d;
+}
+
+/* ====== Actions & Forms ====== */
+.invoice-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.add-item-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.add-item-form input,
+.add-item-form button {
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.add-item-form input {
+  border: 1px solid #cbd5e1;
+}
+
+.add-item-form button {
+  background: #2563eb;
+  color: white;
+  border: none;
+}
+
+.add-item-form button:hover {
+  background: #1e40af;
+}
+
+/* ====== Filters ====== */
+.filters {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.filters select,
+.filters input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* ====== Status Labels ====== */
+.paid {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.unpaid {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.past-invoices-section {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ====== Mobile-First Responsiveness ====== */
+@media (max-width: 768px) {
+
+  /* Main container */
+  .main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+
+  /* Sections as cards */
+  .items-section, .invoice-section, .past-invoices-section {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #ffffff;
+  }
+
+  /* Section headings */
+  .items-section h2, .invoice-section h2, .past-invoices-section h2 {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+  }
+
+  /* Add-item form styling */
+  .add-item-form {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .add-item-form input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.65rem;
+    font-size: 1rem;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .add-item-form button {
+    width: 100%;
+    padding: 0.65rem;
+    font-size: 1rem;
+    border-radius: 10px;
+    transition: transform 0.1s, background 0.2s;
+  }
+
+  .add-item-form button:hover {
+    transform: translateY(-2px);
+    background: #1e40af;
+  }
+
+  /* ====== Invoice Table (Pretty + Fixed) ====== */
+  #invoice-table, #invoice-table tbody, #invoice-table tr, #invoice-table td {
+    display: block;
+    width: 100%;
+  }
+
+  #invoice-table thead {
+    display: none;
+  }
+
+  #invoice-table tr {
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    background: #f9fafb;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  #invoice-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  #invoice-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #0f172a;
+    margin-right: 1rem;
+    flex: 1 0 45%;
+  }
+
+  #invoice-table td span, #invoice-table td button {
+    flex: 1 0 50%;
+    text-align: right;
+  }
+
+  #invoice-table td button {
+    max-width: 35px;
+  }
+
+  #invoice-total {
+    font-size: 1.1rem;
+    color: #1e293b;
+  }
+
+  #invoice-table tfoot {
+    display: block;
+    width: 100%;
+  }
+
+  #invoice-table tfoot td {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    padding-top: 0.75rem;
+    font-size: 1.05rem;
+    border-top: 2px solid #94a3b8;
+  }
+
+  #invoice-table button {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+
+  /* Invoice action buttons */
+  .invoice-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .invoice-actions button {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  /* Filters */
+  .filters {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .filters select, .filters input {
+    width: 100%;
+    padding: 0.65rem;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  /* Past invoices cards */
+  #past-invoices li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: #f9fafb;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    transition: transform 0.1s, background 0.2s;
+  }
+
+  #past-invoices li:hover {
+    transform: translateY(-2px);
+    background: #f1f5f9;
+  }
+
+  #past-invoices li strong {
+    margin-bottom: 0.25rem;
+  }
+
+  #past-invoices .invoice-buttons {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  #past-invoices .invoice-buttons button {
+    flex: 1 1 48%;
+    padding: 0.6rem;
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+
+  /* General buttons */
+  button {
+    transition: transform 0.1s, background 0.2s;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* ====== Past Invoice Cards ====== */
+#past-invoices {
+  display: grid;
+  gap: 1rem;
+}
+
+#past-invoices .invoice-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#past-invoices .invoice-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.invoice-date {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.invoice-status {
+  font-size: 0.9rem;
+}
+
+.invoice-body {
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.invoice-total {
+  font-weight: 600;
+}
+
+.invoice-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.invoice-buttons button {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+}
+
+.status.paid {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.status.unpaid {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.delete-item-btn {
+  float: right;
+  position: relative;
+  top: -9px;  /* Its weirdly going to the bottom, so this fixes it. */
+  left: 12px;
+}
+
+.invoice-cfid {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#cfid-input {
+  width: 120px;
+  padding: 4px 8px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 14px;
+}

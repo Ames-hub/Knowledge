@@ -9,6 +9,8 @@ import time
 
 logbook = LogBookHandler('AUTH')
 
+expiration_hours = 168  # 1 Week
+
 # Simple in-memory rate limiter
 _login_attempts = {}
 
@@ -177,7 +179,7 @@ class UserLogin:
             self.store_token(self.token)
 
     def store_token(self, token: str):
-        expires_at = datetime.datetime.now() + datetime.timedelta(hours=2)
+        expires_at = datetime.datetime.now() + datetime.timedelta(hours=expiration_hours)
         logbook.info(f"New token generated for {self.username}")
         try:
             with sqlite3.connect(DB_PATH) as conn:

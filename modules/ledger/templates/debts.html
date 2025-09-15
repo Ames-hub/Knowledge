@@ -15,7 +15,7 @@
         <a href="/ledger">Accounts</a>
         <a href="/ledger/planning">Financial Planning</a>
         <a href="/ledger/debts" class="active">Debts</a>
-        <a href="/ledger/invoices"></a>
+        <a href="/ledger/invoices">Invoices</a>
     </nav>
 </aside>
 
@@ -42,6 +42,9 @@
 
             <label>Description:</label>
             <textarea name="description" rows="3" placeholder="Optional notes about this debt..."></textarea>
+
+            <label>CFID (optional):</label>
+            <input type="number" name="cfid" min="0" step="1" placeholder="Enter CFID if applicable">
 
             <button type="submit" class="btn track-debt">Add Debt</button>
         </form>

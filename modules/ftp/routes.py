@@ -12,7 +12,9 @@ router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 logbook = LogBookHandler('File Server')
 
-JAIL_PATH = "modules/ftp/userfiles"
+JAIL_PATH = "ftp_user_files/"
+
+os.makedirs(JAIL_PATH, exist_ok=True)
 
 class walk_data(BaseModel):
     path: str

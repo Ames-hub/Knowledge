@@ -489,7 +489,7 @@ class debts:
                 return False
 
     @staticmethod
-    def create_new_debt(debtor:str, debtee:str, amount:float, description:str, start_date=None, end_date=None):
+    def create_new_debt(debtor:str, debtee:str, amount:float, description:str, start_date=None, end_date=None, cfid=None):
         if not start_date:
             start_date = datetime.datetime.now()
         with sqlite3.connect(DB_PATH) as conn:
@@ -497,10 +497,10 @@ class debts:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    INSERT INTO debts (debtor, debtee, amount, start_date, end_date)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO debts (debtor, debtee, amount, start_date, end_date, cfid)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """,
-                    (debtor, debtee, amount, start_date, end_date)
+                    (debtor, debtee, amount, start_date, end_date, cfid)
                 )
                 debt_id = cursor.lastrowid
                 cursor.execute(
@@ -651,6 +651,7 @@ class debt_data(BaseModel):
     description: str
     start_date: str | None = None
     end_date: str | None = None
+    cfid: int|None
 
 @router.post("/api/finances/debts/add")
 async def add_debt(request: Request, data: debt_data, token: str = Depends(require_valid_token)):
@@ -664,7 +665,8 @@ async def add_debt(request: Request, data: debt_data, token: str = Depends(requi
                 amount=data.amount,
                 start_date=data.start_date,
                 end_date=data.end_date,
-                description=data.description
+                description=data.description,
+                cfid=data.cfid
             )
             success = True if type(debt_id) is int else False
             return JSONResponse(content={"success": success, "debt_id": debt_id}, status_code=200 if success else 500)
@@ -729,3 +731,232 @@ async def get_all_records(request: Request, data: get_records_data, token: str =
     else:
         records = debts.get_debt_records(debt_id)
         return JSONResponse(records, status_code=200)
+
+# Invoices section
+
+@router.get("/ledger/invoices")
+async def invoices_page(request: Request, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the invoices page.")
+    return templates.TemplateResponse(
+        request,
+        "invoices.html",
+    )
+
+class get_invoices_data(BaseModel):
+    searchTerm: str
+    StatusFilter: str
+
+@router.post("/api/ledger/invoices/get-invoices")
+async def get_invoice_items(request: Request, data: get_invoices_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all invoice items.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            if not data.searchTerm:
+                date_search = datetime.datetime.now().strftime("%d-%m-%Y")
+            else:
+                date_search = data.searchTerm
+
+            is_paid_filter = True if data.StatusFilter.lower() == "paid" else False
+            if data.StatusFilter.lower() == "all":
+                is_paid_filter = -1
+
+            cursor.execute(
+                f"SELECT invoice_id, date, amount, is_paid FROM invoices WHERE date = ? {"AND is_paid = ?" if is_paid_filter != -1 else ""}",
+                (date_search, is_paid_filter,) if is_paid_filter != -1 else (date_search,)
+            )
+            data = cursor.fetchall()
+
+            parsed_data = []
+            for item in data:
+                parsed_data.append({
+                    "id": item[0],
+                    "date": item[1],
+                    "total": item[2],
+                    "paid": bool(item[3]),
+                })
+
+            for item in parsed_data:
+                invoice_id = item["id"]
+                cursor.execute(
+                    "SELECT item, value FROM items_on_invoices WHERE invoice_id = ?",
+                    (invoice_id,)
+                )
+                items_data = cursor.fetchall()
+                item_list = []
+                for item_data in items_data:
+                    item_list.append({
+                        "item": item_data[0],
+                        "value": item_data[1],
+                    })
+                item["items"] = item_list
+
+            return JSONResponse(parsed_data, status_code=200)
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while fetching invoice items: {err}", exception=err)
+            conn.rollback()
+
+class del_item_data(BaseModel):
+    name: str
+
+@router.post("/api/ledger/invoices/delete-item")
+async def delete_item(request: Request, data: del_item_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is deleting an invoice item.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM invoice_items WHERE item_id = ?",
+                (data.name,)
+            )
+            conn.commit()
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while deleting an invoice item: {err}", exception=err)
+            return JSONResponse(content={"success": False, "error": "Database error occurred while deleting an invoice item."}, status_code=500)
+
+
+class save_invoice_data(BaseModel):
+    items: list
+    total: float
+    cfid: int|None
+
+@router.post("/api/ledger/invoices/save-invoice")
+async def save_invoice(request: Request, data: save_invoice_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is saving the invoice (invoice  they just made.")
+    datenow = datetime.datetime.now().strftime("%d-%m-%Y")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO invoices (date, amount, is_paid, cfid) VALUES (?, ?, ?, ?)
+                """,
+                (datenow, data.total, False, data.cfid)
+            )
+            invoice_id = cur.lastrowid
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while saving the invoice: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(content={"success": False, "error": "Database error occurred while saving the invoice."}, status_code=500)
+
+        try:
+            for item in data.items:
+                name, price = item['name'], item['price']
+                cur.execute(
+                    """
+                    INSERT INTO items_on_invoices (invoice_id, item, value) VALUES (?, ?, ?)
+                    """,
+                    (invoice_id, name, price)
+                )
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while saving the invoice items: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(content={"success": False, "error": "Database error occurred while saving the invoice items."}, status_code=500)
+
+    return JSONResponse(content={"success": True}, status_code=200)
+
+@router.get("/api/ledger/invoices/get-invoice/{invoice_id}")
+async def get_invoice(request: Request, invoice_id: int, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is fetching invoice {invoice_id}.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT invoice_id, date, amount, is_paid, cfid FROM invoices WHERE invoice_id = ?",
+                (invoice_id,)
+            )
+            invoice_data = cursor.fetchone()
+
+            cursor.execute(
+                "SELECT item, value FROM items_on_invoices WHERE invoice_id = ?",
+                (invoice_id,)
+            )
+            items_data = cursor.fetchall()
+
+            if invoice_data is None:
+                return JSONResponse(content={}, status_code=404)
+            else:
+                items_parsed = [{"name": i[0], "price": i[1]} for i in items_data]
+                return JSONResponse(
+                    content={
+                        "cfid": invoice_data[4],
+                        "id": invoice_data[0],
+                        "date": invoice_data[1],
+                        "total": invoice_data[2],
+                        "paid": bool(invoice_data[3]),
+                        "items": items_parsed
+                    },
+                    status_code=200
+                )
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while fetching invoice {invoice_id}: {err}", exception=err)
+            conn.rollback()
+
+class toggle_paid_data(BaseModel):
+   paid: bool
+   invoice_id: int
+
+@router.post("/api/ledger/invoices/toggle-paid")
+async def toggle_invoice_paid(request: Request, data: toggle_paid_data, token: str = Depends(require_valid_token)):
+    body = await request.json()
+    new_status = bool(body.get("paid", False))
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is toggling invoice {data.invoice_id} paid={new_status}.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE invoices SET is_paid = ? WHERE invoice_id = ?",
+                (new_status, data.invoice_id)
+            )
+            conn.commit()
+            return JSONResponse(content={"success": True, "paid": new_status}, status_code=200)
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while toggling invoice paid status: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(content={"success": False}, status_code=500)
+
+class add_item_data(BaseModel):
+    name: str
+    price: float
+
+@router.post("/api/ledger/invoices/add-item")
+async def add_possible_invoice_item(request: Request, data: add_item_data, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is adding invoice item {data.name} with value {data.price}.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO invoice_items (item_id, value)
+                VALUES (?, ?)
+                """,
+                (data.name, data.price)
+            )
+            conn.commit()
+            return JSONResponse(content={"success": True}, status_code=200)
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while adding invoice item: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(content={"success": False}, status_code=500)
+
+@router.get("/api/ledger/invoices/get-items")
+async def get_invoice_items(request: Request, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all invoice items.")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT item_id, value FROM invoice_items"
+            )
+            data = cursor.fetchall()
+            parsed_data = []
+            for item in data:
+                parsed_data.append({
+                    "name": item[0],
+                    "price": item[1]
+                })
+            return JSONResponse(parsed_data, status_code=200)
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while fetching invoice items: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(content={}, status_code=500)

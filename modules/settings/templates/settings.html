@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Project Configuration</title>
+		<link rel="stylesheet" href="/static/settings/css/settings.css">
+	</head>
+<body>
+	<header>Project Configuration</header>
+
+	<main id="config-container">
+		<div class="config-card">
+			<label for="weekday-start">Weekday Start</label>
+			<select id="weekday-start" data-config-name="weekday_start">
+				<option value="monday" selected>Monday</option>
+				<option value="tuesday">Tuesday</option>
+				<option value="wednesday">Wednesday</option>
+				<option value="thursday">Thursday</option>
+				<option value="friday">Friday</option>
+				<option value="saturday">Saturday</option>
+				<option value="sunday">Sunday</option>
+			</select>
+		</div>
+		<div class="config-card">
+			<label for="registration-allowed">Allow New Users</label>
+			<input type="checkbox" id="registration-allowed" data-config-name="registration_allowed">
+		</div>
+		<div class="config-card">
+			<label for="lookback-length">On the ledger, how far back do we load finances in days?</label>
+			<input type="number" id="lookback-length" data-config-name="looback_length">
+		</div>
+		<button class="save-btn" onclick="saveConfig()">Save Settings</button>
+		<a href="/" class="back-btn">Back</a>
+	</main>
+
+<script src="/static/settings/js/settings.js"></script>
+</body>
+</html>

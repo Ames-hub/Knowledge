@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.database import DB_PATH
 from pydantic import BaseModel
+from library import settings
 import datetime
 import sqlite3
 import logging
@@ -13,8 +14,6 @@ from modules.browser.routes import logbook
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
-
-# -------------------- Helpers --------------------
 
 def get_bp_exists(date: datetime.datetime, owner: str):
     with sqlite3.connect(DB_PATH) as conn:
@@ -355,16 +354,29 @@ async def get_weekly_production(request: Request, data: weekly_prod_get, token: 
     owner = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({owner}) is fetching weekly production for {data.date}.")
 
+    # Ensure date format
     date_str = dateformatenforcer(data.date)
     try:
-        date_obj = datetime.datetime.strptime(date_str, "%d-%m-%Y")
+        date_obj = datetime.datetime.strptime(date_str, "%d-%m-%Y").date()
     except ValueError:
         return HTMLResponse("Invalid date format. Use DD-MM-YYYY.", status_code=400)
 
-    dates_list = [(date_obj - datetime.timedelta(days=i)).strftime("%d-%m-%Y") for i in range(7)]
-    production_metrics = [get_quota_done_helper(day, owner) for day in dates_list]
+    week_start = settings.get.get_week_start()
+    if week_start < 1 or week_start > 7:
+        return HTMLResponse("week_start must be 1 (Monday) to 7 (Sunday).", status_code=400)
 
-    return HTMLResponse(str(sum(production_metrics)), status_code=200)
+    # Calculate the difference to move to the start of the week
+    current_weekday = date_obj.isoweekday()  # 1=Monday, 7=Sunday
+    delta_days = (current_weekday - week_start) % 7
+    start_of_week = date_obj - datetime.timedelta(days=delta_days)
+
+    # Build the 7-day week list from the start
+    dates_list = [(start_of_week + datetime.timedelta(days=i)).strftime("%d-%m-%Y") for i in range(7)]
+
+    production_metrics = [get_quota_done_helper(day, owner) for day in dates_list]
+    weekly_total = sum(production_metrics)
+
+    return HTMLResponse(str(weekly_total), status_code=200)
 
 class clearbp_data(BaseModel):
     date: str

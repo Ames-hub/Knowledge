@@ -4,6 +4,7 @@ from library.auth import authbook, autherrors
 from library.logbook import LogBookHandler
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
+from library import settings
 import os
 
 router = APIRouter()
@@ -20,6 +21,8 @@ async def show_reg(request: Request):
 
 @router.post("/api/authbook/register")
 async def register(request: Request, data: RegisterData):
+    if settings.get.allow_registration() is False:
+        return JSONResponse({"success": False, "error": "Registration has been disabled by administration."}, status_code=403)
     try:
         success = authbook.create_account(
             data.username,

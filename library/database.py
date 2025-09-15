@@ -59,6 +59,43 @@ class database:
                 "phone": "TEXT NOT NULL",
                 "email": "TEXT NOT NULL",
             },
+            "cf_is_dianetics_pc": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "is_dn_pc": "BOOLEAN NOT NULL DEFAULT FALSE",
+            },
+            "cf_dn_stuck_case": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "is_stuck_case": "BOOLEAN NOT NULL DEFAULT FALSE",
+                "stuck_age": "INT NOT NULL DEFAULT -1"  # If stuck, where? Age 3?
+            },
+            "cf_dn_control_case": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "is_control_case": "BOOLEAN NOT NULL DEFAULT FALSE",
+            },
+            "cf_dn_shutoffs": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "sonic_shutoff": "BOOLEAN NOT NULL DEFAULT FALSE",
+                "visio_shutoff": "BOOLEAN NOT NULL DEFAULT FALSE",
+            },
+            "cf_dn_fabricator_case": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "is_fabricator_case": "BOOLEAN NOT NULL DEFAULT FALSE",
+            },
+            "cf_dn_action_records": {
+                "action_id": "INTEGER PRIMARY KEY AUTOINCREMENT",  # Mostly here so it can be modified in DB viewers
+                "date": "DATE NOT NULL DEFAULT CURRENT_DATE",
+                "cfid": "INTEGER NOT NULL",
+                "action": "TEXT NOT NULL",
+            },
+            "cf_tonescale_records": {
+                "cfid": "INTEGER NOT NULL PRIMARY KEY",
+                "est_tone_level": "REAL NOT NULL",
+            },
+            "cf_pc_mind_class": {
+                "cfid": "INTEGER NOT NULL PRIMARY KEY",
+                "actual_class": "INT NOT NULL",  # Class A, B or C. Store as int (1 = A, 2 = B, 3 = C)
+                "apparent_class": "INT NOT NULL",
+            },
             "bulletin_archives": {
                 "archive_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "title": "TEXT NOT NULL",
@@ -99,6 +136,7 @@ class database:
                 "amount": "REAL NOT NULL",
                 "start_date": "DATE NOT NULL DEFAULT CURRENT_DATE",
                 "end_date": "DATE",
+                "cfid": "INT",  # The Central Files ID for whom this debt is for.
             },
             "debt_records": {
                 "record_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -128,6 +166,61 @@ class database:
                 "done_amount": "REAL NOT NULL DEFAULT 0.0",
                 "owner": "TEXT NOT NULL",
                 "name": "TEXT NOT NULL"
+            },
+            "invoices": {
+                "invoice_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "date": "DATE NOT NULL DEFAULT CURRENT_DATE",
+                "amount": "REAL NOT NULL",
+                "is_paid": "BOOLEAN NOT NULL DEFAULT FALSE",
+                "cfid": "INT",  # The Central Files ID for whom this invoice is for.
+            },
+            "items_on_invoices": {
+                # Items that ARE on an invoice, and which invoice.
+                "itemkey": "INTEGER PRIMARY KEY AUTOINCREMENT",  # Purely for being able to modify this table in beekeeper studio.
+                "invoice_id": "INTEGER NOT NULL",
+                "item": "TEXT NOT NULL",
+                "value": "REAL NOT NULL",
+            },
+            "invoice_items": {
+                # Items that COULD appear on an invoice.
+                "item_id": "TEXT PRIMARY KEY",  # A service, like "Washed windows" or whatever.
+                "value": "REAL NOT NULL",
+            },
+            "CF_hubbard_chard_of_eval": {  # Credit to L. Ron Hubbard for his work on this.
+                "cfid": "INT NOT NULL PRIMARY KEY",
+                "behavior_and_psychology": "INT",
+                "medical_range": "INT",
+                "emotion": "INT",
+                "sexual_behavior": "INT",
+                "attitude_children": "INT",
+                "command_over_environ": "INT",
+                "worth_actual_apparent": "INT",
+                "ethics_level": "INT",
+                "handling_of_truth": "INT",
+                "courage_level": "INT",
+                "speech_talks": "INT",
+                "speech_listens": "INT",
+                "handling_of_comm_as_relay": "INT",
+                "reality": "INT",
+                "responsibility": "INT",
+                "persistence": "INT",
+                "literalness_of_reception": "INT",
+                "method_handling_others": "INT",
+                "hypnotic_level": "INT",
+                "ability_to_experience_pt_pleasure": "INT",
+                "value_as_friend": "INT",
+                "how_much_others_like": "INT",
+                "state_of_possessions": "INT",
+                "how_well_understood": "INT",
+                "potential_success": "INT",
+                "potential_survival": "INT",
+            },
+            "cf_dynamic_strengths": {
+                "cfid": "INT NOT NULL PRIMARY KEY",
+                "dyn_1": "INT",
+                "dyn_2": "INT",
+                "dyn_3": "INT",
+                "dyn_4": "INT",  # The int is strength. 1 = Weak, 2 = Normal, 3 = Strong.
             }
         }
 

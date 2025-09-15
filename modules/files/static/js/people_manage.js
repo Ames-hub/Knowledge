@@ -118,6 +118,3 @@ async function removeName() {
 }
 
 document.addEventListener('DOMContentLoaded', Get_Names);
-
-const theme = localStorage.getItem("theme") || "dark";
-document.documentElement.setAttribute("data-theme", theme);

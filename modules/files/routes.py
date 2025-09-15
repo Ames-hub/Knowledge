@@ -1,3 +1,4 @@
+from modules.dianetics.routes import update_mind_class_estimation
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.auth import require_valid_token
@@ -56,6 +57,349 @@ class centralfiles:
             def __str__(self):
                 return self.message
 
+    class dianetics:
+        class tonescale:
+            def __init__(self, cfid):
+                self.cfid = int(cfid)
+
+            def set_level(self, new_level):
+                if new_level > 4.0 or new_level < 0.0:
+                    raise ValueError("Invalid level")
+
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cur = conn.cursor()
+                        cur.execute(
+                            """
+                            INSERT INTO cf_tonescale_records (cfid, est_tone_level) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET est_tone_level=excluded.est_tone_level
+                            """,
+                            (self.cfid, float(new_level))
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error setting tone level for cfid {self.cfid}: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+        class modify:
+            def __init__(self, cfid):
+                self.cfid = int(cfid)
+
+            def add_action(self, action:str):
+                datenow = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            """
+                            INSERT INTO cf_dn_action_records (cfid, action, date) VALUES (?, ?, ?)
+                            """,
+                            (self.cfid, action, datenow)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error adding action to cfid {self.cfid}: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+            def is_sonic_off(self, new_value:bool):
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            """
+                            INSERT INTO cf_dn_shutoffs (cfid, sonic_shutoff) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET sonic_shutoff=excluded.sonic_shutoff
+                            """,
+                            (self.cfid, new_value)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error updating cfid {self.cfid} on is_sonic_off: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+            def is_visio_off(self, new_value:bool):
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            """
+                            INSERT INTO cf_dn_shutoffs (cfid, visio_shutoff) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET visio_shutoff=excluded.visio_shutoff
+                            """,
+                            (self.cfid, new_value)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error updating cfid {self.cfid} on is_visio_off: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+            def is_fabricator_case(self, new_value:bool):
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            """
+                            INSERT INTO cf_dn_fabricator_case (cfid, is_fabricator_case) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET is_fabricator_case=excluded.is_fabricator_case
+                            """,
+                            (self.cfid, new_value)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error updating cfid {self.cfid} on is_fabricator_case: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+            def is_stuck_case(self, new_value:bool):
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cur = conn.cursor()
+                        cur.execute(
+                            """
+                            INSERT INTO cf_dn_stuck_case (cfid, is_stuck_case) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET is_stuck_case=excluded.is_stuck_case
+                            """,
+                            (self.cfid, new_value)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error updating cfid {self.cfid} on is_stuck_case: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+            def stuck_age(self, new_value:int):
+                with sqlite3.connect(DB_PATH) as conn:
+                    cur = conn.cursor()
+                    try:
+                        cur.execute(
+                            """
+                            INSERT INTO cf_dn_stuck_case (cfid, stuck_age) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET stuck_age=excluded.stuck_age
+                            """,
+                            (self.cfid, new_value)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error updating cfid {self.cfid} on stuck_age: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+            def is_control_case(self, new_value:bool):
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cur = conn.cursor()
+                        cur.execute(
+                            """
+                            INSERT INTO cf_dn_control_case (cfid, is_control_case) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET is_control_case=excluded.is_control_case
+                            """,
+                            (self.cfid, new_value)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error updating cfid {self.cfid} on is_control_case: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
+        @staticmethod
+        def get_profile(cfid):
+            with sqlite3.connect(DB_PATH) as conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(
+                        "SELECT is_dn_pc FROM cf_is_dianetics_pc WHERE cfid = ?",
+                        (cfid,)
+                    )
+                    is_dn_pc = bool(cursor.fetchone()[0])
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting is_dn_pc for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    is_dn_pc = False
+                except TypeError:
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_is_dianetics_pc (cfid, is_dn_pc) VALUES (?, ?)
+                        """,
+                        (cfid, False)
+                    )
+                    conn.commit()
+                    is_dn_pc = False
+
+                try:
+                    cursor.execute(
+                        """
+                        SELECT is_stuck_case, stuck_age FROM cf_dn_stuck_case WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    is_stuck_case, stuck_age = cursor.fetchone()
+                    is_stuck_case = bool(is_stuck_case)
+                    stuck_age = int(stuck_age)
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting is_stuck_case for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    is_stuck_case = False
+                    stuck_age = -1
+                except TypeError:
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_dn_stuck_case (cfid, is_stuck_case, stuck_age) VALUES (?, ?, ?)
+                        """,
+                        (cfid, False, -1)
+                    )
+                    conn.commit()
+                    is_stuck_case = False
+                    stuck_age = -1
+
+                try:
+                    cursor.execute(
+                        """
+                        SELECT is_control_case FROM cf_dn_control_case WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    is_control_case = bool(cursor.fetchone()[0])
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting is_control_case for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    is_control_case = False
+                except TypeError:
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_dn_control_case (cfid, is_control_case) VALUES (?, ?)
+                        """,
+                        (cfid, False)
+                    )
+                    conn.commit()
+                    is_control_case = False
+
+                try:
+                    cursor.execute(
+                        """
+                        SELECT sonic_shutoff, visio_shutoff FROM cf_dn_shutoffs WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    is_sonic_shutoff, is_visio_shutoff = cursor.fetchone()
+                    is_sonic_shutoff, is_visio_shutoff = bool(is_sonic_shutoff), bool(is_visio_shutoff)
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting is_sonic_shutoff or is_visio_shutoff for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    is_sonic_shutoff, is_visio_shutoff = False, False
+                except TypeError:
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_dn_shutoffs (cfid, sonic_shutoff, visio_shutoff) VALUES (?, ?, ?)
+                        """,
+                        (cfid, False, False)
+                    )
+                    conn.commit()
+                    is_sonic_shutoff, is_visio_shutoff = False, False
+
+                try:
+                    cursor.execute(
+                        """
+                        SELECT is_fabricator_case FROM cf_dn_fabricator_case WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    conn.commit()
+                    is_fabricator_case = bool(cursor.fetchone()[0])
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting is_fabricator_case for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    is_fabricator_case = False
+                except TypeError:
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_dn_fabricator_case (cfid, is_fabricator_case) VALUES (?, ?)
+                        """,
+                        (cfid, False)
+                    )
+                    conn.commit()
+                    is_fabricator_case = False
+
+                try:
+                    # Gets the latest action on the PC.
+                    cursor.execute(
+                        """
+                        SELECT action FROM cf_dn_action_records WHERE cfid = ? ORDER BY date DESC LIMIT 1
+                        """,
+                        (cfid,)
+                    )
+                    last_action = cursor.fetchone()[0]
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting last_action for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    last_action = "Last Action Not Found"
+                except TypeError:
+                    last_action = "No actions performed."
+
+                try:
+                    cursor.execute(
+                        """
+                        SELECT est_tone_level FROM cf_tonescale_records WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    tone_level = cursor.fetchone()[0]
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting tone_level for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    tone_level = -1
+                except TypeError:
+                    # Do not insert data for this one. It must be determined, not assumed. Just keep returning -1
+                    tone_level = -1
+
+                try:
+                    cursor.execute(
+                        """
+                        SELECT actual_class, apparent_class FROM cf_pc_mind_class WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    actual_class, apparent_class = cursor.fetchone()
+                    actual_class, apparent_class = int(actual_class), int(apparent_class)
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting actual_class and apparent_class for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    actual_class, apparent_class = -1, -1
+                except TypeError:
+                    update_mind_class_estimation(cfid)
+                    actual_class, apparent_class = -1, -1
+
+            mind_class_map = {
+                1: "Class A",
+                2: "Class B",
+                3: "Class C",
+            }
+
+            return {
+                "is_dn_pc": is_dn_pc,
+                "is_stuck_case": is_stuck_case,
+                "stuck_age": stuck_age,
+                "is_control_case": is_control_case,
+                "is_sonic_shutoff": is_sonic_shutoff,
+                "is_visio_shutoff": is_visio_shutoff,
+                "is_fabricator_case": is_fabricator_case,
+                "tone_level": tone_level,
+                "last_action": last_action,
+                "mind_class_actual": mind_class_map[actual_class],
+                "mind_class_apparent": mind_class_map[apparent_class],
+            }
+
     @staticmethod
     def dupe_check(name:str):
         """
@@ -75,7 +419,8 @@ class centralfiles:
                 "exists": len(cfid_list) != 0,
                 "cfids": cfid_list
             }
-        except sqlite3.OperationalError:
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Error checking for duplicates: {err}")
             return {
                 "exists": False,
                 "error": "Database error occurred while checking for duplicates."
@@ -86,6 +431,23 @@ class centralfiles:
     class modify:
         def __init__(self, cfid):
             self.cfid = int(cfid)
+
+        def is_dn_pc(self, new_value:bool):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_is_dianetics_pc (cfid, is_dn_pc) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET is_dn_pc=excluded.is_dn_pc
+                        """,
+                        (self.cfid, new_value)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid} on is_dn_pc: {err}")
+                    conn.rollback()
 
         def name(self, new_name):
             conn = sqlite3.connect(DB_PATH)
@@ -220,6 +582,12 @@ class centralfiles:
                 "INSERT INTO cf_pronouns (cfid, subjective, objective) VALUES (?, ?, ?)",
                 (cfid, "UNK", "UNK")
             )
+            cursor.execute(
+                """
+                INSERT INTO cf_is_dianetics_pc (cfid, is_dn_pc) VALUES (?, ?)
+                """,
+                (cfid, False)
+            )
 
             conn.commit()
             return cfid
@@ -335,6 +703,17 @@ class centralfiles:
                     "author": item[3],
                 }
 
+            cursor.execute(
+                """
+                SELECT is_dn_pc FROM cf_is_dianetics_pc WHERE cfid = ?
+                """,
+                (cfid,),
+            )
+            try:
+                is_dn_pc = bool(cursor.fetchone()[0])
+            except (TypeError, IndexError):
+                is_dn_pc = False
+
             profile = {
                 "cfid": cfid,
                 "name": name,
@@ -344,6 +723,7 @@ class centralfiles:
                     "objective_pron": objective_pron,
                 },
                 "profile_notes": profile_notes,
+                "is_dianetics_pc": is_dn_pc
             }
 
             return profile
@@ -415,6 +795,63 @@ class centralfiles:
         finally:
             conn.close()
 
+    @staticmethod
+    def get_assosciated_invoices(cfid):
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    SELECT invoice_id, date, amount, is_paid FROM invoices WHERE cfid = ?
+                    """,
+                    (cfid,)
+                )
+                rows = cur.fetchall()
+                parsed_data = []
+                for row in rows:
+                    parsed_data.append({
+                        "invoice_id": row[0],
+                        "date": row[1],
+                        "amount": row[2],
+                        "is_paid": row[3]
+                    })
+                return parsed_data
+            except sqlite3.OperationalError:
+                conn.rollback()
+                return []
+
+    @staticmethod
+    def get_assosciated_debts(cfid):
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    SELECT debt_id, debtor, debtee, amount, start_date, end_date FROM debts WHERE cfid = ?
+                    """,
+                    (cfid,)
+                )
+                rows = cur.fetchall()
+                parsed_data = []
+                for row in rows:
+                    start_date = datetime.datetime.strptime(row[4], "%Y-%m-%d %H:%M:%S.%f").strftime("%d-%m-%Y")
+                    end_date = row[5]
+                    if end_date:
+                        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S.%f").strftime("%d-%m-%Y")
+
+                    parsed_data.append({
+                        "debt_id": row[0],
+                        "debtor": row[1],
+                        "debtee": row[2],
+                        "amount": row[3],
+                        "start_date": start_date,
+                        "end_date": end_date
+                    })
+                return parsed_data
+            except sqlite3.OperationalError:
+                conn.rollback()
+                return []
+
 # noinspection PyUnusedLocal
 @router.get("/files", response_class=HTMLResponse)
 async def show_reg(request: Request, token: str = Depends(require_valid_token)):
@@ -436,11 +873,18 @@ async def dupe_check(request: Request, name: str, token: str = Depends(require_v
 async def get_file(request: Request, cfid: int, token: str = Depends(require_valid_token)):
     logbook.info(f"IP {request.client.host} Has fetched the folder for cfid {cfid} under account {authbook.token_owner(token)}")
     profile = centralfiles.get_profile(cfid=int(cfid))
+    assosciated_invoices = centralfiles.get_assosciated_invoices(cfid)
+    assosciated_debts = centralfiles.get_assosciated_debts(cfid)
+    dianetics_profile = centralfiles.dianetics.get_profile(cfid=cfid)
+
     return templates.TemplateResponse(
+        request,
         "profile.html",
         {
-            "request": request,
             "profile": profile,
+            "invoices": assosciated_invoices,
+            "debts": assosciated_debts,
+            "dianetics": dianetics_profile
         }
     )
 
@@ -460,6 +904,33 @@ async def modify_file(data: ModifyFileData, token: str = Depends(require_valid_t
             success = True
         elif data.field == "name":
             centralfiles.modify(data.cfid).name(data.value)
+            success = True
+        elif data.field == "is_dianetics":
+            centralfiles.modify(data.cfid).is_dn_pc(bool(data.value))
+            success = True
+        elif data.field == "last_action":
+            centralfiles.dianetics.modify(data.cfid).add_action(data.value)
+            success = True
+        elif data.field == "sonic_shutoff":
+            centralfiles.dianetics.modify(data.cfid).is_sonic_off(bool(data.value))
+            success = True
+        elif data.field == "visio_shutoff":
+            centralfiles.dianetics.modify(data.cfid).is_visio_off(bool(data.value))
+            success = True
+        elif data.field == "stuck_case":
+            centralfiles.dianetics.modify(data.cfid).is_stuck_case(bool(data.value))
+            success = True
+        elif data.field == "stuck_age":
+            centralfiles.dianetics.modify(data.cfid).stuck_age(int(data.value))
+            success = True
+        elif data.field == "control_case":
+            centralfiles.dianetics.modify(data.cfid).is_control_case(bool(data.value))
+            success = True
+        elif data.field == "fabricator_case":
+            centralfiles.dianetics.modify(data.cfid).is_fabricator_case(bool(data.value))
+            success = True
+        elif data.field == "tone_level":
+            centralfiles.dianetics.tonescale(data.cfid).set_level(float(data.value))
             success = True
         else:
             success = False
