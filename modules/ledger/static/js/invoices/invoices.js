@@ -96,31 +96,51 @@ addItemForm.addEventListener("submit", async (e) => {
 function updateInvoice() {
   invoiceTableBody.innerHTML = "";
   let total = 0;
-  items.forEach((item, index) => {
+
+  // Group items by name
+  const grouped = {};
+  items.forEach(item => {
+    if (grouped[item.name]) {
+      grouped[item.name].qty += 1;
+      grouped[item.name].price += item.price;
+    } else {
+      grouped[item.name] = { ...item, qty: 1 };
+    }
+  });
+
+  // Render grouped items
+  Object.values(grouped).forEach((item, index) => {
     total += item.price;
     const row = document.createElement("tr");
 
     const nameCell = document.createElement("td");
     nameCell.textContent = item.name;
 
+    const qtyCell = document.createElement("td");
+    qtyCell.textContent = item.qty;
+
     const priceCell = document.createElement("td");
-    priceCell.textContent = `$${item.price}`;
+    priceCell.textContent = `$${item.price.toFixed(2)}`;
 
     const removeCell = document.createElement("td");
     const removeBtn = document.createElement("button");
     removeBtn.textContent = "✖";
     removeBtn.onclick = () => {
-      items.splice(index, 1);
+      // Remove all of that item from items array
+      items = items.filter(i => i.name !== item.name);
       updateInvoice();
     };
     removeCell.appendChild(removeBtn);
 
     row.appendChild(nameCell);
+    row.appendChild(qtyCell);
     row.appendChild(priceCell);
     row.appendChild(removeCell);
+
     invoiceTableBody.appendChild(row);
   });
-  invoiceTotal.textContent = `$${total}`;
+
+  invoiceTotal.textContent = `$${total.toFixed(2)}`;
 }
 
 // ------------------------
@@ -262,6 +282,19 @@ function generatePDF(invoice = null) {
     paid: false,
   };
 
+  // Group items by name
+  const grouped = {};
+  data.items.forEach(item => {
+    if (grouped[item.name]) {
+      grouped[item.name].qty += 1;
+      grouped[item.name].price += item.price;
+    } else {
+      grouped[item.name] = { ...item, qty: 1 };
+    }
+  });
+
+  const groupedItems = Object.values(grouped);
+
   // Header
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
@@ -280,13 +313,15 @@ function generatePDF(invoice = null) {
   doc.setFont("helvetica", "bold");
   doc.text("#", 14, 50);
   doc.text("Item", 25, 50);
-  doc.text("Price", 150, 50);
+  doc.text("Qty", 130, 50, { align: "right" });
+  doc.text("Price", 160, 50, { align: "right" });
 
   doc.setFont("helvetica", "normal");
   let y = 58;
-  data.items.forEach((item, i) => {
+  groupedItems.forEach((item, i) => {
     doc.text(`${i + 1}`, 14, y);
     doc.text(`${item.name}`, 25, y);
+    doc.text(`${item.qty}`, 130, y, { align: "right" });
     doc.text(`$${item.price.toFixed(2)}`, 160, y, { align: "right" });
     y += 8;
   });
