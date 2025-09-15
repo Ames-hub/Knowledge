@@ -52,8 +52,20 @@
       </div>
     </div>
 
-    <!-- If the person is a DN PC, load this section -->
     {% if profile.is_dianetics_pc %}
+    <div id="actions_record">
+      <h2>Auditing Actions Record</h2>
+      <form id="submit_action_form">
+        <label for="action_input">Action Input</label>
+        <input id="cfid_input" type="hidden" value="{{ profile.cfid }}">
+        <input id="action_input" type="text" placeholder="Insert New Action" required>
+        <button type="submit">Submit</button>
+      </form>
+      <ol id="action_list">
+      </ol>
+    </div>
+
+    <!-- If the person is a DN PC, load this section -->
     <h2>Dianetics PC Profile</h2>
     <div class="grid-box">
       <div class="field">
@@ -185,5 +197,6 @@
     </div>
   </div>
   <script src="/static/files/js/themecontrol.js"></script>
+  <script src="/static/files/js/action_list.js"></script>
 </body>
 </html>

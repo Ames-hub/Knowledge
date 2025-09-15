@@ -214,6 +214,31 @@ class centralfiles:
                         return False
 
         @staticmethod
+        def list_actions(cfid):
+            with sqlite3.connect(DB_PATH) as conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(
+                        """
+                        SELECT action_id, action, date FROM cf_dn_action_records WHERE cfid = ? ORDER BY date DESC
+                        """,
+                        (cfid,)
+                    )
+                    data = cursor.fetchall()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting actions for cfid {cfid}: {err}", exception=err)
+                    return []
+
+            parsed_data = []
+            for item in data:
+                parsed_data.append({
+                    "action_id": item[0],
+                    "action": item[1],
+                    "date": item[2]
+                })
+            return parsed_data
+
+        @staticmethod
         def get_profile(cfid):
             with sqlite3.connect(DB_PATH) as conn:
                 cursor = conn.cursor()
@@ -1008,14 +1033,10 @@ async def get_all_profiles(request: Request, token: str = Depends(require_valid_
     )
 
 @router.post("/api/files/get_profile", response_class=JSONResponse)
-async def get_profile(
-        request: Request,
-        data: NamePostData,
-        token: str = Depends(require_valid_token)
-):
+async def get_profile(request: Request, data: NamePostData, token: str = Depends(require_valid_token)):
+    logbook.info(f"IP {request.client.host} fetched profile '{data.name}' under account {authbook.token_owner(token)}")
     try:
         profile = centralfiles.get_profile(name=data.name)
-        logbook.info(f"IP {request.client.host} fetched profile '{data.name}' under account {authbook.token_owner(token)}")
         return JSONResponse(content=profile, status_code=200)
     except centralfiles.errors.ProfileNotFound:
         return JSONResponse(content={"error": "Profile not found."}, status_code=404)
@@ -1023,8 +1044,8 @@ async def get_profile(
         return JSONResponse(content={"error": "Multiple profiles with that name."}, status_code=400)
 
 @router.post("/api/files/create", response_class=JSONResponse)
-async def create_name(data: NamePostData, token: str = Depends(require_valid_token)):
-    logbook.info(f"Request from account {authbook.token_owner(token)} to CREATE name '{data.name}'")
+async def create_name(request: Request, data: NamePostData, token: str = Depends(require_valid_token)):
+    logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to CREATE name '{data.name}'")
     cfid = centralfiles.add_name(data.name)
     if cfid is not None:
         return JSONResponse(content={"success": True, "cfid": cfid}, status_code=200)
@@ -1032,10 +1053,29 @@ async def create_name(data: NamePostData, token: str = Depends(require_valid_tok
         return JSONResponse(content={"success": False, "error": "Creation failed"}, status_code=400)
 
 @router.post("/api/files/delete", response_class=JSONResponse)
-async def delete_name(data: DeleteNameData, token: str = Depends(require_valid_token)):
-    logbook.info(f"Request from account {authbook.token_owner(token)} to DELETE name '{data.name}'")
+async def delete_name(request: Request, data: DeleteNameData, token: str = Depends(require_valid_token)):
+    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to DELETE name '{data.name}'")
     success = centralfiles.delete_name(data.name)
     if success:
         return JSONResponse(content={"success": True}, status_code=200)
     else:
         return JSONResponse(content={"success": False, "error": "Deletion failed"}, status_code=400)
+
+class SubmitActionData(BaseModel):
+    cfid: int
+    action: str
+
+@router.post("/api/files/submit_action", response_class=JSONResponse)
+async def submit_action(request: Request, data: SubmitActionData, token: str = Depends(require_valid_token)):
+    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to SUBMIT action '{data.action}' for cfid {data.cfid}")
+    success = centralfiles.dianetics.modify(data.cfid).add_action(data.action)
+    if success:
+        return JSONResponse(content={"success": True}, status_code=200)
+    else:
+        return JSONResponse(content={"success": False, "error": "Action submission failed"}, status_code=400)
+
+@router.get("/api/files/get_actions/{cfid}", response_class=JSONResponse)
+async def submit_action(request: Request, cfid, token: str = Depends(require_valid_token)):
+    logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to get all actions for cfid {cfid}")
+    actions = centralfiles.dianetics.list_actions(cfid)
+    return JSONResponse(content=actions, status_code=200)
