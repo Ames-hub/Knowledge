@@ -39,6 +39,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!selectedCFID) {
             infoDiv.style.display = "none";
             chartContainer.classList.add("hidden");
+            dynStrengthSel.classList.add("hidden");
+            shutoffs_chart.classList.add("hidden");
+            mindclass_estimation.classList.add("hidden");
             return;
         }
 

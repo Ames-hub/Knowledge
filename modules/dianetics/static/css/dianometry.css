@@ -357,4 +357,8 @@ body {
     margin-right: 1rem;
     flex: 0 0 70px;
   }
+
+  #main {
+    width: 100%;
+  }
 }
