@@ -284,6 +284,28 @@ document.addEventListener('click', () => {
 });
 
 // ==================== Drag & Drop uploads ====================
+// Recursively read folder entries
+function traverseFileTree(item, path, files) {
+  return new Promise(resolve => {
+    if (item.isFile) {
+      item.file(file => {
+        file.fullPath = path + file.name;
+        files.push(file);
+        resolve();
+      });
+    } else if (item.isDirectory) {
+      const dirReader = item.createReader();
+      dirReader.readEntries(entries => {
+        const promises = [];
+        for (const entry of entries) {
+          promises.push(traverseFileTree(entry, path + item.name + "/", files));
+        }
+        Promise.all(promises).then(resolve);
+      });
+    }
+  });
+}
+
 dropZone.addEventListener('dragover', e => {
   e.preventDefault();
   dropZone.classList.add('dragover');
@@ -294,7 +316,20 @@ dropZone.addEventListener('dragleave', () => {
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('dragover');
-  uploadFiles(e.dataTransfer.files);
+  const items = e.dataTransfer.items;
+  if (items) {
+    const files = [];
+    for (let i = 0; i < items.length; i++) {
+      const entry = items[i].webkitGetAsEntry();
+      if (entry) {
+        traverseFileTree(entry, "", files).then(() => {
+          uploadFiles(files);
+        });
+      }
+    }
+  } else {
+    uploadFiles(e.dataTransfer.files);
+  }
 });
 fileInput.addEventListener('change', e => {
   uploadFiles(e.target.files);
@@ -318,9 +353,17 @@ async function uploadFiles(files) {
   };
 
   for (const file of files) {
+    if (file.type === "") {
+      // This might be a directory placeholder, skip
+      continue;
+    }
     const arrayBuffer = await file.arrayBuffer();
     const base64 = arrayBufferToBase64(arrayBuffer);
-    payload.files.push({ name: file.name, data: base64 });
+
+    // Keep relative paths for folder uploads
+    const relativePath = file.webkitRelativePath || file.name;
+
+    payload.files.push({ name: relativePath, data: base64 });
   }
 
   try {

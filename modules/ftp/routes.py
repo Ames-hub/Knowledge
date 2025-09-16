@@ -118,10 +118,13 @@ async def upload_ftp(request: Request, data: UploadData, token: str = Depends(re
     saved_files = []
     for file in data.files:
         dest = os.path.join(file_path, file.name)
+
+        # Create parent directories if needed
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+
         with open(dest, "wb") as f:
             f.write(base64.b64decode(file.data))
         saved_files.append(file.name)
-
     return JSONResponse(content={"success": True, "files": saved_files}, status_code=200)
 
 @router.get("/api/ftp/download")
@@ -266,7 +269,7 @@ async def save_file(request: Request, data: save_file_data, token: str = Depends
 
     if os.path.commonpath([jail_real, file_path]) != jail_real:
         return JSONResponse({"success": False, "error": "Path escapes jail."}, status_code=400)
-    if not os.path.exists(os.path.dirname(file_path)):
+    if not os.path.exists(file_path):
         return JSONResponse({"success": False, "error": "Directory not found."}, status_code=404)
 
     try:
