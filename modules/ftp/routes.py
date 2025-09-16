@@ -1,5 +1,3 @@
-import re
-
 from fastapi.responses import HTMLResponse, FileResponse
 from library.auth import require_valid_token, authbook
 from fastapi import APIRouter, Request, Depends
@@ -7,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from library.logbook import LogBookHandler
 from pydantic import BaseModel
 import os
+import re
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
