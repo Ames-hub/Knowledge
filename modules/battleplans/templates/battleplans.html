@@ -32,6 +32,7 @@
       <button id="help-btn">Help</button>
       <button id="add-quota-btn">Add Quota</button>
       <button id="delete-quota-btn">Delete Quota</button>
+      <button id="export-pdf-btn">Export to PDF</button>
     </div>
 
     <!-- Quota section -->
@@ -45,6 +46,14 @@
     <!-- New task form -->
     <form id="new-task-form">
       <input type="text" id="task-input" placeholder="What task needs to be done?">
+
+      <!-- Category dropdown -->
+      <select id="task-category">
+        <option value="work">Work</option>
+        <option value="personal">Personal</option>
+        <option value="other">Other</option>
+      </select>
+
       <button type="submit" id="add-task-btn">Add Task</button>
     </form>
 

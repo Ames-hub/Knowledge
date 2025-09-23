@@ -17,23 +17,27 @@ class get:
             return settings.get(key, default)
 
     @staticmethod
-    def get_week_start():
-        return int(get.get("weekday_start", 1))
+    def reset_bp_plan_on_new_week():
+        return bool(get.get("new_week_stats_plan", False))
+
+    @staticmethod
+    def get_week_end():
+        return int(get.get("weekday_end", 1))
 
     @staticmethod
     def allow_registration():
-        return bool(get.get("allow_registration", False))
+        return bool(get.get("registration_allowed", False))
 
     @staticmethod
-    def looback_length():
-        return int(get.get("looback_length", 30))
+    def lookback_length():
+        return int(get.get("lookback_length", 30))
 
 def save(key, value):
     settings = {}
 
     if key == "allow_registration":
         value = bool(value)
-    elif key == "weekday_start":
+    elif key == "weekday_end":
         ref_dict = {
             "monday": 1,
             "tuesday": 2,

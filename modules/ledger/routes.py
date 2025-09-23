@@ -1,7 +1,8 @@
 from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
-from library.auth import require_valid_token
+from library.authperms import set_permission
+from library.auth import require_prechecks
 from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from library.auth import authbook
@@ -17,7 +18,8 @@ templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "t
 logbook = LogBookHandler("Finance Records")
 
 @router.get("/ledger", response_class=HTMLResponse)
-async def show_home(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="ledger")
+async def show_home(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the ledger.")
     return templates.TemplateResponse(
         request,
@@ -25,12 +27,15 @@ async def show_home(request: Request, token: str = Depends(require_valid_token))
     )
 
 @router.get("/api/finances/load_accounts")
-async def load_accounts():
+async def load_accounts(request: Request, token: str = Depends(require_prechecks)):
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {owner}) is loading finance accounts.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cursor = conn.cursor()
+
             cursor.execute(
-                "SELECT account_id, account_name, balance FROM finance_accounts"
+                "SELECT account_id, account_name, balance FROM finance_accounts",
             )
             data = cursor.fetchall()
 
@@ -47,7 +52,8 @@ async def load_accounts():
             return None
 
 @router.get("/api/finances/account/total_expenses/{account_id}")
-async def get_total_expenses(account_id:int):
+async def get_total_expenses(request: Request, account_id:int, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) has accessed total expenses for account {account_id}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cursor = conn.cursor()
@@ -131,7 +137,7 @@ class finances_data(BaseModel):
     receipt_bytes: list = None
 
 @router.post("/api/finances/modify", response_class=JSONResponse)
-async def modify_finances(request: Request, data: finances_data, token: str = Depends(require_valid_token)):
+async def modify_finances(request: Request, data: finances_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has modified finances.")
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -237,7 +243,7 @@ class transaction_delete(BaseModel):
     transaction_id: int
 
 @router.post("/api/finances/del_transaction", response_class=JSONResponse)
-async def del_transaction(request: Request, data: transaction_delete, token: str = Depends(require_valid_token)):
+async def del_transaction(request: Request, data: transaction_delete, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has deleted a finance transaction.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -275,14 +281,15 @@ class make_account_data(BaseModel):
     account_name: str
 
 @router.post("/api/finances/account/make", response_class=JSONResponse)
-async def make_account(request: Request, data: make_account_data, token: str = Depends(require_valid_token)):
-    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has made a new finance account under the name {data.account_name}.")
+async def make_account(request: Request, data: make_account_data, token: str = Depends(require_prechecks)):
+    username = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {username}) has made a new finance account under the name {data.account_name}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO finance_accounts (account_name) VALUES (?)",
-                (data.account_name,)
+                "INSERT INTO finance_accounts (account_name, owner) VALUES (?, ?)",
+                (data.account_name, username)
             )
             conn.commit()
             return JSONResponse(content={"success": True}, status_code=200)
@@ -294,7 +301,7 @@ class del_account_data(BaseModel):
     account_id: int
 
 @router.post("/api/finances/account/delete", response_class=JSONResponse)
-async def del_account(request: Request, data: del_account_data, token: str = Depends(require_valid_token)):
+async def del_account(request: Request, data: del_account_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has deleted the finance account with the ID {data.account_id}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -310,7 +317,8 @@ async def del_account(request: Request, data: del_account_data, token: str = Dep
             return JSONResponse(content={"success": False, "error": "Database error occurred while deleting the account."}, status_code=500)
 
 @router.get("/ledger/planning")
-async def planning(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="ledger")
+async def planning(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the financial planning page.")
     return templates.TemplateResponse(
         request,
@@ -324,7 +332,7 @@ class expense_data(BaseModel):
     annualCost: float
 
 @router.post("/api/finances/fp/add_expense")
-async def add_fp_expense(request: Request, data: expense_data, token: str = Depends(require_valid_token)):
+async def add_fp_expense(request: Request, data: expense_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has added an expense to the FP No. 1.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -343,7 +351,7 @@ class del_expense_data(BaseModel):
     name: str
 
 @router.post("/api/finances/fp/delete_expense")
-async def delete_fp_expense(request: Request, data: del_expense_data, token: str = Depends(require_valid_token)):
+async def delete_fp_expense(request: Request, data: del_expense_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has deleted an expense from the FP No. 1.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -359,7 +367,7 @@ async def delete_fp_expense(request: Request, data: del_expense_data, token: str
             return JSONResponse(content={"success": False, "error": "Database error occurred while deleting the expense."}, status_code=500)
 
 @router.get("/api/finances/fp/get_expenses")
-async def get_fp_expenses(request: Request, token: str = Depends(require_valid_token)):
+async def get_fp_expenses(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the FP No. 1.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -382,7 +390,8 @@ async def get_fp_expenses(request: Request, token: str = Depends(require_valid_t
             return JSONResponse(content={"error": "Database error occurred while fetching expenses."}, status_code=500)
 
 @router.get("/ledger/debts")
-async def debts_page(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="ledger")
+async def debts_page(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the debts record page.")
     return templates.TemplateResponse(
         request,
@@ -654,7 +663,8 @@ class debt_data(BaseModel):
     cfid: int|None
 
 @router.post("/api/finances/debts/add")
-async def add_debt(request: Request, data: debt_data, token: str = Depends(require_valid_token)):
+@set_permission(permission="ledger")
+async def add_debt(request: Request, data: debt_data, token: str = Depends(require_prechecks)):
     debt_id = debts.find_debt_id(data.debtor, data.debtee)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has added a debt of {data.amount} from the debt with the ID {debt_id}.")
     try:
@@ -689,7 +699,7 @@ class subtract_debt_data(BaseModel):
     record_id: int
 
 @router.post("/api/finances/debts/subtract")
-async def subtract_debt(request: Request, data: subtract_debt_data, token = Depends(require_valid_token)):
+async def subtract_debt(request: Request, data: subtract_debt_data, token = Depends(require_prechecks)):
     debt_id = debts.find_debt_id(data.debtor, data.debtee)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has subtracted {data.amount} from the debt with ID {debt_id}.")
     try:
@@ -712,7 +722,7 @@ async def subtract_debt(request: Request, data: subtract_debt_data, token = Depe
         return JSONResponse(content={"success": False, "error": "Database error occurred while subtracting the debt."}, status_code=500)
 
 @router.get("/api/finances/debts/get_all")
-async def get_debts(request: Request, token: str = Depends(require_valid_token)):
+async def get_debts(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all debts.")
     debt_list = debts.get_all_debts()
     return JSONResponse(debt_list, status_code=200)
@@ -722,7 +732,7 @@ class get_records_data(BaseModel):
     debtee: str
 
 @router.post("/api/finances/debts/get_all_records")
-async def get_all_records(request: Request, data: get_records_data, token: str = Depends(require_valid_token)):
+async def get_all_records(request: Request, data: get_records_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all debt records.")
 
     debt_id = debts.find_debt_id(data.debtor, data.debtee)
@@ -735,7 +745,8 @@ async def get_all_records(request: Request, data: get_records_data, token: str =
 # Invoices section
 
 @router.get("/ledger/invoices")
-async def invoices_page(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="ledger")
+async def invoices_page(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the invoices page.")
     return templates.TemplateResponse(
         request,
@@ -747,7 +758,7 @@ class get_invoices_data(BaseModel):
     StatusFilter: str
 
 @router.post("/api/ledger/invoices/get-invoices")
-async def get_invoice_items(request: Request, data: get_invoices_data, token: str = Depends(require_valid_token)):
+async def get_invoice_items(request: Request, data: get_invoices_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all invoice items.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -800,7 +811,7 @@ class del_item_data(BaseModel):
     name: str
 
 @router.post("/api/ledger/invoices/delete-item")
-async def delete_item(request: Request, data: del_item_data, token: str = Depends(require_valid_token)):
+async def delete_item(request: Request, data: del_item_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is deleting an invoice item.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -821,7 +832,7 @@ class save_invoice_data(BaseModel):
     cfid: int|None
 
 @router.post("/api/ledger/invoices/save-invoice")
-async def save_invoice(request: Request, data: save_invoice_data, token: str = Depends(require_valid_token)):
+async def save_invoice(request: Request, data: save_invoice_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is saving the invoice (invoice  they just made.")
     datenow = datetime.datetime.now().strftime("%d-%m-%Y")
     with sqlite3.connect(DB_PATH) as conn:
@@ -856,7 +867,7 @@ async def save_invoice(request: Request, data: save_invoice_data, token: str = D
     return JSONResponse(content={"success": True}, status_code=200)
 
 @router.get("/api/ledger/invoices/get-invoice/{invoice_id}")
-async def get_invoice(request: Request, invoice_id: int, token: str = Depends(require_valid_token)):
+async def get_invoice(request: Request, invoice_id: int, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is fetching invoice {invoice_id}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -897,7 +908,7 @@ class toggle_paid_data(BaseModel):
    invoice_id: int
 
 @router.post("/api/ledger/invoices/toggle-paid")
-async def toggle_invoice_paid(request: Request, data: toggle_paid_data, token: str = Depends(require_valid_token)):
+async def toggle_invoice_paid(request: Request, data: toggle_paid_data, token: str = Depends(require_prechecks)):
     body = await request.json()
     new_status = bool(body.get("paid", False))
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is toggling invoice {data.invoice_id} paid={new_status}.")
@@ -920,7 +931,7 @@ class add_item_data(BaseModel):
     price: float
 
 @router.post("/api/ledger/invoices/add-item")
-async def add_possible_invoice_item(request: Request, data: add_item_data, token: str = Depends(require_valid_token)):
+async def add_possible_invoice_item(request: Request, data: add_item_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is adding invoice item {data.name} with value {data.price}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -940,7 +951,7 @@ async def add_possible_invoice_item(request: Request, data: add_item_data, token
             return JSONResponse(content={"success": False}, status_code=500)
 
 @router.get("/api/ledger/invoices/get-items")
-async def get_invoice_items(request: Request, token: str = Depends(require_valid_token)):
+async def get_invoice_items(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all invoice items.")
     with sqlite3.connect(DB_PATH) as conn:
         try:

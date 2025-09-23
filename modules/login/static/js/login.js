@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // redirect or update UI
                 window.location.href = '/';
             } else {
-                toast(result.message || 'Login failed. Check your credentials.');
+                toast(result.error || 'Login failed. Check your credentials.');
             }
         } catch (err) {
             console.error('Login error:', err);

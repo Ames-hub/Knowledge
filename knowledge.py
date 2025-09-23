@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from library.logbook import LogBookHandler
 from library.database import database
 from fastapi import Request, FastAPI
+from library import settings
 import importlib
 import uvicorn
 import asyncio
@@ -30,12 +31,24 @@ async def unauthorized_handler(request: Request, exc):
 </head>
 <body>
 <h1>You are being redirected after an unauthorized connection.</h1>
+<p>All this means, most likely, is that your session has expired.</p>
 <script>
     window.location.href = "/login";
 </script>
 </body>
     """
     return HTMLResponse(content, status_code=401)
+
+@fastapp.exception_handler(403)
+async def forbidden_handler(request: Request, exc):
+    logbook.info(f"IP {request.client.host} Attempted to connect but was Forbidden")
+    if str(exc) == "403: Account is arrested":
+        with open("modules/403-arrested.html", "r") as file:
+            content = file.read()
+    else:
+        with open("modules/403.html", "r") as file:
+            content = file.read()
+    return HTMLResponse(content, status_code=403)
 
 # noinspection PyUnusedLocal
 @fastapp.exception_handler(404)
@@ -93,17 +106,25 @@ for module_name in os.listdir(modules_dir):
             raise FileNotFoundError(f"No routes.py found in {module_name}")
 
 if __name__ == "__main__":
-    if __name__ == "__main__":
-        config = uvicorn.Config(
-            "knowledge:fastapp",
-            host="0.0.0.0",
-            port=WEB_PORT,
-            loop="asyncio",
-            lifespan="on",
-            reload=True
-        )
-        server = uvicorn.Server(config)
-        try:
-            asyncio.run(server.serve())
-        except KeyboardInterrupt:
-            print("Interrupt signal detected, Stopping server and shutting down.")
+    if settings.get.get("use_ssl", False) is True:
+        ssl_certfile_dir = os.path.abspath("certs/cert.pem")
+        ssl_keyfile_dir = os.path.abspath("certs/key.pem")
+    else:
+        ssl_certfile_dir = None
+        ssl_keyfile_dir = None
+
+    config = uvicorn.Config(
+        "knowledge:fastapp",
+        host="0.0.0.0",
+        port=WEB_PORT,
+        loop="asyncio",
+        lifespan="on",
+        reload=True,
+        ssl_certfile=ssl_certfile_dir,
+        ssl_keyfile=ssl_keyfile_dir
+    )
+    server = uvicorn.Server(config)
+    try:
+        asyncio.run(server.serve())
+    except KeyboardInterrupt:
+        print("Interrupt signal detected, Stopping server and shutting down.")

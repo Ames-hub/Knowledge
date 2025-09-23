@@ -1,6 +1,7 @@
 from library.logbook import LogBookHandler
-from library.database import DB_PATH
 from fastapi import HTTPException, Request
+from library.authperms import AuthPerms
+from library.database import DB_PATH
 import datetime
 import sqlite3
 import secrets
@@ -8,17 +9,31 @@ import bcrypt
 import time
 
 logbook = LogBookHandler('AUTH')
-
 expiration_hours = 168  # 1 Week
 
 # Simple in-memory rate limiter
 _login_attempts = {}
+arrested_ips = []
 
-def require_valid_token(request: Request):
+def require_prechecks(request: Request):
     token = request.cookies.get("sessionKey") or request.headers.get("Authorization")
 
     if not token or not authbook.verify_token(token):
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    username = authbook.token_owner(token)
+
+    good_authority = AuthPerms.verify_user(username, request.url.path)
+    if not good_authority:
+        raise HTTPException(status_code=403, detail="Invalid permissions to access this route.")
+
+    if authbook.check_arrested(username):
+        if request.client.host not in arrested_ips:
+            arrested_ips.append(request.client.host)
+            logbook.info(f"Arrested IP detected: {request.client.host}. Saving IP to list.")
+        else:
+            logbook.info(f"Arrested IP detected: {request.client.host}.")
+        raise HTTPException(status_code=403, detail="Account is arrested")
 
     return token
 
@@ -49,9 +64,14 @@ class autherrors:
             self.username = username
 
         def __str__(self):
-            return f"User \"{self.username}\"'s account has been arrested."
+            return f"User \"{self.username}\" Unauthorised, Account has been arrested. IP Logged for security purposes."
 
 class authbook:
+    @staticmethod
+    def list_users():
+        users = AuthPerms.list_users_perms()
+        return users
+
     @staticmethod
     def token_owner(token: str):
         try:
@@ -85,6 +105,11 @@ class authbook:
                 )
                 conn.commit()
                 logbook.info(f"Account under the name {username} created")
+
+                okay = AuthPerms.give_all_perms(username)
+                if not okay:
+                    logbook.warning("Error giving user all perms! User may be unfairly restricted.")
+
                 return True
         except sqlite3.IntegrityError:
             logbook.info(f"Attempted creation of existing account: {username}")
@@ -149,10 +174,23 @@ class authbook:
                 row = cur.fetchone()
                 if not row:
                     raise autherrors.UserNotFound(username)
-                return bool(row[0])
+                arrested = bool(row[0])
+                return arrested
         except sqlite3.Error as err:
             logbook.error("Database error in check_arrested", exception=err)
             return True  # assume arrested if DB fails
+
+    @staticmethod
+    def set_arrested(username: str, arrested: bool):
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                cur.execute("UPDATE authbook SET arrested = ? WHERE username = ?", (arrested, username))
+                conn.commit()
+                return True
+        except sqlite3.Error as err:
+            logbook.error("Database error in set_arrested", exception=err)
+            return False
 
 class UserLogin:
     def __init__(self, details: dict):
@@ -167,6 +205,18 @@ class UserLogin:
             # Username/password login
             self.username = details["username"]
             self.password = details["password"]
+            self.request_ip = details["request_ip"]
+
+            request_ip = details["request_ip"]
+            if authbook.check_arrested(self.username):
+                arrested_ips.append(request_ip)
+
+            if request_ip in arrested_ips:
+                logbook.info(f"Arrested IP detected: {request_ip}. Arresting user who tried to connect from that IP.")
+                # Arrest the account that tried to connect with that IP
+                authbook.set_arrested(self.username, True)
+                raise autherrors.AccountArrested(self.username)
+
             if not authbook.check_password(self.username, self.password):
                 raise autherrors.InvalidPassword(self.password)
             self.token = self.gen_token()

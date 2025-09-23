@@ -21,7 +21,7 @@ async def show_reg(request: Request):
 
 @router.post("/api/authbook/register")
 async def register(request: Request, data: RegisterData):
-    if settings.get.allow_registration() is False:
+    if not settings.get.allow_registration():
         return JSONResponse({"success": False, "error": "Registration has been disabled by administration."}, status_code=403)
     try:
         success = authbook.create_account(

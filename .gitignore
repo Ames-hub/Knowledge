@@ -5,3 +5,4 @@ venv
 logs
 ftp_user_files/*
 settings.json
+*.pem

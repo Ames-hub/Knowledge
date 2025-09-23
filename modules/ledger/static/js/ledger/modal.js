@@ -1,3 +1,5 @@
+// Modals.js
+
 // Handle click on "submit" buttons in incoming/outgoing
 document.addEventListener("click", (e) => {
   if (e.target.matches(".incoming button, .outgoing button")) {

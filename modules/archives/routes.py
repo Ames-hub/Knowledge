@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
-from library.auth import require_valid_token
+from library.authperms import set_permission
+from library.auth import require_prechecks
 from library.logbook import LogBookHandler
 from fastapi.responses import JSONResponse
 from library.database import DB_PATH
@@ -32,12 +33,13 @@ def check_archive_exists(archive_id):
         return cursor.fetchone() is not None
 
 @router.get("/archives")
-async def load_index(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="bulletin_archives")
+async def load_index(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the bulletins / tech memory section.")
     return templates.TemplateResponse("index.html", {"request": request})
 
 @router.post("/api/archives/save")
-async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = Depends(require_valid_token)):
+async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) is saving a PDF to the archives.")
 
@@ -71,7 +73,7 @@ async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = De
     return JSONResponse(content={"message": "PDF saved successfully.", "archive_id": archive_id})
 
 @router.post("/api/archives/delete")
-async def del_pdf(data: LoadRequest, request: Request, token: str = Depends(require_valid_token)):
+async def del_pdf(data: LoadRequest, request: Request, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) is deleting archive ID {data.id}.")
 
@@ -88,7 +90,8 @@ async def del_pdf(data: LoadRequest, request: Request, token: str = Depends(requ
         return JSONResponse(content={"message": "PDF deleted successfully.", "error": None, "success": True}, status_code=200)
 
 @router.get("/api/archives/get_all")
-async def get_all_pdfs(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="bulletin_archives")
+async def get_all_pdfs(request: Request, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) requested all PDF names in the archives.")
 
@@ -120,7 +123,8 @@ async def get_all_pdfs(request: Request, token: str = Depends(require_valid_toke
     )
 
 @router.post("/api/archives/load")
-async def load_pdf(data: LoadRequest, request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="bulletin_archives")
+async def load_pdf(data: LoadRequest, request: Request, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) is loading archive ID {data.id}.")
 

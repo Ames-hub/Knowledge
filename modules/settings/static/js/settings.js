@@ -33,3 +33,47 @@ function saveConfig() {
 		alert('Failed to save settings. Check console.');
 	});
 }
+
+function loadConfig() {
+	fetch('/api/settings/load')
+		.then(res => {
+			if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+			return res.json();
+		})
+		.then(data => {
+			const inputs = document.querySelectorAll('#config-container .config-card input, #config-container .config-card select');
+			
+			let weekdays_map = {
+				1: "monday",
+				2: "tuesday",
+				3: "wednesday",
+				4: "thursday",
+				5: "friday",
+				6: "saturday",
+				7: "sunday"
+			};
+			
+			// Convert from number to text
+			data.weekday_start = weekdays_map[data.weekday_start]
+
+			const config = data;
+
+			inputs.forEach(input => {
+				const name = input.dataset.configName;
+				if (!name || !(name in config)) return;
+				let value = config[name];
+				
+				if (input.type === 'checkbox') {
+					input.checked = Boolean(value);
+				} else {
+					input.value = value;
+				}
+			});
+		})
+		.catch(err => {
+			console.error('Error loading settings:', err);
+			alert('Failed to load settings. Check console.');
+		});
+}
+
+document.addEventListener('DOMContentLoaded', loadConfig);

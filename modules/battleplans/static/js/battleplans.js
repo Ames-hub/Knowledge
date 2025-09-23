@@ -59,7 +59,6 @@ async function loadBattlePlans() {
 
     // Store all plans for searching
     allBattlePlans = Object.entries(data).map(([planName, dateObj]) => {
-      // parse day, month and optional year safely
       const dayNum = parseInt(String(dateObj.day || "").replace(/^0+/, "") || "1", 10);
       const yearNum = dateObj.year ? parseInt(dateObj.year, 10) : new Date().getFullYear();
       const monthIdx = parseMonthIndex(dateObj.month || "");
@@ -72,10 +71,8 @@ async function loadBattlePlans() {
       };
     });
 
-    // Sort by date (numeric). Ascending by default; flip if sortDescending true.
     allBattlePlans.sort((a, b) => sortDescending ? b.timestamp - a.timestamp : a.timestamp - b.timestamp);
 
-    // Initially show all plans
     filterBattlePlans("");
   } catch (err) {
     console.error(err);
@@ -99,7 +96,6 @@ async function loadFullBP({ day, month }, do_alert = true) {
     currentBPId = bpData.bp_id || null;
     if (bpIndicator) bpIndicator.textContent = `BattlePlan: ${bpData.date || fullDateStr}`;
 
-    // only run after we know the ID
     await loadQuotas(currentBPId, currentBPDate);
     await updateQuotaStatus(currentBPId);
 
@@ -112,13 +108,13 @@ async function loadFullBP({ day, month }, do_alert = true) {
       li.innerHTML = `
         <input type="checkbox" class="task-checkbox" ${task.done ? "checked" : ""}>
         <span class="task-text">${task.text}</span>
+        <span class="task-category">[${task.category}]</span>
         <button class="delete-task-btn">Delete</button>
       `;
 
       const checkbox = li.querySelector(".task-checkbox");
       const deleteBtn = li.querySelector(".delete-task-btn");
 
-      // Checkbox toggle with guard
       checkbox.addEventListener("change", async () => {
         if (!(await ensureEditAllowed(checkbox))) return;
         const taskId = li.dataset.id;
@@ -137,7 +133,6 @@ async function loadFullBP({ day, month }, do_alert = true) {
         }
       });
 
-      // Delete button with guard
       deleteBtn.addEventListener("click", async () => {
         if (!(await ensureEditAllowed(deleteBtn))) return;
         const taskId = li.dataset.id;
@@ -213,18 +208,19 @@ addPlanBtn.addEventListener("click", async () => {
   }
 });
 
-// Auto-load today's BP
 loadFullBP({ day: String(new Date().getDate()).padStart(2, "0"), month: new Date().toLocaleString("default", { month: "long" }) });
 
 // ==================== Tasks ====================
 const newTaskForm = document.getElementById("new-task-form");
 const taskInput = document.getElementById("task-input");
+const taskCategory = document.getElementById("task-category");
 
 newTaskForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!(await ensureEditAllowed(taskInput))) return;
 
   const text = taskInput.value.trim();
+  const category = taskCategory.value;
   if (!text || !currentBPId) {
     toast("No active BattlePlan. Create one first.", "error");
     return;
@@ -234,7 +230,7 @@ newTaskForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/bps/task/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: currentBPDate, text })
+      body: JSON.stringify({ "date": currentBPDate, "text": text, "category": category })
     });
     if (!res.ok) throw new Error("Failed to add task");
     const newTask = await res.json();
@@ -246,6 +242,7 @@ newTaskForm.addEventListener("submit", async (e) => {
     li.innerHTML = `
       <input type="checkbox" class="task-checkbox">
       <span class="task-text">${newTask.text}</span>
+      <span class="task-category">[${category}]</span>
       <button class="delete-task-btn">Delete</button>
     `;
 
@@ -282,6 +279,7 @@ newTaskForm.addEventListener("submit", async (e) => {
 
     taskList.appendChild(li);
     taskInput.value = "";
+    taskCategory.value = "work";
   } catch (err) {
     console.error(err);
     toast("Failed to add new task.", "error");
@@ -289,6 +287,7 @@ newTaskForm.addEventListener("submit", async (e) => {
 });
 
 // ==================== Quota Handling ====================
+// (unchanged from your file)
 const quotaList = document.getElementById("quota-list");
 
 function debounce(fn, wait = 700) {
@@ -379,8 +378,7 @@ async function updateQuotaStatus(bpId, bpDate = currentBPDate) {
       return;
     }
     const weekly = await res.text();
-    quotaStatus.textContent =
-      `Production this week: ${weekly}`
+    quotaStatus.textContent = `Production this week: ${weekly}`
   } catch {
     quotaStatus.textContent = "Production this week: N/A";
   }
@@ -643,3 +641,124 @@ searchBar.addEventListener("input", (e) => {
   clearSearchBtn.style.display = e.target.value ? "block" : "none";
   filterBattlePlans(e.target.value);
 });
+
+// ==================== Export to PDF ====================
+async function exportBattlePlanToPDF() {
+  if (!currentBPId || !currentBPDate) {
+    toast("No active BattlePlan to export", "error");
+    return;
+  }
+
+  if (typeof window.jspdf === "undefined") {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      script.onload = resolve;
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // ================= HEADER =================
+  doc.setFillColor(41, 128, 185);
+  doc.rect(0, 0, 210, 20, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.text("BATTLE PLAN", 14, 13);
+  doc.setFontSize(11);
+  doc.text(`Date: ${currentBPDate}`, 160, 13);
+
+  doc.setTextColor(0, 0, 0);
+  let y = 30;
+
+  // ================= TASKS =================
+  doc.setFontSize(16);
+  doc.setTextColor(44, 62, 80);
+  doc.text("Tasks", 14, y);
+  y += 6;
+
+  doc.setFontSize(11);
+  const tasks = [...taskList.querySelectorAll(".task-item")];
+
+  tasks.forEach((task, i) => {
+    const text = task.querySelector(".task-text").textContent;
+    const category = task.querySelector(".task-category")?.textContent || "";
+    const checked = task.querySelector(".task-checkbox").checked;
+
+    const fullText = `${text} ${category}`;
+
+    const wrapped = doc.splitTextToSize(fullText, 170); // wrap to fit width
+
+    if (i % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(10, y - 4, 190, 8 * wrapped.length, "F");
+    }
+
+    doc.setDrawColor(41, 128, 185);
+    doc.rect(14, y - 3, 4, 4);
+    if (checked) {
+      doc.setDrawColor(39, 174, 96);
+      doc.setLineWidth(0.6);
+      doc.line(14, y - 3, 18, y + 1);
+      doc.line(18, y - 3, 14, y + 1);
+    }
+
+    doc.setTextColor(0, 0, 0);
+    doc.text(wrapped, 22, y + 1);
+
+    y += wrapped.length * 6 + 4;
+
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+  });
+
+  // ================= QUOTAS =================
+  y += 8;
+  doc.setFontSize(16);
+  doc.setTextColor(44, 62, 80);
+  doc.text("Quotas", 14, y);
+  y += 6;
+
+  const quotas = [...quotaList.querySelectorAll(".quota-row")];
+  doc.setFontSize(11);
+  doc.setDrawColor(200, 200, 200);
+  doc.line(14, y, 196, y);
+  y += 4;
+
+  quotas.forEach((q, i) => {
+    const name = q.querySelector(".quota-name").textContent;
+    const done = q.querySelector(".quota-done").value;
+    const needed = q.querySelector(".quota-needed").value;
+
+    if (i % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(14, y - 4, 182, 8, "F");
+    }
+
+    doc.text(name, 18, y + 1);
+    doc.text(`${done} / ${needed}`, 170, y + 1, { align: "right" });
+
+    y += 10;
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+  });
+
+  // ================= FOOTER =================
+  doc.setFillColor(41, 128, 185);
+  doc.rect(0, 287, 210, 10, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text("Generated by Knowledge | Toolbox Program", 105, 293, { align: "center" });
+
+  doc.save(`BattlePlan-${currentBPDate}.pdf`);
+}
+
+const exportPdfBtn = document.getElementById("export-pdf-btn");
+exportPdfBtn.addEventListener("click", exportBattlePlanToPDF);

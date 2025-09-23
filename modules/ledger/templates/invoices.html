@@ -83,6 +83,33 @@
     <ul id="past-invoices"></ul>
   </section>
 
+  <!-- Invoice Details Section -->
+  <section class="invoice-details-section">
+    <h2>Invoice Details</h2>
+    <form id="invoice-details-form" class="invoice-details-form">
+      <div class="form-row">
+        <label for="billing-name">Billing Name:</label>
+        <input type="text" id="billing-name" placeholder="Customer Name" required>
+      </div>
+      <div class="form-row">
+        <label for="billing-address">Billing Address:</label>
+        <textarea id="billing-address" placeholder="Street, City, ZIP" rows="3" required></textarea>
+      </div>
+      <div class="form-row">
+        <label for="billing-email">Email:</label>
+        <input type="email" id="billing-email" placeholder="customer@example.com">
+      </div>
+      <div class="form-row">
+        <label for="billing-phone">Phone:</label>
+        <input type="tel" id="billing-phone" placeholder="+61 400 000 000">
+      </div>
+      <div class="form-row">
+        <label for="invoice-notes">Notes:</label>
+        <textarea id="invoice-notes" placeholder="Additional information (optional)" rows="2"></textarea>
+      </div>
+    </form>
+  </section>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="/static/ledger/js/invoices/invoices.js"></script>
 </main>

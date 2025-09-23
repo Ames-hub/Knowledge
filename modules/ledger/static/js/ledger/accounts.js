@@ -1,3 +1,5 @@
+// Accounts.js
+
 document.addEventListener("DOMContentLoaded", () => {
   loadAccounts();
 

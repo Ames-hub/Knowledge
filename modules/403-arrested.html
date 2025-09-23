@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Restricted</title>
+<style>
+  /* Background and body styling */
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace;
+    background: radial-gradient(circle at center, #1a0000, #000000);
+    color: #ff0000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Container for the message */
+  .container {
+    text-align: center;
+    max-width: 700px;
+    padding: 40px;
+    border: 4px solid #ff0000;
+    background: rgba(0, 0, 0, 0.85);
+    box-shadow: 0 0 50px #ff0000, 0 0 100px #ff0000 inset;
+    animation: pulse 1.5s infinite alternate;
+  }
+
+  /* Main heading */
+  h1 {
+    font-size: 3em;
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+  }
+
+  /* Subheading */
+  h2 {
+    font-size: 1.5em;
+    margin: 0 0 30px 0;
+    color: #ff4d4d;
+    text-shadow: 0 0 15px #ff0000;
+  }
+
+  /* Warning text */
+  p {
+    font-size: 1em;
+    line-height: 1.5em;
+    color: #ff6666;
+  }
+
+  /* Red alert animation */
+  @keyframes pulse {
+    0% { box-shadow: 0 0 30px #ff0000, 0 0 60px #ff0000 inset; }
+    100% { box-shadow: 0 0 60px #ff0000, 0 0 120px #ff0000 inset; }
+  }
+
+  /* Flickering text effect */
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  h1, h2 {
+    animation: flicker 1s infinite;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Account Restricted</h1>
+  <h2>Suspicious Activity Detected</h2>
+  <p>
+    Your account has been flagged, and your access to "Knowledge" has been terminated.<br>
+    Any further attempts to bypass restrictions will result in permanent action. Your IP has been logged for security purposes.
+  </p>
+</div>
+</body>
+</html>

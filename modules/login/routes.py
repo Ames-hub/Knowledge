@@ -19,11 +19,13 @@ class LoginData(BaseModel):
 
 @router.get("/login", response_class=HTMLResponse)
 async def show_login(request: Request):
+    logbook.info(f"IP {request.client.host} accessed the login page.")
     return templates.TemplateResponse("index.html", {"request": request})
 
 @router.post("/api/token/check")
-async def verify_token(data: TokenData):
+async def verify_token(request: Request, data: TokenData):
     verified = authbook.verify_token(data.token)
+    logbook.info(f"IP {request.client.host} ({authbook.token_owner(data.token)}) has attempted to verify their token.")
     return JSONResponse(content={'verified': verified}, status_code=200 if verified else 401)
 
 @router.post("/api/user/login")
@@ -33,6 +35,7 @@ async def login_user(request: Request, data: LoginData):
         user = UserLogin(details={
             "username": data.username,
             "password": data.password,
+            "request_ip": request.client.host
         })
     except autherrors.UserNotFound:
         logbook.info(f"Under the IP {request.client.host}, Non-Existent user {data.username} attempted to log in unsuccessfully.")

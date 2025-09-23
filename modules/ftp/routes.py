@@ -1,18 +1,19 @@
-from fastapi.responses import HTMLResponse, FileResponse
-from library.auth import require_valid_token, authbook
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from library.auth import require_prechecks, authbook
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
+from library.authperms import set_permission
 from library.logbook import LogBookHandler
 from pydantic import BaseModel
+from typing import List
+import base64
 import os
 import re
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 logbook = LogBookHandler('File Server')
-
 JAIL_PATH = "ftp_user_files/"
-
 os.makedirs(JAIL_PATH, exist_ok=True)
 
 class walk_data(BaseModel):
@@ -57,11 +58,13 @@ def list_directory(path: str):
     return all_files, all_folders
 
 @router.get("/ftp", response_class=HTMLResponse)
+@set_permission("ftp_server")
 async def ftp(request: Request):
     return templates.TemplateResponse("ftp.html", {"request": request})
 
 @router.post("/api/ftp/walk")
-async def walk_ftp(request: Request, data: walk_data, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def walk_ftp(request: Request, data: walk_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) accessed ftp dir {data.path}.")
 
     try:
@@ -84,17 +87,6 @@ async def walk_ftp(request: Request, data: walk_data, token: str = Depends(requi
         status_code=200
     )
 
-# Pydantic model for JSON part (metadata only)
-class UploadMeta(BaseModel):
-    path: str
-
-from pydantic import BaseModel
-from typing import List
-import base64
-import os
-from fastapi.responses import JSONResponse
-from fastapi import Request, Depends
-
 class FileData(BaseModel):
     name: str
     data: str  # base64 string
@@ -104,7 +96,8 @@ class UploadData(BaseModel):
     files: List[FileData] = []
 
 @router.post("/api/ftp/upload")
-async def upload_ftp(request: Request, data: UploadData, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def upload_ftp(request: Request, data: UploadData, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is uploading files to {data.path}.")
 
     file_path, jail_real = resolve_path(data.path)
@@ -127,7 +120,8 @@ async def upload_ftp(request: Request, data: UploadData, token: str = Depends(re
     return JSONResponse(content={"success": True, "files": saved_files}, status_code=200)
 
 @router.get("/api/ftp/download")
-async def download_ftp(request: Request, path: str, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def download_ftp(request: Request, path: str, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) downloaded file {path}.")
 
     try:
@@ -144,7 +138,8 @@ class delete_data(BaseModel):
     path: str
 
 @router.post("/api/ftp/delete")
-async def delete_ftp(request: Request, data: delete_data, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def delete_ftp(request: Request, data: delete_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is deleting file/folder {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -176,7 +171,8 @@ def validate_path(path):
         raise ValueError("Invalid path.")
 
 @router.post("/api/ftp/rename")
-async def rename_ftp(request: Request, data: rename_data, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def rename_ftp(request: Request, data: rename_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is renaming file/folder {data.path} to {data.new_name}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -201,7 +197,8 @@ class mk_folder_data(BaseModel):
     name: str
 
 @router.post("/api/ftp/create-folder")
-async def create_folder(request: Request, data: mk_folder_data, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def create_folder(request: Request, data: mk_folder_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is creating folder {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -221,7 +218,8 @@ class mk_file_data(BaseModel):
     name: str
 
 @router.post("/api/ftp/create-file")
-async def create_file(request: Request, data: mk_file_data, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def create_file(request: Request, data: mk_file_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is creating file {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -241,7 +239,8 @@ class read_file_data(BaseModel):
     path: str
 
 @router.post("/api/ftp/read-file")
-async def read_file(request: Request, data: read_file_data, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def read_file(request: Request, data: read_file_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is reading file {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -262,7 +261,8 @@ class save_file_data(BaseModel):
     content: str
 
 @router.post("/api/ftp/save")
-async def save_file(request: Request, data: save_file_data, token: str = Depends(require_valid_token)):
+@set_permission("ftp_server")
+async def save_file(request: Request, data: save_file_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is the saving file {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 

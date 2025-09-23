@@ -17,11 +17,18 @@ class database:
         """
         # Function I pulled from another project.
         # Using this dict, it formats the SQL query to create the tables if they don't exist
+
         table_dict = {
             'authbook': {
                 'username': 'TEXT PRIMARY KEY',
                 'password': 'TEXT NOT NULL',
                 'arrested': 'BOOLEAN NOT NULL DEFAULT FALSE',
+            },
+            'auth_permissions': {
+                'entry_id': 'INTEGER PRIMARY KEY AUTOINCREMENT',  # Just for easy editing in DB viewers
+                'username': 'TEXT NOT NULL',
+                'permission': 'TEXT NOT NULL',
+                'allowed': 'BOOLEAN NOT NULL DEFAULT FALSE',
             },
             'revoked_tokens': {
                 'token': 'TEXT NOT NULL PRIMARY KEY',
@@ -107,6 +114,7 @@ class database:
                 "account_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "account_name": "TEXT NOT NULL",
                 "balance": "REAL NOT NULL DEFAULT 0.0",
+                "owner": "TEXT"
             },
             "finance_transactions": {
                 "transaction_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -157,6 +165,7 @@ class database:
                 "task": "TEXT NOT NULL",
                 "is_done": "BOOLEAN NOT NULL DEFAULT FALSE",
                 "owner": "TEXT NOT NULL",
+                "category": "TEXT NOT NULL DEFAULT 'Other'",
             },
             "bp_quotas": {
                 "quota_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -223,7 +232,6 @@ class database:
                 "dyn_4": "INT",  # The int is strength. 1 = Weak, 2 = Normal, 3 = Strong.
             }
         }
-
         for table_name, columns in table_dict.items():
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()

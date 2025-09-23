@@ -14,7 +14,7 @@ body {
 }
 
 /* ====== Sections ====== */
-.items-section, .invoice-section, .past-invoices-section {
+.items-section, .invoice-section, .past-invoices-section, .invoice-details-section {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -236,8 +236,152 @@ button:disabled {
 }
 
 .past-invoices-section {
-  max-height: 400px;
+  max-height: calc(100% - 230px);
   overflow-y: auto;
+}
+
+/* ====== Past Invoice Cards ====== */
+#past-invoices {
+  display: grid;
+  gap: 1rem;
+}
+
+#past-invoices .invoice-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#past-invoices .invoice-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.invoice-date {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.invoice-status {
+  font-size: 0.9rem;
+}
+
+.invoice-body {
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.invoice-total {
+  font-weight: 600;
+}
+
+.invoice-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.invoice-buttons button {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+}
+
+.status.paid {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.status.unpaid {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.delete-item-btn {
+  float: right;
+  position: relative;
+  top: -9px;  /* Its weirdly going to the bottom, so this fixes it. */
+  left: 12px;
+}
+
+.invoice-cfid {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#cfid-input {
+  width: 120px;
+  padding: 4px 8px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* ====== Invoice Details Section ====== */
+.invoice-details-section {
+  height: calc(100% - 230px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.invoice-details-section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #0f172a;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.invoice-details-form .form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.invoice-details-form label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #1e293b;
+}
+
+.invoice-details-form input,
+.invoice-details-form textarea {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #f9fafb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.invoice-details-form textarea {
+  resize: vertical;
+}
+
+.invoice-details-form input:focus,
+.invoice-details-form textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 3px rgba(37, 99, 235, 0.3);
 }
 
 /* ====== Mobile-First Responsiveness ====== */
@@ -440,96 +584,13 @@ button:disabled {
   button:hover {
     transform: translateY(-2px);
   }
-}
 
-/* ====== Past Invoice Cards ====== */
-#past-invoices {
-  display: grid;
-  gap: 1rem;
-}
+  .invoice-details-form .form-row {
+    width: 100%;
+  }
 
-#past-invoices .invoice-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-#past-invoices .invoice-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-}
-
-.invoice-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.invoice-date {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.invoice-status {
-  font-size: 0.9rem;
-}
-
-.invoice-body {
-  margin-bottom: 0.75rem;
-  font-size: 0.95rem;
-  color: #334155;
-}
-
-.invoice-total {
-  font-weight: 600;
-}
-
-.invoice-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.invoice-buttons button {
-  flex: 1 1 auto;
-  font-size: 0.85rem;
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
-}
-
-.status.paid {
-  color: #16a34a;
-  font-weight: 600;
-}
-
-.status.unpaid {
-  color: #dc2626;
-  font-weight: 600;
-}
-
-.delete-item-btn {
-  float: right;
-  position: relative;
-  top: -9px;  /* Its weirdly going to the bottom, so this fixes it. */
-  left: 12px;
-}
-
-.invoice-cfid {
-  margin: 10px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#cfid-input {
-  width: 120px;
-  padding: 4px 8px;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  font-size: 14px;
+  .invoice-details-form input,
+  .invoice-details-form textarea {
+    width: 100%;
+  }
 }

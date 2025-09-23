@@ -1,0 +1,77 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#cardsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.user-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 20px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-card h2 {
+  margin: 0;
+  font-size: 1.2em;
+  word-break: break-word;
+}
+
+.arrested {
+  color: red;
+  font-weight: bold;
+}
+
+.permissions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.permission {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1 1 45%;
+  min-width: 100px;
+}
+
+.permission input {
+  pointer-events: none; /* display-only */
+}
+
+.arrest-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.arrest-btn.arrest {
+  background: red;
+  color: white;
+}
+
+.arrest-btn.release {
+  background: green;
+  color: white;
+}

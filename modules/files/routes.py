@@ -1,7 +1,8 @@
 from modules.dianetics.routes import update_mind_class_estimation
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
-from library.auth import require_valid_token
+from library.authperms import set_permission
+from library.auth import require_prechecks
 from fastapi.responses import HTMLResponse
 from library.logbook import LogBookHandler
 from fastapi.responses import JSONResponse
@@ -880,11 +881,13 @@ class centralfiles:
 
 # noinspection PyUnusedLocal
 @router.get("/files", response_class=HTMLResponse)
-async def show_reg(request: Request, token: str = Depends(require_valid_token)):
-    return templates.TemplateResponse("index.html", {"request": request})
+@set_permission(permission="central_files")
+async def show_reg(request: Request, token: str = Depends(require_prechecks)):
+    return templates.TemplateResponse(request, "index.html")
 
 @router.get("/files/dupecheck/{name}", response_class=HTMLResponse)
-async def dupe_check(request: Request, name: str, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def dupe_check(request: Request, name: str, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host}, User {authbook.token_owner(token)} Has checked for duplicates for cfid {name}")
     result = centralfiles.dupe_check(str(name))
     if result["exists"]:
@@ -896,7 +899,8 @@ async def dupe_check(request: Request, name: str, token: str = Depends(require_v
             return JSONResponse(content={"exists": -1, "error": result["error"]}, status_code=500)
 
 @router.get("/files/get/{cfid}")
-async def get_file(request: Request, cfid: int, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def get_file(request: Request, cfid: int, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} Has fetched the folder for cfid {cfid} under account {authbook.token_owner(token)}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     assosciated_invoices = centralfiles.get_assosciated_invoices(cfid)
@@ -915,7 +919,8 @@ async def get_file(request: Request, cfid: int, token: str = Depends(require_val
     )
 
 @router.post("/api/files/modify", response_class=JSONResponse)
-async def modify_file(data: ModifyFileData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def modify_file(data: ModifyFileData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from account {authbook.token_owner(token)} to modify cfid {data.cfid}: field '{data.field}' with value '{data.value}'")
 
     try:
@@ -971,7 +976,8 @@ async def modify_file(data: ModifyFileData, token: str = Depends(require_valid_t
         return JSONResponse(content={"success": False, "error": "Internal server error"}, status_code=500)
 
 @router.post("/api/files/note/modify", response_class=JSONResponse)
-async def modify_note(request: Request, data: NoteData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def modify_note(request: Request, data: NoteData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host} under account {authbook.token_owner(token)} to modify note ID {data.note_id} to \"{data.note}\"")
     success = centralfiles.notes(data.note_id).modify(data.note)
     if success:
@@ -980,7 +986,8 @@ async def modify_note(request: Request, data: NoteData, token: str = Depends(req
         return JSONResponse(content={"success": False, "error": "Update failed"}, status_code=400)
 
 @router.post("/api/files/note/delete", response_class=JSONResponse)
-async def delete_note(request: Request, data: NoteDeleteData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def delete_note(request: Request, data: NoteDeleteData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host} to DELETE note ID {data.note_id} by account {authbook.token_owner(token)}")
     success = centralfiles.notes(data.note_id).delete()
     if success:
@@ -989,7 +996,8 @@ async def delete_note(request: Request, data: NoteDeleteData, token: str = Depen
         return JSONResponse(content={"success": False, "error": "Deletion failed"}, status_code=400)
 
 @router.post("/api/files/note/create", response_class=JSONResponse)
-async def create_note(request: Request, data: NoteCreateData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def create_note(request: Request, data: NoteCreateData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host} to CREATE a note by account {authbook.token_owner(token)}")
 
     author = authbook.token_owner(token)
@@ -1009,7 +1017,8 @@ async def create_note(request: Request, data: NoteCreateData, token: str = Depen
         return JSONResponse(content={"success": False, "error": "Create failed"}, status_code=400)
 
 @router.get("/api/files/get_names", response_class=HTMLResponse)
-async def get_names(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def get_names(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} Has fetched all names under account {authbook.token_owner(token)}")
     names, cfid_list = centralfiles.get_names() # type: ignore
     data = {
@@ -1022,7 +1031,8 @@ async def get_names(request: Request, token: str = Depends(require_valid_token))
     )
 
 @router.get("/api/files/get_all_profile", response_class=HTMLResponse)
-async def get_all_profiles(request: Request, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def get_all_profiles(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} Has fetched all names under account {authbook.token_owner(token)}")
     data = {
         "profiles": centralfiles.get_all_profiles(),
@@ -1033,7 +1043,8 @@ async def get_all_profiles(request: Request, token: str = Depends(require_valid_
     )
 
 @router.post("/api/files/get_profile", response_class=JSONResponse)
-async def get_profile(request: Request, data: NamePostData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def get_profile(request: Request, data: NamePostData, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} fetched profile '{data.name}' under account {authbook.token_owner(token)}")
     try:
         profile = centralfiles.get_profile(name=data.name)
@@ -1044,7 +1055,8 @@ async def get_profile(request: Request, data: NamePostData, token: str = Depends
         return JSONResponse(content={"error": "Multiple profiles with that name."}, status_code=400)
 
 @router.post("/api/files/create", response_class=JSONResponse)
-async def create_name(request: Request, data: NamePostData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def create_name(request: Request, data: NamePostData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to CREATE name '{data.name}'")
     cfid = centralfiles.add_name(data.name)
     if cfid is not None:
@@ -1053,7 +1065,8 @@ async def create_name(request: Request, data: NamePostData, token: str = Depends
         return JSONResponse(content={"success": False, "error": "Creation failed"}, status_code=400)
 
 @router.post("/api/files/delete", response_class=JSONResponse)
-async def delete_name(request: Request, data: DeleteNameData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def delete_name(request: Request, data: DeleteNameData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to DELETE name '{data.name}'")
     success = centralfiles.delete_name(data.name)
     if success:
@@ -1066,7 +1079,8 @@ class SubmitActionData(BaseModel):
     action: str
 
 @router.post("/api/files/submit_action", response_class=JSONResponse)
-async def submit_action(request: Request, data: SubmitActionData, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def submit_action(request: Request, data: SubmitActionData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to SUBMIT action '{data.action}' for cfid {data.cfid}")
     success = centralfiles.dianetics.modify(data.cfid).add_action(data.action)
     if success:
@@ -1075,7 +1089,8 @@ async def submit_action(request: Request, data: SubmitActionData, token: str = D
         return JSONResponse(content={"success": False, "error": "Action submission failed"}, status_code=400)
 
 @router.get("/api/files/get_actions/{cfid}", response_class=JSONResponse)
-async def submit_action(request: Request, cfid, token: str = Depends(require_valid_token)):
+@set_permission(permission="central_files")
+async def submit_action(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to get all actions for cfid {cfid}")
     actions = centralfiles.dianetics.list_actions(cfid)
     return JSONResponse(content=actions, status_code=200)
