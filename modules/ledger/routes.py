@@ -660,13 +660,20 @@ class debt_data(BaseModel):
     description: str
     start_date: str | None = None
     end_date: str | None = None
-    cfid: int|None
+    cfid: int|str|None
 
 @router.post("/api/finances/debts/add")
 @set_permission(permission="ledger")
 async def add_debt(request: Request, data: debt_data, token: str = Depends(require_prechecks)):
     debt_id = debts.find_debt_id(data.debtor, data.debtee)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has added a debt of {data.amount} from the debt with the ID {debt_id}.")
+
+    if data.cfid is not None:
+        if data.cfid.isnumeric():
+            data.cfid = int(data.cfid)
+        else:
+            data.cfid = None
+
     try:
         if not debts.check_exists(debt_id):
             debt_id = debts.create_new_debt(
