@@ -14,6 +14,7 @@ async function loadQuotas(bpId, bpDate = currentBPDate) {
       const row = document.createElement("div");
       row.className = "quota-row";
       row.dataset.quotaId = quota.quota_id;
+      row.dataset.bpId = bpId;
 
       row.innerHTML = `
         <span class="quota-name">${quota.name}</span>
@@ -81,30 +82,46 @@ async function updateQuotaStatus(bpId, bpDate = currentBPDate) {
     if (!res.ok) return;
 
     const weekly = await res.json();
-    const totalsForBp = weekly.weekly_totals?.[bpId];
+    
+    // Calculate weekly totals from the array
+    const weeklyTotals = {};
+    if (Array.isArray(weekly)) {
+      weekly.forEach(dayData => {
+        if (dayData && typeof dayData === 'object') {
+          Object.entries(dayData).forEach(([quotaName, amount]) => {
+            weeklyTotals[quotaName] = (weeklyTotals[quotaName] || 0) + amount;
+          });
+        }
+      });
+    }
+    
+    // Find ALL quota rows for this bpId
+    const quotaRows = document.querySelectorAll(`.quota-row[data-bp-id="${String(bpId)}"]`);
+    if (!quotaRows.length) return;
 
-    // Find the quota row container for this bpId
-    const quotaRow = document.querySelector(`.quota-row[data-bp-id="${bpId}"]`);
-    if (!quotaRow) return;
+    quotaRows.forEach(quotaRow => {
+      // Remove old breakdown if it exists
+      const oldBreakdown = quotaRow.querySelector(".weekly-breakdown");
+      if (oldBreakdown) oldBreakdown.remove();
 
-    // Remove old breakdown if it exists
-    const oldBreakdown = quotaRow.querySelector(".weekly-breakdown");
-    if (oldBreakdown) oldBreakdown.remove();
+      // Get the quota name from this specific row
+      const quotaNameElement = quotaRow.querySelector(".quota-name");
+      const quotaName = quotaNameElement ? quotaNameElement.textContent.trim() : null;
+      
+      if (quotaName && weeklyTotals[quotaName] !== undefined) {
+        // Create a new breakdown element
+        const breakdownDiv = document.createElement("div");
+        breakdownDiv.className = "weekly-breakdown";
 
-    if (totalsForBp && Object.keys(totalsForBp).length > 0) {
-      // Create a new breakdown element
-      const breakdownDiv = document.createElement("div");
-      breakdownDiv.className = "weekly-breakdown";
-
-      for (const [statName, total] of Object.entries(totalsForBp)) {
+        // Display only the relevant quota's weekly total
         const statEl = document.createElement("span");
         statEl.className = "weekly-stat";
-        statEl.textContent = `${statName}: ${total}`;
+        statEl.textContent = `Weekly: ${weeklyTotals[quotaName]}`;
         breakdownDiv.appendChild(statEl);
-      }
 
-      quotaRow.appendChild(breakdownDiv);
-    }
+        quotaRow.appendChild(breakdownDiv);
+      }
+    });
   } catch (err) {
     console.error("Error fetching weekly production:", err);
   }

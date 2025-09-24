@@ -44,8 +44,6 @@ async def login_user(request: Request, data: LoginData):
         logbook.info(f"Under the IP {request.client.host}, user {data.username} attempted to log in unsuccessfully.")
         return JSONResponse(content={'error': str(err)}, status_code=401)
 
-    token = user.gen_token()
-    user.store_token(token)
     logbook.info(f"Under the IP {request.client.host}, user {data.username} successfully logged in.")
 
-    return JSONResponse(content={'token': token}, status_code=200)
+    return JSONResponse(content={'token': user.token}, status_code=200)

@@ -7,6 +7,7 @@ from library import settings
 import importlib
 import uvicorn
 import asyncio
+import secrets
 import os
 
 #==============CONFIG==============#
@@ -17,6 +18,15 @@ fastapp = FastAPI()
 database.modernize()
 logbook = LogBookHandler('root')
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+
+# The FORCE KEY is a key you can enter into the username field of login with as "<USERNAME:FORCE_KEY>" to get a login going without the password.
+# The forcekey should never be revealed.
+FORCE_KEY = secrets.token_urlsafe(16)
+print(f"THE FORCE KEY FOR THIS SESSION IS: {FORCE_KEY}")
+
+# Save it for use elsewhere
+with open('forcekey', 'w') as f:
+    f.write(FORCE_KEY)
 
 # noinspection PyUnusedLocal
 @fastapp.exception_handler(401)

