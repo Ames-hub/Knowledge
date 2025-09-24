@@ -106,7 +106,7 @@ for module_name in os.listdir(modules_dir):
             raise FileNotFoundError(f"No routes.py found in {module_name}")
 
 if __name__ == "__main__":
-    if settings.get.get("use_ssl", False) is True:
+    if settings.get.use_ssl() is True:
         ssl_certfile_dir = os.path.abspath("certs/cert.pem")
         ssl_keyfile_dir = os.path.abspath("certs/key.pem")
     else:

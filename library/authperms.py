@@ -1,10 +1,13 @@
+from library.settings import make_settings_file, SETTINGS_PATH
 from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from fastapi import Request
 from functools import wraps
 import sqlite3
+import json
+import os
 
-logbook = LogBookHandler("AUTHPERMS")
+logbook = LogBookHandler("AUTH-PERMS")
 
 valid_perms = [
     'central_files',
@@ -18,20 +21,48 @@ valid_perms = [
     'app_settings'
 ]
 
-page_perms = {}
-
 def set_permission(permission: str):
     """
     Used for adding a permission requirement to a route at launch.
+    Automatically uses the route template, ignoring dynamic parameters.
     """
+    if not os.path.exists(SETTINGS_PATH):
+        make_settings_file()
+
     def decorator(route_func):
-        @wraps(route_func)  # <-- crucial. FastAPI Cries without it
+        @wraps(route_func)
         async def wrapper(request: Request, *args, **kwargs):
-            path = request.url.path
-            page_perms[path] = permission
+            # Use the route template from FastAPI, not the full path that'll have used parameters and stuff.
+            path = request.scope.get("route").path
+
+            # remove trailing slash
+            if path != '/' and path.endswith('/'):
+                path = path[:-1]
+
+            with open(SETTINGS_PATH, 'r') as file:
+                data = json.load(file)
+
+            if data.get("route_perms") is None:
+                data['route_perms'] = {}
+            data['route_perms'][path] = permission
+
+            with open(SETTINGS_PATH, 'w') as file:
+                json.dump(data, file, indent=4, separators=(',', ': '))
+
             return await route_func(request, *args, **kwargs)
+
         return wrapper
     return decorator
+
+def get_permission(route: str):
+    with open('settings.json', 'r') as file:
+        data = json.load(file)
+        if data.get("route_perms", None) is None:
+            return None
+        if route not in data["route_perms"].keys():
+            return None
+        return data["route_perms"][route]
+
 
 excepted_routes = [
     '/',
@@ -50,15 +81,18 @@ class AuthPerms:
         if requested_route in excepted_routes:
             return True
 
-        for perm in user_perms:
-            needed_perm = page_perms.get(requested_route)
+        for perm_name in user_perms:
+            needed_perm = get_permission(requested_route)
             if not needed_perm:
                 logbook.info(f"Route \"{requested_route}\" is missing permission requirements, please consider adding them. "
                              "If you won't, add them to exceptions.\"")
                 return True
-            if needed_perm == perm:
-                allowed = True
-                break
+
+            if perm_name == needed_perm:
+                perm_allowed = user_perms[perm_name]
+                if perm_allowed is True:
+                    allowed = True
+                    break
         else:
             allowed = False
 
@@ -97,16 +131,16 @@ class AuthPerms:
             user_perms = {}
             for row in perms_data:
                 if row[0] in valid_perms:
-                    user_perms[row[0]] = row[1]
+                    user_perms[row[0]] = bool(row[1])
                 else:
                     logbook.warning(f"User {username} has an invalid, illegal permission: {row[0]}")
 
-            # Specifiy any perms not listed
+            # Specify any perms not listed
             if fill_not_set:
                 for perm_name in user_perms:
                     for valid_perm in valid_perms:
                         if valid_perm not in user_perms:
-                            user_perms[perm_name] = False
+                            user_perms[perm_name] = True
 
             return user_perms
 

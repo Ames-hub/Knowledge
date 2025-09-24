@@ -28,7 +28,7 @@ class database:
                 'entry_id': 'INTEGER PRIMARY KEY AUTOINCREMENT',  # Just for easy editing in DB viewers
                 'username': 'TEXT NOT NULL',
                 'permission': 'TEXT NOT NULL',
-                'allowed': 'BOOLEAN NOT NULL DEFAULT FALSE',
+                'allowed': 'BOOLEAN NOT NULL DEFAULT TRUE',
             },
             'revoked_tokens': {
                 'token': 'TEXT NOT NULL PRIMARY KEY',

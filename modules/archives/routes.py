@@ -38,6 +38,7 @@ async def load_index(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the bulletins / tech memory section.")
     return templates.TemplateResponse("index.html", {"request": request})
 
+@set_permission(permission="bulletin_archives")
 @router.post("/api/archives/save")
 async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
@@ -72,6 +73,7 @@ async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = De
     conn.commit()
     return JSONResponse(content={"message": "PDF saved successfully.", "archive_id": archive_id})
 
+@set_permission(permission="bulletin_archives")
 @router.post("/api/archives/delete")
 async def del_pdf(data: LoadRequest, request: Request, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
@@ -89,8 +91,8 @@ async def del_pdf(data: LoadRequest, request: Request, token: str = Depends(requ
         conn.commit()
         return JSONResponse(content={"message": "PDF deleted successfully.", "error": None, "success": True}, status_code=200)
 
-@router.get("/api/archives/get_all")
 @set_permission(permission="bulletin_archives")
+@router.get("/api/archives/get_all")
 async def get_all_pdfs(request: Request, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) requested all PDF names in the archives.")
@@ -122,8 +124,8 @@ async def get_all_pdfs(request: Request, token: str = Depends(require_prechecks)
         status_code=200
     )
 
-@router.post("/api/archives/load")
 @set_permission(permission="bulletin_archives")
+@router.post("/api/archives/load")
 async def load_pdf(data: LoadRequest, request: Request, token: str = Depends(require_prechecks)):
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) is loading archive ID {data.id}.")

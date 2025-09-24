@@ -7,6 +7,18 @@ import os
 logbook = LogBookHandler("settings")
 SETTINGS_PATH = "settings.json"
 
+valid_settings = {
+    "new_week_stats_plan": True,
+    "weekday_end": 1,
+    "registration_allowed": True,
+    "lookback_length": 7,
+    "use_ssl": False,
+}
+
+def make_settings_file():
+    with open(SETTINGS_PATH, "w") as f:
+        json.dump(valid_settings, f, indent=4, separators=(",", ": "))
+
 class get:
     @staticmethod
     def get(key, default=None):
@@ -15,6 +27,10 @@ class get:
         with open(SETTINGS_PATH, "r") as f:
             settings = json.load(f)
             return settings.get(key, default)
+
+    @staticmethod
+    def use_ssl():
+        return bool(get.get("use_ssl", False))
 
     @staticmethod
     def reset_bp_plan_on_new_week():

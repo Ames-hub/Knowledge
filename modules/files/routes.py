@@ -883,6 +883,7 @@ class centralfiles:
 @router.get("/files", response_class=HTMLResponse)
 @set_permission(permission="central_files")
 async def show_reg(request: Request, token: str = Depends(require_prechecks)):
+    logbook.info(f"IP {request.client.host}, User {authbook.token_owner(token)} has accessed the C/F Page.")
     return templates.TemplateResponse(request, "index.html")
 
 @router.get("/files/dupecheck/{name}", response_class=HTMLResponse)

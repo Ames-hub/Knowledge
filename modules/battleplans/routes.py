@@ -3,16 +3,15 @@ from library.auth import authbook, require_prechecks
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
+from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from pydantic import BaseModel
 from library import settings
 import datetime
 import sqlite3
-import logging
 import os
 
-from modules.browser.routes import logbook
-
+logbook = LogBookHandler("BattlePlans")
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 
@@ -63,31 +62,40 @@ def get_quota_done_helper(date: str, owner: str):
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cursor = conn.cursor()
-
             cursor.execute(
                 """
-                SELECT done_amount FROM bp_quotas WHERE bp_date = ? AND owner = ?  -- Should select for all quota's for the day.
+                SELECT done_amount, name, bp_id
+                FROM bp_quotas
+                WHERE bp_date = ? AND owner = ?
                 """,
-                (date, owner,)
+                (date, owner),
             )
             data = cursor.fetchall()
 
-            prod_data = []
-            for item in data:
-                prod_data.append(item[0])
+            prod_data = {}
+            for done_amount, name, bp_id in data:
+                if bp_id not in prod_data:
+                    prod_data[bp_id] = {}
+                if name not in prod_data[bp_id]:
+                    prod_data[bp_id][name] = []
+                prod_data[bp_id][name].append(done_amount)
 
-            return sum(prod_data)
+            return prod_data
+
         except sqlite3.OperationalError as err:
-            logbook.error(f"Database error occurred while fetching the quota amount: {err}", exception=err)
+            logbook.error(
+                f"Database error occurred while fetching the quota amount: {err}",
+                exception=err,
+            )
             conn.rollback()
-            return 0
+            return {}
 
 # -------------------- Routes --------------------
 
 @router.get("/battleplans", response_class=HTMLResponse)
 @set_permission(permission="battleplans")
 async def show_login(request: Request, token: str = Depends(require_prechecks)):
-    logging.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the battleplans page.")
+    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the battleplans page.")
     return templates.TemplateResponse(request, "battleplans.html")
 
 @router.get("/api/bps/list", response_class=JSONResponse)
@@ -255,6 +263,22 @@ async def delete_quota(request: Request, data: quota_delete, token: str = Depend
             conn.rollback()
             return JSONResponse({"success": False, "error": "Database error occurred while deleting quota."}, status_code=500)
 
+def check_quota_exists(bp_id: int, quota_name: str) -> bool:
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT * FROM bp_quotas WHERE name = ? AND bp_id = ?
+                """,
+                (quota_name, bp_id,)
+            )
+            data = cursor.fetchone()
+            return True if data is not None else False
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error while checking quota: {err}", exception=err)
+            return False
+
 @router.post("/api/bps/quota/create")
 async def create_quota(request: Request, data: quota_make, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
@@ -262,6 +286,13 @@ async def create_quota(request: Request, data: quota_make, token: str = Depends(
 
     with sqlite3.connect(DB_PATH) as conn:
         try:
+            # Check if the quota already exists
+            if check_quota_exists(data.bp_id, data.quota_name):
+                return JSONResponse(
+                    content={"success": False, "error": "Quota already exists."},
+                    status_code=409
+                )
+
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT date FROM battleplans WHERE bp_id = ? AND owner = ?",
@@ -382,10 +413,26 @@ async def get_weekly_production(request: Request, data: weekly_prod_get, token: 
     # Build the 7-day week list from the start
     dates_list = [(start_of_week + datetime.timedelta(days=i)).strftime("%d-%m-%Y") for i in range(7)]
 
-    production_metrics = [get_quota_done_helper(day, owner) for day in dates_list]
-    weekly_total = sum(production_metrics)
+    # Gather and merge production data
+    weekly_data = {}
+    for day in dates_list:
+        day_data = get_quota_done_helper(day, owner)
+        for bp_id, names in day_data.items():
+            if bp_id not in weekly_data:
+                weekly_data[bp_id] = {}
+            for name, amounts in names.items():
+                if name not in weekly_data[bp_id]:
+                    weekly_data[bp_id][name] = []
+                weekly_data[bp_id][name].extend(amounts)
 
-    return HTMLResponse(str(weekly_total), status_code=200)
+    # Optionally calculate totals
+    weekly_totals = {}
+    for bp_id, names in weekly_data.items():
+        weekly_totals[bp_id] = {}
+        for name, amounts in names.items():
+            weekly_totals[bp_id][name] = sum(amounts)
+
+    return JSONResponse({"weekly_data": weekly_data, "weekly_totals": weekly_totals})
 
 class clearbp_data(BaseModel):
     date: str
@@ -462,14 +509,19 @@ async def yesterday_import(request: Request, data: yesterday_import_bp_data, tok
             })
         quotas_list = []
         for item in quota_row:
-            quotas_list.append({
-                "bp_id": item[0],
-                "bp_date": item[1],
-                "planned_amount": item[2],
-                "done_amount": item[3],
-                "owner": item[4],
-                "name": item[5]
-            })
+            # Only append non-existent quotas
+            quota_exists = check_quota_exists(today_bp_id, item[5])
+            if not quota_exists:
+                quotas_list.append({
+                    "bp_id": item[0],
+                    "bp_date": item[1],
+                    "planned_amount": item[2],
+                    "done_amount": item[3],
+                    "owner": item[4],
+                    "name": item[5]
+                })
+            else:
+                logbook.info(f"The quota name {item[5]} for BP ID {today_bp_id} does exists. Skipping.")
 
         try:
             # Insert tasks for today

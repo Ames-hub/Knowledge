@@ -73,8 +73,10 @@ async def arrest_user(request: Request, username: str, token: str = Depends(requ
 @router.get("/api/auth/perm/set/{username}/{permission}/{value}")
 @set_permission(permission="auth_page")
 async def set_user_permission(request: Request, username: str, permission: str, value: int, token: str = Depends(require_prechecks)):
-    logbook.info(
-        f"IP {request.client.host} (user: {authbook.token_owner(token)}) is setting permission '{permission}' = {value} for user {username}.")
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is setting permission '{permission}' = {value} for user {username}.")
+
+    value = bool(value)
+    permission = str(permission).lower()
 
     if permission not in valid_perms:
         return JSONResponse({"success": False, "error": f"Invalid permission: {permission}"}, status_code=400)
@@ -89,13 +91,15 @@ async def set_user_permission(request: Request, username: str, permission: str, 
                 cursor.execute(
                     """
                     INSERT INTO auth_permissions (username, permission, allowed) VALUES (?, ?, ?)
-                    """
+                    """,
+                    (username, permission, value)
                 )
             else:
                 cursor.execute(
                     """
                     UPDATE auth_permissions SET allowed = ? WHERE username = ? AND permission = ?
-                    """
+                    """,
+                    (value, username, permission)
                 )
 
         return JSONResponse({"success": True, "permission": permission, "value": value}, status_code=200)
