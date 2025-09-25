@@ -7,8 +7,8 @@ from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
-import datetime
 import sqlite3
+import datetime
 import magic
 import os
 import io
@@ -429,9 +429,15 @@ class debts:
                 data = cursor.fetchall()
                 parsed_data = {}
                 for item in data:
-                    start_datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S.%f")
+                    if "." in item[4]:  # TODO: Figure out what gives this string the .%f
+                        start_datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S.%f")
+                    else:
+                        start_datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S")
                     if item[5] is not None:
-                        end_datetime_obj = datetime.datetime.strptime(item[5], "%Y-%m-%d %H:%M:%S.%f")
+                        if "." in item[5]:
+                            end_datetime_obj = datetime.datetime.strptime(item[5], "%Y-%m-%d %H:%M:%S.%f")
+                        else:
+                            end_datetime_obj = datetime.datetime.strptime(item[5], "%Y-%m-%d %H:%M:%S")
                         end_value = end_datetime_obj.strftime("%Y-%m-%d")
                     else:
                         end_value = None
@@ -459,27 +465,34 @@ class debts:
                     (debt_id,)
                 )
                 data = cursor.fetchone()
-                if data is None:
-                    return None
-
-                start_datetime_obj = datetime.datetime.strptime(data[4], "%Y-%m-%d %H:%M:%S.%f")
-                if data[5] is not None:
-                    end_datetime_obj = datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S.%f")
-                    end_value = end_datetime_obj.strftime("%Y-%m-%d")
-                else:
-                    end_value = None
-                return {
-                    "debt_id": data[0],
-                    "debtor": data[1],
-                    "debtee": data[2],
-                    "amount": data[3],
-                    "start_date": start_datetime_obj.strftime("%Y-%m-%d"),
-                    "end_date": end_value,
-                }
             except sqlite3.OperationalError as err:
                 logbook.error(f"Database error occurred while fetching debt data: {err}", exception=err)
                 conn.rollback()
                 return None
+
+        if data is None:
+            return None
+
+        if "." in data[4]:  # TODO: Figure out what gives this string the .%f
+            start_datetime_obj = datetime.datetime.strptime(data[4], "%Y-%m-%d %H:%M:%S.%f")
+        else:
+            start_datetime_obj = datetime.datetime.strptime(data[4], "%Y-%m-%d %H:%M:%S")
+        if data[5] is not None:
+            if "." in data[5]:
+                end_datetime_obj = datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S")
+            else:
+                end_datetime_obj = datetime.datetime.strptime(data[5], "%Y-%m-%d %H:%M:%S")
+            end_value = end_datetime_obj.strftime("%Y-%m-%d")
+        else:
+            end_value = None
+        return {
+            "debt_id": data[0],
+            "debtor": data[1],
+            "debtee": data[2],
+            "amount": data[3],
+            "start_date": start_datetime_obj.strftime("%Y-%m-%d"),
+            "end_date": end_value,
+        }
 
     @staticmethod
     def delete_debt(debt_id):
@@ -659,7 +672,7 @@ class debt_data(BaseModel):
     amount: float
     description: str
     start_date: str | None = None
-    end_date: str | None = None
+    due_date: str | None = None
     cfid: int|str|None
 
 @router.post("/api/finances/debts/add")
@@ -674,15 +687,19 @@ async def add_debt(request: Request, data: debt_data, token: str = Depends(requi
         else:
             data.cfid = None
 
+    due_date = datetime.datetime.now().strptime(data.due_date, "%Y-%m-%d") if data.due_date is not None else None
+    start_date = datetime.datetime.now().strptime(data.start_date, "%Y-%m-%d") if data.start_date is not None else None
+    description = data.description if data.description is not None else "No description provided."
+
     try:
         if not debts.check_exists(debt_id):
             debt_id = debts.create_new_debt(
                 debtor=data.debtor,
                 debtee=data.debtee,
                 amount=data.amount,
-                start_date=data.start_date,
-                end_date=data.end_date,
-                description=data.description,
+                start_date=start_date,
+                end_date=due_date,
+                description=description,
                 cfid=data.cfid
             )
             success = True if type(debt_id) is int else False
@@ -717,7 +734,10 @@ async def subtract_debt(request: Request, data: subtract_debt_data, token = Depe
         amount = debt['amount']
         if float(amount) - float(data.amount) <= 0:
             success = debts.delete_debt(debt_id)
-            return JSONResponse(content={"success": success, "action": "Deleted debt as it was 0."}, status_code=200)
+            if success:
+                return JSONResponse(content={"success": success, "action": "Deleted debt as it was 0."}, status_code=200)
+            else:
+                return JSONResponse(content={"success": False, "error": "Could not delete debt. Server-side error."}, status_code=500)
         else:
             success = debts.subtract_debt(
                 debt_id=debt_id,
