@@ -2,6 +2,7 @@ from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
+from fastapi.exceptions import HTTPException
 from library.auth import require_prechecks
 from library.logbook import LogBookHandler
 from library.database import DB_PATH
@@ -687,8 +688,8 @@ async def add_debt(request: Request, data: debt_data, token: str = Depends(requi
         else:
             data.cfid = None
 
-    due_date = datetime.datetime.now().strptime(data.due_date, "%Y-%m-%d") if data.due_date is not None else None
-    start_date = datetime.datetime.now().strptime(data.start_date, "%Y-%m-%d") if data.start_date is not None else None
+    due_date = datetime.datetime.now().strptime(data.due_date, "%Y-%m-%d") if data.due_date else None
+    start_date = datetime.datetime.now().strptime(data.start_date, "%Y-%m-%d") if data.start_date else None
     description = data.description if data.description is not None else "No description provided."
 
     try:
@@ -857,19 +858,54 @@ class save_invoice_data(BaseModel):
     items: list
     total: float
     cfid: int|None
+    details: dict
+
+def get_cf_name(cfid):
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT name FROM cf_names WHERE cfid = ?
+                """,
+                (cfid,)
+            )
+            data = cursor.fetchone()
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while fetching cf name of cfid {cfid}: {err}", exception=err)
+            return False
+
+    return data[0] if data else False
 
 @router.post("/api/ledger/invoices/save-invoice")
 async def save_invoice(request: Request, data: save_invoice_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is saving the invoice (invoice  they just made.")
     datenow = datetime.datetime.now().strftime("%d-%m-%Y")
+
+    billing_name = data.details.get("billing_name", None)
+    if not billing_name and not data.cfid:
+        raise HTTPException(status_code=400, detail="Billing name is required")
+    elif not billing_name and data.cfid is not None:
+        # Get the name from central files.
+        billing_name = get_cf_name(data.cfid)
+        if billing_name is False:
+            raise HTTPException(status_code=400, detail="To use a CFID for billing name, the CF profile needs to have a saved name.")
+
+    billing_address = data.details.get("billing_address", "")
+    billing_email_address = data.details.get("billing_email_address", "")
+    billing_phone = data.details.get("billing_phone", "")
+    billing_notes = data.details.get("billing_notes", "")
+
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cur = conn.cursor()
             cur.execute(
                 """
-                INSERT INTO invoices (date, amount, is_paid, cfid) VALUES (?, ?, ?, ?)
+                INSERT INTO invoices
+                (date, amount, is_paid, cfid, billing_name, billing_address, billing_email_address, billing_phone, billing_notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (datenow, data.total, False, data.cfid)
+                (datenow, data.total, False, data.cfid, billing_name, billing_address, billing_email_address, billing_phone, billing_notes)
             )
             invoice_id = cur.lastrowid
         except sqlite3.OperationalError as err:
@@ -900,7 +936,11 @@ async def get_invoice(request: Request, invoice_id: int, token: str = Depends(re
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT invoice_id, date, amount, is_paid, cfid FROM invoices WHERE invoice_id = ?",
+                """
+                SELECT invoice_id, date, amount, is_paid, cfid, billing_name, billing_address, billing_email_address, billing_phone, billing_notes
+                FROM invoices
+                WHERE invoice_id = ?
+                """,
                 (invoice_id,)
             )
             invoice_data = cursor.fetchone()
@@ -922,7 +962,12 @@ async def get_invoice(request: Request, invoice_id: int, token: str = Depends(re
                         "date": invoice_data[1],
                         "total": invoice_data[2],
                         "paid": bool(invoice_data[3]),
-                        "items": items_parsed
+                        "items": items_parsed,
+                        "billing_name": invoice_data[4],
+                        "billing_address": invoice_data[5],
+                        "billing_email_address": invoice_data[6],
+                        "billing_phone": invoice_data[7],
+                        "billing_notes": invoice_data[8],
                     },
                     status_code=200
                 )

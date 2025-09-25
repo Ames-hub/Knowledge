@@ -134,17 +134,17 @@ async function saveInvoice() {
   const cfid = cfidInput.value ? parseInt(cfidInput.value) : null;
 
   const details = {
-    name: billingName.value.trim(),
-    address: billingAddress.value.trim(),
-    email: billingEmail.value.trim(),
-    phone: billingPhone.value.trim(),
-    notes: invoiceNotes.value.trim(),
+    billing_name: billingName.value.trim(),
+    billing_address: billingAddress.value.trim(),
+    billing_email_address: billingEmail.value.trim(),
+    billing_phone: billingPhone.value.trim(),
+    billing_notes: invoiceNotes.value.trim(),
   };
 
   await apiFetch("/api/ledger/invoices/save-invoice", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items, total, cfid, details }),
+    body: JSON.stringify({ items, total, cfid, "details": details }),
   });
 
   // Reset after save
@@ -175,7 +175,7 @@ async function loadPastInvoices() {
 
     pastInvoicesList.innerHTML = "";
     saved.forEach((inv) => {
-      const nameDisplay = inv.details?.name ? `Invoice for ${inv.details.name}` : "Invoice";
+      const nameDisplay = inv.billing_name ? `Invoice for ${inv.billing_name}` : "Invoice";
       pastInvoicesList.insertAdjacentHTML(
         "beforeend",
         `
@@ -217,7 +217,15 @@ pastInvoicesList.addEventListener("click", async (e) => {
   if (btn.classList.contains("load-btn")) {
     const invoice = await apiFetch(`/api/ledger/invoices/get-invoice/${id}`);
     items = [...invoice.items];
-    cfidInput.value = invoice.cfid;
+    cfidInput.value = invoice.cfid || "";
+
+    // Populate billing details from new top-level fields
+    billingName.value = invoice.billing_name || "";
+    billingAddress.value = invoice.billing_address || "";
+    billingEmail.value = invoice.billing_email_address || "";
+    billingPhone.value = invoice.billing_phone || "";
+    invoiceNotes.value = invoice.billing_notes || "";
+
     updateInvoice();
   }
 
@@ -249,13 +257,11 @@ function generatePDF(invoice = null) {
     items,
     total: items.reduce((sum, i) => sum + i.price, 0),
     paid: false,
-    details: {
-      name: billingName.value.trim(),
-      address: billingAddress.value.trim(),
-      email: billingEmail.value.trim(),
-      phone: billingPhone.value.trim(),
-      notes: invoiceNotes.value.trim(),
-    }
+    billing_name: billingName.value.trim(),
+    billing_address: billingAddress.value.trim(),
+    billing_email_address: billingEmail.value.trim(),
+    billing_phone: billingPhone.value.trim(),
+    billing_notes: invoiceNotes.value.trim(),
   };
 
   // Header
@@ -267,25 +273,20 @@ function generatePDF(invoice = null) {
 
   // Billing info
   let y = 40;
-  if (data.details) {
-    doc.text(`Bill To: ${data.details.name || ""}`, 14, y); y += 6;
-    if (data.details.address) { doc.text(data.details.address, 14, y); y += 6; }
-    if (data.details.email) { doc.text(`Email: ${data.details.email}`, 14, y); y += 6; }
-    if (data.details.phone) { doc.text(`Phone: ${data.details.phone}`, 14, y); y += 6; }
-  }
+  if (data.billing_name) { doc.text(`Bill To: ${data.billing_name}`, 14, y); y += 6; }
+  if (data.billing_address) { doc.text(data.billing_address, 14, y); y += 6; }
+  if (data.billing_email_address) { doc.text(`Email: ${data.billing_email_address}`, 14, y); y += 6; }
+  if (data.billing_phone) { doc.text(`Phone: ${data.billing_phone}`, 14, y); y += 6; }
 
   // Separator line before table
   y += 4;
   doc.setDrawColor(100).setLineWidth(0.5).line(14, y, 196, y);
   y += 10;
 
-  // Item table headers...
-  // (rest of your PDF code unchanged)
-
   // Notes at bottom
-  if (data.details?.notes) {
+  if (data.billing_notes) {
     doc.setFontSize(10).setTextColor(80);
-    doc.text(`Notes: ${data.details.notes}`, 14, 275);
+    doc.text(`Notes: ${data.billing_notes}`, 14, 275);
   }
 
   doc.save("invoice.pdf");
@@ -306,6 +307,19 @@ invoiceTableBody.addEventListener("click", (e) => {
     updateInvoice();
   }
 });
+
+// Hide/show billing name based on CFID
+function toggleBillingNameVisibility() {
+  const hasCFID = cfidInput.value && cfidInput.value.trim() !== "";
+  billingName.parentElement.style.display = hasCFID ? "none" : "";
+  billingName.required = !hasCFID;
+}
+
+// Run on CFID input change
+cfidInput.addEventListener("input", toggleBillingNameVisibility);
+
+// Initial check
+toggleBillingNameVisibility();
 
 // ------------------------
 // Initial Load

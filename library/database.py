@@ -182,6 +182,11 @@ class database:
                 "amount": "REAL NOT NULL",
                 "is_paid": "BOOLEAN NOT NULL DEFAULT FALSE",
                 "cfid": "INT",  # The Central Files ID for whom this invoice is for.
+                "billing_name": "TEXT NOT NULL DEFAULT ''",
+                "billing_address": "TEXT NOT NULL DEFAULT ''",
+                "billing_email_address": "TEXT NOT NULL DEFAULT ''",
+                "billing_phone": "TEXT NOT NULL DEFAULT ''",
+                "billing_notes": "TEXT NOT NULL DEFAULT ''",
             },
             "items_on_invoices": {
                 # Items that ARE on an invoice, and which invoice.
