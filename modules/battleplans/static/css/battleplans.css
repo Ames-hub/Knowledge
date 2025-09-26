@@ -528,13 +528,10 @@ body[data-theme="light"] {
 }
 
 #quota-list {
-  /* Align all items in a grid */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   padding: 8px 0;
-  max-height: 300px;
-  overflow-y: auto;
 }
 
 /* ---------- Theme Toggle Button ---------- */
@@ -567,15 +564,11 @@ body[data-theme="light"] {
 /* === Quotas === */
 .quota-row {
   display: flex;
+  flex-wrap: wrap;   /* let inputs wrap on small widths */
   align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  padding: 10px 14px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  transition: transform 120ms ease, background 120ms ease;
-  min-width: 330px;
-  width: fit-content;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
 }
 
 .quota-row:hover {
@@ -584,23 +577,25 @@ body[data-theme="light"] {
 }
 
 .quota-name {
-  flex: 0 0 70px; /* fixed width so names align */
+  flex: 1 1 80px;
   font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text);
 }
 
+
+.quota-done,
 .quota-needed,
-.quota-done {
-  width: 90px;
+.quota-weekly-target {
+  flex: 0 1 80px;
+  min-width: 70px;
   padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: transparent;
-  color: var(--text);
-  font-size: 0.9rem;
   text-align: center;
-  transition: border 120ms ease, background 120ms ease;
+}
+
+.weekly-breakdown {
+  flex: 1 1 100%;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 .quota-needed:focus,
@@ -788,4 +783,9 @@ body[data-theme="light"] #task-category:hover {
 body[data-theme="light"] #task-category:focus {
   border-color: var(--accent);
   background: rgba(96,165,250,0.12);
+}
+
+.bp-item.current-bp {
+  background-color: #ffd700 !important; /* gold highlight */
+  font-weight: bold;
 }

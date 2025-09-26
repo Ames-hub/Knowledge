@@ -174,7 +174,8 @@ class database:
                 "planned_amount": "REAL NOT NULL DEFAULT 0.0",
                 "done_amount": "REAL NOT NULL DEFAULT 0.0",
                 "owner": "TEXT NOT NULL",
-                "name": "TEXT NOT NULL"
+                "name": "TEXT NOT NULL",
+                "weekly_target": "REAL NOT NULL DEFAULT 0.0",
             },
             "invoices": {
                 "invoice_id": "INTEGER PRIMARY KEY AUTOINCREMENT",

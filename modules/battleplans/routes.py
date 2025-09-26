@@ -172,8 +172,24 @@ async def set_task_status(request: Request, data: task_state_data, token: str = 
             conn.rollback()
             return JSONResponse({"success": False, "error": "Database error occurred while setting task status."}, status_code=500)
 
+def make_battplan(bp_date_obj, owner, return_bpid=False):
+    date = bp_date_obj.strftime("%d-%m-%Y")
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO battleplans (date, owner) VALUES (?, ?)", (date, owner))
+            conn.commit()
+            if return_bpid:
+                return cursor.lastrowid
+            else:
+                return True
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error while creating battleplan for {owner} on {date}: {err}", exception=err)
+            conn.rollback()
+            return False
+
 @router.get("/api/bps/create/{date}")
-async def create_bp(request: Request, date: str, token: str = Depends(require_prechecks)):
+async def route_create_bp(request: Request, date: str, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({owner}) is creating battleplan for {date}.")
     date_obj = datetime.datetime.strptime(date, "%d-%B-%Y")
@@ -181,16 +197,11 @@ async def create_bp(request: Request, date: str, token: str = Depends(require_pr
     if get_bp_exists(date_obj, owner):
         return JSONResponse({"success": False, "error": "Battleplan already exists."}, status_code=409)
 
-    with sqlite3.connect(DB_PATH) as conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO battleplans (date, owner) VALUES (?, ?)", (date_obj.strftime("%d-%m-%Y"), owner))
-            conn.commit()
-            return JSONResponse({"success": True}, status_code=201)
-        except sqlite3.OperationalError as err:
-            logbook.error(f"Database error while creating battleplan: {err}", exception=err)
-            conn.rollback()
-            return JSONResponse({"success": False, "error": "Database error occurred while creating battleplan."}, status_code=500)
+    success = make_battplan(date_obj, owner)
+    if success:
+        return JSONResponse({"success": True}, status_code=201)
+    else:
+        return JSONResponse({"success": False, "error": "Database error occurred while creating battleplan."}, status_code=500)
 
 class add_task_data(BaseModel):
     text: str
@@ -298,10 +309,11 @@ async def create_quota(request: Request, data: quota_make, token: str = Depends(
             cursor.execute(
                 """
                 INSERT INTO bp_quotas
-                (bp_id, bp_date, planned_amount, done_amount, owner, name)
-                VALUES (?, ?, ?, ?, ? , ?)
+                (bp_id, bp_date, planned_amount, done_amount, owner, name, weekly_target)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (data.bp_id, bp_date, 0, 0, owner, data.quota_name))
+                (data.bp_id, bp_date, 0, 0, owner, data.quota_name, 0)
+            )
             conn.commit()
             return JSONResponse({"success": True}, status_code=201)
         except sqlite3.OperationalError as err:
@@ -320,7 +332,7 @@ async def list_quotas(request: Request, bp_date:str, token: str = Depends(requir
             cursor = conn.cursor()
             cursor.execute(
                 """
-                    SELECT quota_id, bp_id, bp_date, planned_amount, done_amount, owner, name
+                    SELECT quota_id, bp_id, bp_date, planned_amount, done_amount, owner, name, weekly_target
                     FROM bp_quotas
                     WHERE owner = ? AND bp_date = ?  -- Its quota's by BP Date and Owner. Not every BP has the same quota's
                 """,
@@ -341,12 +353,25 @@ async def list_quotas(request: Request, bp_date:str, token: str = Depends(requir
             "planned_amount": item[3],
             "done_amount": item[4],
             "owner": item[5],
-            "name": item[6]
+            "name": item[6],
+            "weekly_target": item[7],
         })
     return JSONResponse(parsed_data, status_code=200)
 
+class quota_data_set_done(BaseModel):
+    quota_id: int
+    amount: int
+    bp_date: str
+
+class notfounderror(Exception):
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 @router.post("/api/bps/quota/done/set")
-async def set_quota_done(request: Request, data: quota_data_set, token: str = Depends(require_prechecks)):
+async def set_quota_done(request: Request, data: quota_data_set_done, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({owner}) is setting quota done amount for quota {data.quota_id} to {data.amount}.")
 
@@ -363,27 +388,222 @@ async def set_quota_done(request: Request, data: quota_data_set, token: str = De
             conn.rollback()
             return JSONResponse({"success": False, "error": "Database error occurred while setting done quota amount."}, status_code=500)
 
-@router.post("/api/bps/quota/wanted/set")
-async def set_quota_wanted(request: Request, data: quota_data_set, token: str = Depends(require_prechecks)):
-    owner = authbook.token_owner(token)
-    logbook.info(f"IP {request.client.host} ({owner}) is setting the wanted quota amount for quota {data.quota_id} to {data.amount}.")
+        try:
+            quota_data = get_quota_data(data.quota_id)
+            if quota_data['weekly_target'] != 0: # If it's not 0, then BPs for later would've been created.
+                if quota_data['planned_amount'] > data.amount:  # If made less than planned
+                    # update tomorrow's planned amount to be its planned amount + today's remainder
+                    remainder = quota_data['planned_amount'] - data.amount
+                    needed_tmr = quota_data['planned_amount'] + remainder
 
+                    data.bp_date = dateformatenforcer(data.bp_date)
+
+                    date_tmr = datetime.datetime.strptime(data.bp_date, "%d-%m-%Y") + datetime.timedelta(days=1)
+                    cursor.execute(
+                        """
+                        SELECT bp_id FROM battleplans WHERE date = ? AND owner = ?
+                        """,
+                        (date_tmr.strftime("%d-%m-%Y"), owner,)
+                    )
+                    data = cursor.fetchone()
+                    if data:
+                        bp_id = data[0]
+                    else:
+                        raise notfounderror("Battleplan ID for tomorrow not found.")
+
+                    cursor.execute(
+                        """
+                        UPDATE bp_quotas SET planned_amount = ? WHERE owner = ? AND bp_id = ? AND name = ?
+                        """,
+                        (needed_tmr, owner, bp_id, quota_data['name'])
+                    )
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error while updating tomorrow's quota data: {err}", exception=err)
+        except notfounderror as err:
+            logbook.error(f"Value error while updating quota data: {err}", exception=err)
+
+    return JSONResponse({"success": True})
+
+def set_planned_quota(amount, quota_id, owner):
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cursor = conn.cursor()
             cursor.execute(
                 "UPDATE bp_quotas SET planned_amount = ? WHERE quota_id = ? AND owner = ?",
+                (amount, quota_id, owner)
+            )
+            conn.commit()
+            return True
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error while setting wanted quota amount: {err}", exception=err)
+            conn.rollback()
+            return False
+
+@router.post("/api/bps/quota/wanted/set")
+async def route_set_quota_wanted(request: Request, data: quota_data_set, token: str = Depends(require_prechecks)):
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} ({owner}) is setting the wanted quota amount for quota {data.quota_id} to {data.amount}.")
+
+    success = set_planned_quota(data.amount, data.quota_id, owner)
+
+    if success:
+        return JSONResponse({"success": True}, status_code=200)
+    else:
+        return JSONResponse({"success": False, "error": "Database error occurred while setting wanted quota amount."}, status_code=500)
+
+def get_bp_date_by_quota_id(quota_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT bp_date FROM bp_quotas WHERE quota_id = ?
+                """,
+                (quota_id,)
+            )
+            row = cursor.fetchone()
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error while getting bp date from Quota ID: {err}", exception=err)
+            return False
+
+    return datetime.datetime.now().strptime(row[0], "%d-%m-%Y") if row else False
+
+def get_quota_data(quota_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT planned_amount, done_amount, weekly_target, name FROM bp_quotas WHERE quota_id = ?
+                """,
+                (quota_id,)
+            )
+            row = cursor.fetchone()
+        except sqlite3.OperationalError as err:
+            logbook.error("Database error while getting quota data", exception=err)
+            return False
+
+    if row:
+        return {
+            "planned_amount": row[0],
+            "done_amount": row[1],
+            "weekly_target": row[2],
+            "name": row[3],
+        }
+    else:
+        return False
+
+def get_quota_name(quota_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM bp_quotas WHERE quota_id = ?", (quota_id,))
+            row = cursor.fetchone()
+            return row[0] if row else None
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error getting quota name: {err}", exception=err)
+            return None
+
+@router.post("/api/bps/quota/weekly_target/set")
+async def set_weekly_target(request: Request, data: quota_data_set, token: str = Depends(require_prechecks)):
+    owner = authbook.token_owner(token)
+    logbook.info(f"{request.client.host} ({owner}) Has set weekly target for quota {data.quota_id} to {data.amount}.")
+
+    # First, get the quota's current data and verify it exists
+    quota_info = get_quota_data(data.quota_id)
+    if not quota_info:
+        return JSONResponse({"success": False, "error": "Quota not found."}, status_code=404)
+
+    # Get the BP date from the quota ID
+    bp_date = get_bp_date_by_quota_id(data.quota_id)
+    if not bp_date:
+        return JSONResponse({"success": False, "error": "Battleplan not found for this quota."}, status_code=404)
+
+    # Get quota name
+    quota_name = get_quota_name(data.quota_id)
+    if not quota_name:
+        return JSONResponse({"success": False, "error": "Could not retrieve quota name."}, status_code=500)
+
+    # Update the weekly target for the specific quota
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE bp_quotas SET weekly_target = ? WHERE quota_id = ? AND owner = ?",
                 (data.amount, data.quota_id, owner)
             )
             conn.commit()
         except sqlite3.OperationalError as err:
-            logbook.error(f"Database error while setting wanted quota amount: {err}", exception=err)
-            conn.rollback()
-            return JSONResponse({"success": False, "error": "Database error occurred while setting wanted quota amount."}, status_code=500)
+            logbook.error(f"Database error while setting weekly target: {err}", exception=err)
+            return JSONResponse({"success": False, "error": "Database error occurred."}, status_code=500)
+
+    # Calculate the current week range based on the quota's date
+    weekday_end = settings.get.weekday_end()
+
+    # Find the start of the week containing our BP date
+    bp_date_num = bp_date.isoweekday()  # 1=Mon … 7=Sun
+
+    # Calculate days to week start (weekday_end is the end day, so start is end_day + 1 mod 7)
+    days_to_week_start = (bp_date_num - (weekday_end + 1)) % 7
+    if days_to_week_start > 0:
+        week_start = bp_date - datetime.timedelta(days=days_to_week_start)
+    else:
+        week_start = bp_date - datetime.timedelta(days=7 + days_to_week_start)
+
+    # Week runs from week_start to week_start + 6 days
+    date_range = [week_start + datetime.timedelta(days=i) for i in range(7)]
+
+    # Calculate daily amount
+    daily_amount = data.amount // 7
+
+    # Update or create quotas for each day in the week
+    with sqlite3.connect(DB_PATH) as conn:
+        for date in date_range:
+            try:
+                cursor = conn.cursor()
+
+                # Ensure BP exists for this date
+                if not get_bp_exists(date, owner):
+                    bp_id = make_battplan(date, owner, return_bpid=True)
+                    if not bp_id:
+                        logbook.error(f"Failed to create battleplan for {date}")
+                        continue
+                else:
+                    bp_id = get_bp_id(date, owner)
+
+                # Check if quota already exists for this date
+                cursor.execute(
+                    "SELECT quota_id FROM bp_quotas WHERE owner = ? AND bp_date = ? AND name = ?",
+                    (owner, date.strftime("%d-%m-%Y"), quota_name)
+                )
+                existing_quota = cursor.fetchone()
+
+                if existing_quota:
+                    # Update existing quota
+                    quota_id = existing_quota[0]
+                    cursor.execute(
+                        "UPDATE bp_quotas SET weekly_target = ?, planned_amount = ? WHERE quota_id = ?",
+                        (data.amount, daily_amount, quota_id)
+                    )
+                else:
+                    # Create new quota
+                    cursor.execute(
+                        "INSERT INTO bp_quotas (bp_id, bp_date, planned_amount, done_amount, owner, name, weekly_target) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (bp_id, date.strftime("%d-%m-%Y"), daily_amount, 0, owner, quota_name, data.amount)
+                    )
+
+                conn.commit()
+
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error processing date {date}: {err}", exception=err)
+                conn.rollback()
+                continue
+
+    return JSONResponse({"success": True, "message": "Weekly target set and distributed across the week."},
+                        status_code=200)
 
 class weekly_prod_get(BaseModel):
     date: str
-
 
 @router.post("/api/bps/quota/weekly")
 async def get_weekly_production(request: Request, data: weekly_prod_get, token: str = Depends(require_prechecks)):
@@ -397,7 +617,7 @@ async def get_weekly_production(request: Request, data: weekly_prod_get, token: 
     except ValueError:
         return HTMLResponse("Invalid date format. Use DD-MM-YYYY.", status_code=400)
 
-    week_start = settings.get.get_week_end()
+    week_start = settings.get.weekday_end()
     if week_start < 1 or week_start > 7:
         return HTMLResponse("week_start must be 1 (Monday) to 7 (Sunday).", status_code=400)
 
@@ -447,6 +667,83 @@ async def clear_bp(request: Request, data: clearbp_data, token: str = Depends(re
 class yesterday_import_bp_data(BaseModel):
     date_today: str
 
+def import_tasks(conn, owner, date_yesterday, date_today, save=True):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT task_id, task, is_done FROM bp_tasks WHERE date = ? AND owner = ? AND is_done = ?",
+        (date_yesterday.strftime("%d-%m-%Y"), owner, False)
+    )
+    task_data = cursor.fetchall()
+
+    tasks = [{"task_id": t[0], "task": t[1], "is_done": t[2]} for t in task_data]
+
+    if save:
+        for task in tasks:
+            cursor.execute(
+                "INSERT INTO bp_tasks (date, task, is_done, owner) VALUES (?, ?, ?, ?)",
+                (date_today.strftime("%d-%m-%Y"), task['task'], task['is_done'], owner)
+            )
+    return tasks
+
+def import_quotas(conn, owner, today_bp_id, yesterday_bp_id, date_today, save=True):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT bp_id, bp_date, planned_amount, done_amount, owner, name, weekly_target "
+        "FROM bp_quotas WHERE bp_id = ? AND owner = ?",
+        (yesterday_bp_id, owner)
+    )
+    quota_rows = cursor.fetchall()
+
+    quotas_list = []
+    for item in quota_rows:
+        if not check_quota_exists(today_bp_id, item[5]):
+            planned_amount = item[2]
+            done_amount = item[3]
+            weekly_target = item[6]
+
+            # Reset planned amount if new week
+            if date_today.isoweekday() - 1 == settings.get.weekday_end():
+                if settings.get.reset_bp_plan_on_new_week():
+                    planned_amount = 0
+
+            needed_per_day = weekly_target // 7
+            if done_amount < planned_amount:
+                remainder = planned_amount - done_amount
+                planned_amount = remainder + needed_per_day
+
+            quota = {
+                "bp_id": today_bp_id,
+                "bp_date": date_today.strftime("%d-%m-%Y"),
+                "planned_amount": planned_amount,
+                "done_amount": 0,
+                "owner": item[4],
+                "name": item[5],
+                "weekly_target": weekly_target
+            }
+            quotas_list.append(quota)
+        else:
+            logbook.info(f"The quota name {item[5]} for BP ID {today_bp_id} exists. Skipping.")
+
+    if save:
+        for quota in quotas_list:
+            try:
+                cursor.execute(
+                    "INSERT INTO bp_quotas (bp_id, bp_date, planned_amount, done_amount, owner, name, weekly_target) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (quota['bp_id'], quota['bp_date'], quota['planned_amount'], quota['done_amount'],
+                     quota['owner'], quota['name'], quota['weekly_target'])
+                )
+            except sqlite3.IntegrityError:
+                cursor.execute(
+                    "UPDATE bp_quotas SET bp_id=?, bp_date=?, planned_amount=?, done_amount=?, owner=?, name=?, weekly_target=? "
+                    "WHERE bp_id=? AND owner=?",
+                    (quota['bp_id'], quota['bp_date'], quota['planned_amount'], quota['done_amount'],
+                     quota['owner'], quota['name'], quota['weekly_target'], today_bp_id, owner)
+                )
+
+    return quotas_list
+
+
 @router.post("/api/bps/yesterday_import")
 async def yesterday_import(request: Request, data: yesterday_import_bp_data, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
@@ -465,80 +762,12 @@ async def yesterday_import(request: Request, data: yesterday_import_bp_data, tok
 
     with sqlite3.connect(DB_PATH) as conn:
         try:
-            cursor = conn.cursor()
-
-            # Fetch yesterday's tasks
-            cursor.execute(
-                "SELECT task_id, task, is_done FROM bp_tasks WHERE date = ? AND owner = ? AND is_done = ?",
-                (date_yesterday.strftime("%d-%m-%Y"), owner, False)
-            )
-            task_data = cursor.fetchall()
-
-            # Fetch yesterday's quotas
-            cursor.execute(
-                "SELECT bp_id, bp_date, planned_amount, done_amount, owner, name FROM bp_quotas WHERE bp_id = ? AND owner = ?",
-                (yesterday_bp_id, owner)
-            )
-            quota_row = cursor.fetchall()
+            tasks = import_tasks(conn, owner, date_yesterday, date_today, save=True)
+            quotas = import_quotas(conn, owner, today_bp_id, yesterday_bp_id, date_today, save=True)
+            conn.commit()
         except sqlite3.OperationalError as err:
-            logbook.error(f"Database error during yesterday's import (fetch): {err}", exception=err)
+            logbook.error(f"Database error during yesterday's import: {err}", exception=err)
             conn.rollback()
             return JSONResponse({"success": False, "error": "Database error during yesterday's import."}, status_code=500)
 
-        tasks = []
-        for task in task_data:
-            tasks.append({
-                "task_id": task[0],
-                "task": task[1],
-                "is_done": task[2]
-            })
-        quotas_list = []
-        for item in quota_row:
-            # Only append non-existent quotas
-            quota_exists = check_quota_exists(today_bp_id, item[5])
-            if not quota_exists:
-                quotas_list.append({
-                    "bp_id": item[0],
-                    "bp_date": item[1],
-                    "planned_amount": item[2],
-                    "done_amount": item[3],
-                    "owner": item[4],
-                    "name": item[5]
-                })
-            else:
-                logbook.info(f"The quota name {item[5]} for BP ID {today_bp_id} does exists. Skipping.")
-
-        try:
-            # Insert tasks for today
-            for task in tasks:
-                cursor.execute(
-                    "INSERT INTO bp_tasks (date, task, is_done, owner) VALUES (?, ?, ?, ?)",
-                    (date_today.strftime("%d-%m-%Y"), task['task'], task['is_done'], owner)
-                )
-
-            # Insert or update quota
-            for quota in quotas_list:
-                planned_amount = quota['planned_amount']
-                # If yesterday is the day of the end of the week, set 'planned_amount' to 0 for the day of the new week.
-                if date_today.isoweekday() - 1 == settings.get.get_week_end():
-                    if settings.get.reset_bp_plan_on_new_week():
-                        planned_amount = 0
-
-                try:
-                    cursor.execute(
-                        "INSERT INTO bp_quotas (bp_id, bp_date, planned_amount, done_amount, owner, name) VALUES (?, ?, ?, ?, ?, ?)",
-                        (today_bp_id, date_today.strftime("%d-%m-%Y"), planned_amount, 0, quota['owner'], quota['name'])
-                    )
-                except sqlite3.IntegrityError:
-                    cursor.execute(
-                        "UPDATE bp_quotas SET bp_id = ?, bp_date = ?, planned_amount = ?, done_amount = ?, owner = ?, name = ? WHERE bp_id = ? AND owner = ?",
-                        (today_bp_id, date_today.strftime("%d-%m-%Y"), planned_amount, 0, quota['owner'], quota['name'])
-                    )
-
-            conn.commit()
-        except sqlite3.OperationalError as err:
-            logbook.error(f"Database error during yesterday's import (insert): {err}", exception=err)
-            conn.rollback()
-            return JSONResponse({"success": False, "error": "Database error during yesterday's import insert phase."}, status_code=500)
-
-    return JSONResponse({"success": True}, status_code=200)
+    return JSONResponse({"success": True, "tasks_imported": len(tasks), "quotas_imported": len(quotas)}, status_code=200)

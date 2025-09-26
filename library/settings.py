@@ -37,7 +37,16 @@ class get:
         return bool(get.get("new_week_stats_plan", False))
 
     @staticmethod
-    def get_week_end():
+    def weekday_end():
+        """
+        1 = Monday
+        2 = Tuesday
+        3 = Wednesday
+        4 = Thursday
+        5 = Friday
+        6 = Saturday
+        7 = Sunday
+        """
         return int(get.get("weekday_end", 1))
 
     @staticmethod

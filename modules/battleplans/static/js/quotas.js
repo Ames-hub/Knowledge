@@ -1,6 +1,7 @@
 const quotaList = document.getElementById("quota-list");
 const debouncedSaveNeeded = debounce((quotaId, v) => saveQuota("needed", quotaId, v), 700);
 const debouncedSaveDone = debounce((quotaId, v) => saveQuota("done", quotaId, v), 700);
+const debouncedSaveWeeklyTarget = debounce((quotaId, v) => saveQuota("weekly_target", quotaId, v), 700);
 
 async function loadQuotas(bpId, bpDate = currentBPDate) {
   if (!bpId || !bpDate) return;
@@ -19,11 +20,13 @@ async function loadQuotas(bpId, bpDate = currentBPDate) {
       row.innerHTML = `
         <span class="quota-name">${quota.name}</span>
         <input type="number" class="quota-done" value="${quota.done_amount || 0}" min="0"> /
-        <input type="number" class="quota-needed" value="${quota.planned_amount || 0}" min="0">
+        <input type="number" class="quota-needed" value="${quota.planned_amount || 0}" min="0"> Goal: 
+        <input type="number" class="quota-weekly-target" value="${quota.weekly_target || 0}" min="0">
       `;
 
       const neededInput = row.querySelector(".quota-needed");
       const doneInput = row.querySelector(".quota-done");
+      const weeklyTargetInput = row.querySelector(".quota-weekly-target");
 
       neededInput.addEventListener("input", e => {
         const val = parseFloat(e.target.value);
@@ -33,6 +36,11 @@ async function loadQuotas(bpId, bpDate = currentBPDate) {
       doneInput.addEventListener("input", e => {
         const val = parseFloat(e.target.value);
         if (!isNaN(val)) debouncedSaveDone(quota.quota_id, val);
+      });
+
+      weeklyTargetInput.addEventListener("input", e => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val)) debouncedSaveWeeklyTarget(quota.quota_id, val);
       });
 
       quotaList.appendChild(row);
@@ -50,8 +58,11 @@ async function saveQuota(type, quotaId, value) {
   if (type === "needed") {
     url = "/api/bps/quota/wanted/set";
     payload = { quota_id: quotaId, amount: value };
-  } else {
+  } else if (type === "done") {
     url = "/api/bps/quota/done/set";
+    payload = { quota_id: quotaId, amount: value, "bp_date": currentBPDate };
+  } else if (type === "weekly_target") {
+    url = "/api/bps/quota/weekly_target/set";
     payload = { quota_id: quotaId, amount: value };
   }
 

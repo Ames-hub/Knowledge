@@ -120,9 +120,20 @@ function filterBattlePlans(searchTerm) {
     plansContainer.innerHTML = `<p class="small">No battle plans found matching "${searchTerm}"</p>`;
     return;
   }
-  filteredPlans.forEach(({ name, dateObj }) => {
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+  filteredPlans.forEach(({ name, dateObj, realDate }) => {
     const btn = document.createElement("button");
     btn.className = "bp-item";
+
+    // Highlight today’s BP
+    const planStr = `${realDate.getFullYear()}-${realDate.getMonth()}-${realDate.getDate()}`;
+    if (planStr === todayStr) {
+      btn.classList.add("current-bp");
+    }
+
     btn.innerHTML = `<p class="bp-text">${name}</p>
       <div class="bp-date"><span class="bp-month">${dateObj.month}</span><br><span class="bp-day">${dateObj.day}</span></div>`;
     btn.addEventListener("click", () => loadFullBP(dateObj));
