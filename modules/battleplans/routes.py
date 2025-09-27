@@ -670,18 +670,18 @@ class yesterday_import_bp_data(BaseModel):
 def import_tasks(conn, owner, date_yesterday, date_today, save=True):
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT task_id, task, is_done FROM bp_tasks WHERE date = ? AND owner = ? AND is_done = ?",
+        "SELECT task_id, task, is_done, category FROM bp_tasks WHERE date = ? AND owner = ? AND is_done = ?",
         (date_yesterday.strftime("%d-%m-%Y"), owner, False)
     )
     task_data = cursor.fetchall()
 
-    tasks = [{"task_id": t[0], "task": t[1], "is_done": t[2]} for t in task_data]
+    tasks = [{"task_id": t[0], "task": t[1], "is_done": t[2], "category": t[3]} for t in task_data]
 
     if save:
         for task in tasks:
             cursor.execute(
-                "INSERT INTO bp_tasks (date, task, is_done, owner) VALUES (?, ?, ?, ?)",
-                (date_today.strftime("%d-%m-%Y"), task['task'], task['is_done'], owner)
+                "INSERT INTO bp_tasks (date, task, is_done, owner, category) VALUES (?, ?, ?, ?, ?)",
+                (date_today.strftime("%d-%m-%Y"), task['task'], task['is_done'], owner, task['category'])
             )
     return tasks
 
