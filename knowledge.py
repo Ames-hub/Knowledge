@@ -19,15 +19,6 @@ database.modernize()
 logbook = LogBookHandler('root')
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-# The FORCE KEY is a key you can enter into the username field of login with as "<USERNAME:FORCE_KEY>" to get a login going without the password.
-# The forcekey should never be revealed.
-FORCE_KEY = secrets.token_urlsafe(16)
-print(f"THE FORCE KEY FOR THIS SESSION IS: {FORCE_KEY}")
-
-# Save it for use elsewhere
-with open('forcekey', 'w') as f:
-    f.write(FORCE_KEY)
-
 # noinspection PyUnusedLocal
 @fastapp.exception_handler(401)
 async def unauthorized_handler(request: Request, exc):
@@ -116,6 +107,15 @@ for module_name in os.listdir(modules_dir):
             raise FileNotFoundError(f"No routes.py found in {module_name}")
 
 if __name__ == "__main__":
+    # The FORCE KEY is a key you can enter into the username field of login with as "<USERNAME:FORCE_KEY>" to get a login going without the password.
+    # The forcekey should never be revealed.
+    FORCE_KEY = secrets.token_urlsafe(16)
+    print(f"THE FORCE KEY FOR THIS SESSION IS: {FORCE_KEY}")
+
+    # Save it for use elsewhere
+    with open('forcekey', 'w') as f:
+        f.write(FORCE_KEY)
+
     if settings.get.use_ssl() is True:
         ssl_certfile_dir = os.path.abspath("certs/cert.pem")
         ssl_keyfile_dir = os.path.abspath("certs/key.pem")

@@ -743,7 +743,6 @@ def import_quotas(conn, owner, today_bp_id, yesterday_bp_id, date_today, save=Tr
 
     return quotas_list
 
-
 @router.post("/api/bps/yesterday_import")
 async def yesterday_import(request: Request, data: yesterday_import_bp_data, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
