@@ -102,7 +102,18 @@ async function loadBattlePlans() {
       const dayNum = parseInt(String(dateObj.day || "").replace(/^0+/, "") || "1", 10);
       const yearNum = dateObj.year ? parseInt(dateObj.year, 10) : new Date().getFullYear();
       const monthIdx = parseMonthIndex(dateObj.month || "");
-      return { name: planName, dateObj, realDate: new Date(yearNum, monthIdx, dayNum), timestamp: new Date(yearNum, monthIdx, dayNum).getTime() };
+      const realDate = new Date(yearNum, monthIdx, dayNum);
+
+      const weekdayName = realDate.toLocaleDateString("default", { weekday: "long" });
+      const fullDateStr = `${String(dayNum).padStart(2,"0")}-${String(monthIdx+1).padStart(2,"0")}-${yearNum}`;
+
+      return {
+        name: weekdayName, // display weekday
+        dateObj,
+        realDate,
+        timestamp: realDate.getTime(),
+        fullDateStr // searchable date string
+      };
     });
 
     allBattlePlans.sort((a, b) => sortDescending ? b.timestamp - a.timestamp : a.timestamp - b.timestamp);
@@ -114,7 +125,13 @@ async function loadBattlePlans() {
 }
 
 function filterBattlePlans(searchTerm) {
-  const filteredPlans = allBattlePlans.filter(plan => plan.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const term = searchTerm.toLowerCase();
+
+  const filteredPlans = allBattlePlans.filter(plan =>
+    plan.name.toLowerCase().includes(term) ||
+    plan.fullDateStr.toLowerCase().includes(term)
+  );
+
   plansContainer.innerHTML = "";
   if (filteredPlans.length === 0 && searchTerm) {
     plansContainer.innerHTML = `<p class="small">No battle plans found matching "${searchTerm}"</p>`;
@@ -128,7 +145,7 @@ function filterBattlePlans(searchTerm) {
     const btn = document.createElement("button");
     btn.className = "bp-item";
 
-    // Highlight today’s BP
+    // Highlight today\u2019s BP
     const planStr = `${realDate.getFullYear()}-${realDate.getMonth()}-${realDate.getDate()}`;
     if (planStr === todayStr) {
       btn.classList.add("current-bp");
@@ -146,7 +163,7 @@ const searchBar = document.getElementById("search-bar");
 const clearSearchBtn = document.createElement("button");
 clearSearchBtn.id = "clear-search";
 clearSearchBtn.style.display = "none";
-clearSearchBtn.textContent = "×";
+clearSearchBtn.textContent = "�";
 searchBar.insertAdjacentElement('afterend', clearSearchBtn);
 
 searchBar.addEventListener("input", (e) => {

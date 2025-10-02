@@ -6,7 +6,9 @@ async function fetchUserList() {
 
 async function toggleArrest(username, isArrested, button, statusDiv) {
     const action = isArrested ? 'release' : 'arrest';
-    if (!confirm(`Are you sure you want to ${action} ${username}?`)) return;
+    if (!confirm(`Are you sure you want to ${action} ${username}?`)) {
+        return false
+    };
 
     const url = isArrested 
         ? `/api/auth/release/${encodeURIComponent(username)}`
@@ -29,10 +31,11 @@ async function toggleArrest(username, isArrested, button, statusDiv) {
             button.classList.remove('arrest');
             button.classList.add('release');
         }
-
+        return true
     } catch (err) {
         console.error('Error toggling arrest:', err);
         alert('Failed to update arrest status.');
+        return false
     }
 }
 
@@ -79,9 +82,11 @@ async function loadUserPermissions() {
             updateButton(info.arrested);
 
             btn.addEventListener('click', () => {
-                toggleArrest(username, info.arrested, btn, arrestedDiv);
-                info.arrested = !info.arrested; // update after confirmation
-                updateButton(info.arrested);
+                let did_arrest = toggleArrest(username, info.arrested, btn, arrestedDiv);
+                if (did_arrest) { 
+                    info.arrested = !info.arrested; // update after confirmation
+                    updateButton(info.arrested);
+                }
             });
 
             card.appendChild(btn);

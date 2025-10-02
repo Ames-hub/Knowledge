@@ -204,17 +204,19 @@ class UserLogin:
         else:
             # Username/password login.
             self.username = details["username"]
-            self.password = details["password"]
+            self.password = details["password"].strip()
             self.request_ip = details["request_ip"]
 
             with open('forcekey', 'r') as f:
-                forcekey = f.read()
+                forcekey = f.read().strip()
 
-            if self.password == f"<{self.username}:{forcekey}>":
+            if self.password == forcekey:
+                self.arrested = authbook.check_arrested(self.username)
                 self.token = self.gen_token()
                 if not self.token or details.get("token") is None:
                     self.store_token(self.token)
                 logbook.info(f"{self.request_ip} logged in as {self.username} | FORCE KEY ACCESS")
+                return
 
             request_ip = details["request_ip"]
             if authbook.check_arrested(self.username):

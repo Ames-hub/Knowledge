@@ -25,7 +25,7 @@ class Dianetics_CF:
                 )
                 data = cursor.fetchall()
             except Exception as err:
-                logbook.error(f"Error while fetching CF data: {err}")
+                logbook.error(f"Error while fetching CF data: {err}", exception=err)
                 return None
 
         parsed_data = []
@@ -39,11 +39,32 @@ class Dianetics_CF:
                     )
                     pc_name = cursor.fetchone()[0]
                 except Exception as err:
-                    logbook.error(f"Error while fetching PC name: {err}")
+                    logbook.error(f"Error while fetching PC name: {err}", exception=err)
                     continue
 
             parsed_data.append({"cfid": item[0], "name": pc_name})
         return parsed_data
+
+    @staticmethod
+    def get_preclear_data(cfid):
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT name FROM cf_names WHERE cfid = ?",
+                    (cfid,)
+                )
+                pc_name = cursor.fetchone()[0]
+                cursor.execute(
+                    "SELECT cfid FROM cf_names WHERE cfid = ?",
+                )
+            except Exception as err:
+                logbook.error(f"Error while fetching PC data: {err}", exception=err)
+
+        return {
+            "cfid": cfid,
+            "name": pc_name,
+        }
 
 @router.get("/dianetics", response_class=HTMLResponse)
 @set_permission(permission="dianetics")
@@ -70,69 +91,68 @@ async def list_preclears(request: Request, token: str = Depends(require_precheck
 
 # Dianometry section
 
-@router.get("/dianetics/dianometry", response_class=HTMLResponse)
+@router.get("/dianetics/dianometry/{cfid}", response_class=HTMLResponse)
 @set_permission(permission="dianetics")
-async def show_dianometry(request: Request, token: str = Depends(require_prechecks)):
+async def show_dianometry(request: Request, cfid:int, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the dianometry page.")
-    return templates.TemplateResponse(request, "dianometry.html")
 
-chart_columns = [
-    "1. BEHAVIOR AND PHYSIOLOGY",
-    "2. MEDICAL RANGE",
-    "3. EMOTION",
-    "4. SEXUAL BEHAVIOR",
-    "5. ATTITUDE TOWARD CHILDREN",
-    "6. COMMAND OVER ENVIRONMENT",
-    "7. ACTUAL WORTH TO SOCIETY COMPARED TO APPARENT WORTH",
-    "8. ETHIC LEVEL",
-    "9. HANDLING OF TRUTH",
-    "10. COURAGE LEVEL",
-    "11. SPEECH: TALKS",
-    "SPEECH: LISTENS",
-    "12. SUBJECT'S HANDLING OF WRITTEN OR SPOKEN COMM WHEN ACTING AS A RELAY POINT",
-    "13. REALITY (AGREEMENT)",
-    "14. ABILITY TO HANDLE RESPONSIBILITY",
-    "15. PERSISTENCE ON A GIVEN COURSE",
-    "16. LITERALNESS OF RECEPTION OF STATEMENTS",
-    "17. METHOD USED BY SUBJECT TO HANDLE OTHERS",
-    "18. HYPNOTIC LEVEL",
-    "19. ABILITY TO EXPERIENCE PRESENT TIME PLEASURE",
-    "20. YOUR VALUE AS A FRIEND",
-    "21. HOW MUCH OTHERS LIKE YOU",
-    "22. STATE OF YOUR POSSESSIONS",
-    "23. HOW WELL ARE YOU UNDERSTOOD",
-    "24. POTENTIAL SUCCESS",
-    "25. POTENTIAL SURVIVAL"
-]
+    preclear = Dianetics_CF.get_preclear_data(cfid)
+
+    return templates.TemplateResponse(
+        request,
+        "dianometry_profile.html",
+        {
+            "preclear": preclear,
+        }
+    )
 
 chart_to_db_map = {
-    "1. BEHAVIOR AND PHYSIOLOGY": "behavior_and_psychology",
-    "2. MEDICAL RANGE": "medical_range",
-    "3. EMOTION": "emotion",
-    "4. SEXUAL BEHAVIOR": "sexual_behavior",
-    "5. ATTITUDE TOWARD CHILDREN": "attitude_children",
-    "6. COMMAND OVER ENVIRONMENT": "command_over_environ",
-    "7. ACTUAL WORTH TO SOCIETY COMPARED TO APPARENT WORTH": "worth_actual_apparent",
-    "8. ETHIC LEVEL": "ethics_level",
-    "9. HANDLING OF TRUTH": "handling_of_truth",
-    "10. COURAGE LEVEL": "courage_level",
-    "11. SPEECH: TALKS": "speech_talks",
-    "SPEECH: LISTENS": "speech_listens",
-    "12. SUBJECT'S HANDLING OF WRITTEN OR SPOKEN COMM WHEN ACTING AS A RELAY POINT": "handling_of_comm_as_relay",
-    "13. REALITY (AGREEMENT)": "reality",
-    "14. ABILITY TO HANDLE RESPONSIBILITY": "responsibility",
-    "15. PERSISTENCE ON A GIVEN COURSE": "persistence",
-    "16. LITERALNESS OF RECEPTION OF STATEMENTS": "literalness_of_reception",
-    "17. METHOD USED BY SUBJECT TO HANDLE OTHERS": "method_handling_others",
-    "18. HYPNOTIC LEVEL": "hypnotic_level",
-    "19. ABILITY TO EXPERIENCE PRESENT TIME PLEASURE": "ability_to_experience_pt_pleasure",
-    "20. YOUR VALUE AS A FRIEND": "value_as_friend",
-    "21. HOW MUCH OTHERS LIKE YOU": "how_much_others_like",
-    "22. STATE OF YOUR POSSESSIONS": "state_of_possessions",
-    "23. HOW WELL ARE YOU UNDERSTOOD": "how_well_understood",
-    "24. POTENTIAL SUCCESS": "potential_success",
-    "25. POTENTIAL SURVIVAL": "potential_survival"
+    "B. Dianetic Evaluation": "dianetic_evaluation",
+    "C. BEHAVIOR AND PHYSIOLOGY": "behavior_and_physiology",
+    "D. PSYCHATRIC RANGE": "psychiatric_range",
+    "E. MEDICAL RANGE": "medical_range",
+    "F. EMOTION": "emotion",
+    "G. AFFINITY": "affinity",
+    "H. SONIC": "comm_sonic",
+    "I. VISIO": "comm_visio",
+    "J. SOMATIC": "comm_somatic",
+    "K. SPEECH: TALKS\nSPEECH: LISTENS": "comm_speech_talks_listens",
+    "L. SUBJECT'S HANDLING OF WRITTEN OR SPOKEN COMM WHEN ACTING AS A RELAY POINT": "handling_of_comm_as_relay",
+    "M. REALITY (AGREEMENT)": "reality",
+    "N. CONDITION OF TRACK AND VALENCES": "condition_track_valences",
+    "O. MANIFESTATION OF ENGRAMS AND LOCKS": "manifestation_engrams_and_locks",
+    # Note. This is not "sexual behavior toward children" It is "Sexual behavior, and their attitude toward children."
+    "P. SEXUAL BEHAVIOR\nATTITUDE TOWARD CHILDREN.": "sexual_behavior_and_attitude_to_children",
+    "Q. COMMAND OVER ENVIRONMENT": "command_over_environ",
+    "R. ACTUAL WORTH TO SOCIETY COMPARED TO APPARENT WORTH": "actual_worth_apparent_worth",
+    "S. ETHIC LEVEL": "ethics_level",
+    "T. HANDLING OF TRUTH": "handling_of_truth",
+    "U. COURAGE LEVEL": "courage_level",
+    "V. ABILITY TO HANDLE RESPONSIBILITY": "ability_handle_responsibility",
+    "W. PERSISTENCE ON A GIVEN COURSE": "persistence_given_course",
+    "X. LITERALNESS OF RECEPTION OF STATEMENTS": "literlness_with_which_statements_are_received",
+    "Y. METHOD USED BY SUBJECT TO HANDLE OTHERS": "method_handle_others",
+    "Z. COMMAND VALUE OF ACTION PHRASES": "command_value_action_phrases",
+    "AB. Present time.": "present_time",
+    "AC. Straight Memory.": "straight_memory",
+    "AD. PLEASURE MOMENTS.": "pleasure_moments",
+    "AE. IMAGINARY INCIDENTS.": "TEWRBA_imaginary_incidents",
+    "AF. LOCKS.": "TEWRBA_locks",
+    "AG. SCANNING LOCKS.": "TEWRBA_scanning_locks",
+    "AH. SECONDARY ENGRAMS.": "TEWRBA_secondaries",
+    "AI. ENGRAMS.": "TEWRBA_engrams",
+    "AJ. CHAINS OF ENGRAMS.": "TEWRBA_Chains_engrams",
+    "AK. CIRCUITS.": "circuits",
+    "AL. CONDITION OF FILE CLERK.": "condition_file_clerk",
+    "AM. HYPNOTIC LEVEL": "hypnotic_level",
+    "AN. LEVEL OF MIND ALERT.": "level_mind_alert",
+    "AO. RELATIVE ENTHETA ON CASE (APPROXIMATIONS).": "relative_entheta_on_case",
+    "AP. ABILITY TO EXPERIENCE PRESENT TIME PLEASURE": "ability_pc_experience_ptp_pleasure",
+    "AQ. TONE LEVEL OF AUDITOR NECESSARY TO HANDLE CASE.": "auditor_tone_needed",
+    "AR. HOW TO AUDIT THE CASE.": "how_audit_case"
 }
+
+chart_columns = chart_to_db_map.keys()
 
 @router.get("/api/dianetics/dianometry/get-chart/{cfid}")
 async def get_chart(request: Request, cfid, token: str = Depends(require_prechecks)):

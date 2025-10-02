@@ -28,7 +28,7 @@ async def save_settings(request: Request, data: SettingsData, token=Depends(requ
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is saving settings. New config: {data.config}")
     for setting, value in data.config.items():
         settings.save(
-            key=setting,
+            key=setting.lower(),
             value=value,
         )
     return HTMLResponse(content="Settings saved successfully.", status_code=200)

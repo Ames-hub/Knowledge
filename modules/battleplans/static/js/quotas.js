@@ -92,20 +92,9 @@ async function updateQuotaStatus(bpId, bpDate = currentBPDate) {
 
     if (!res.ok) return;
 
-    const weekly = await res.json();
-    
-    // Calculate weekly totals from the array
-    const weeklyTotals = {};
-    if (Array.isArray(weekly)) {
-      weekly.forEach(dayData => {
-        if (dayData && typeof dayData === 'object') {
-          Object.entries(dayData).forEach(([quotaName, amount]) => {
-            weeklyTotals[quotaName] = (weeklyTotals[quotaName] || 0) + amount;
-          });
-        }
-      });
-    }
-    
+    // Backend now returns { "QuotaA": 42, "QuotaB": 19, ... }
+    const weeklyTotals = await res.json();
+
     // Find ALL quota rows for this bpId
     const quotaRows = document.querySelectorAll(`.quota-row[data-bp-id="${String(bpId)}"]`);
     if (!quotaRows.length) return;
@@ -118,7 +107,7 @@ async function updateQuotaStatus(bpId, bpDate = currentBPDate) {
       // Get the quota name from this specific row
       const quotaNameElement = quotaRow.querySelector(".quota-name");
       const quotaName = quotaNameElement ? quotaNameElement.textContent.trim() : null;
-      
+
       if (quotaName && weeklyTotals[quotaName] !== undefined) {
         // Create a new breakdown element
         const breakdownDiv = document.createElement("div");

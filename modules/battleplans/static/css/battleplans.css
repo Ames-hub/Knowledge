@@ -176,14 +176,6 @@ body {
   color: var(--text);
 }
 
-/* form for adding tasks */
-#new-task-form {
-  display:flex;
-  gap:8px;
-  align-items:center;
-  width:100%;
-}
-
 #task-input {
   flex: 1;
   padding: 12px;
@@ -267,7 +259,6 @@ body {
   border-radius: 999px;
 }
 
-/* ---------- responsive behavior ---------- */
 @media (max-width: 900px){
   body { padding: 12px; gap: 12px; }
   #bplist { width: 320px; position: fixed; left: 12px; top: 12px; bottom: 12px; z-index: 70; transform: translateX(0); }
@@ -277,13 +268,11 @@ body {
   #bp-editor-container { margin-left: 0; }
 }
 
-/* smallest screens: stack vertically */
 @media (max-width: 520px){
   #bplist { width: calc(100% - 24px); min-width: auto; max-width: none; border-radius: 12px; }
   #bp-editor-container { width: calc(100% - 24px); padding: 16px; border-radius: 12px; }
 }
 
-/* === UNIVERSAL MODAL CENTERING === */
 #bp-help-modal,
 #bp-warning-modal,
 #add-quota-modal {
@@ -328,7 +317,6 @@ body {
 #bp-warning-modal .modal-content::-webkit-scrollbar-track,
 #add-quota-modal .modal-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
 
-/* Fullscreen for smallest screens */
 @media (max-width: 520px){
   #bp-help-modal .modal-content,
   #bp-warning-modal .modal-content,
@@ -342,7 +330,6 @@ body {
   }
 }
 
-/* ---------- accessibility focus states ---------- */
 button:focus, input:focus {
   outline: 3px solid rgba(125,211,252,0.14);
   outline-offset: 2px;
@@ -788,4 +775,71 @@ body[data-theme="light"] #task-category:focus {
 .bp-item.current-bp {
   background-color: #ffd700 !important; /* gold highlight */
   font-weight: bold;
+}
+
+/* ---------- Task Form Responsiveness ---------- */
+/* Default layout (desktop) */
+#new-task-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+#task-input {
+  flex: 1;
+  min-width: 150px;
+}
+
+#task-category {
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+#add-task-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Tablet and smaller screens */
+@media (max-width: 768px) {
+  #new-task-form {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  #task-input {
+    flex: 1 1 100%;
+    min-width: auto;
+    order: 1;
+  }
+  
+  #task-category {
+    flex: 1;
+    min-width: auto;
+    order: 2;
+  }
+  
+  #add-task-btn {
+    flex: 1;
+    min-width: auto;
+    order: 3;
+  }
+}
+
+/* Mobile screens */
+@media (max-width: 480px) {
+  #new-task-form {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  #task-input,
+  #task-category,
+  #add-task-btn {
+    flex: 1 1 100%;
+    width: 100%;
+    order: 0; /* Reset order for natural stacking */
+  }
 }

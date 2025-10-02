@@ -109,6 +109,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
+  background-color: white;
 }
 
 .hubbard-chart td.selected {

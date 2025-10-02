@@ -534,6 +534,7 @@ async def set_weekly_target(request: Request, data: quota_data_set, token: str =
             )
             conn.commit()
         except sqlite3.OperationalError as err:
+            conn.rollback()
             logbook.error(f"Database error while setting weekly target: {err}", exception=err)
             return JSONResponse({"success": False, "error": "Database error occurred."}, status_code=500)
 
@@ -545,10 +546,7 @@ async def set_weekly_target(request: Request, data: quota_data_set, token: str =
 
     # Calculate days to week start (weekday_end is the end day, so start is end_day + 1 mod 7)
     days_to_week_start = (bp_date_num - (weekday_end + 1)) % 7
-    if days_to_week_start > 0:
-        week_start = bp_date - datetime.timedelta(days=days_to_week_start)
-    else:
-        week_start = bp_date - datetime.timedelta(days=7 + days_to_week_start)
+    week_start = bp_date - datetime.timedelta(days=days_to_week_start)
 
     # Week runs from week_start to week_start + 6 days
     date_range = [week_start + datetime.timedelta(days=i) for i in range(7)]
@@ -625,6 +623,8 @@ async def get_weekly_production(request: Request, data: weekly_prod_get, token: 
     current_weekday = date_obj.isoweekday()  # 1=Monday, 7=Sunday
     delta_days = (current_weekday - week_start) % 7
     start_of_week = date_obj - datetime.timedelta(days=delta_days)
+    # So that we don't count the weekday end past, we add 1 day.
+    start_of_week = start_of_week + datetime.timedelta(days=1)
 
     # Generate all dates in the week
     week_dates = [
@@ -632,12 +632,14 @@ async def get_weekly_production(request: Request, data: weekly_prod_get, token: 
         for i in range(7)
     ]
 
-    week_data = []
+    # Aggregate totals across the week
+    weekly_totals: dict[str, int] = {}
     for date in week_dates:
         day_data = get_quota_done_helper(date, owner)
-        week_data.append(day_data)
+        for quota_name, done in day_data.items():
+            weekly_totals[quota_name] = weekly_totals.get(quota_name, 0) + done
 
-    return JSONResponse(content=week_data, status_code=200)
+    return JSONResponse(content=weekly_totals, status_code=200)
 
 class clearbp_data(BaseModel):
     date: str

@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         preclears.forEach(pc => {
             const li = document.createElement("li");
             const a = document.createElement("a");
-            a.href = `/files/get/${pc.cfid}`;
+            a.href = `/dianetics/dianometry/${pc.cfid}`;
             a.textContent = `${pc.name} (CFID: ${pc.cfid})`;
             li.appendChild(a);
             list.appendChild(li);
