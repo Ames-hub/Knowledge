@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signal Server</title>
+  <link rel="stylesheet" href="/static/signals/css/signals.css">
+  <link rel="stylesheet" href="/static/register/css/toast.css">
+</head>
+
+<!-- New Route Modal -->
+<div id="new-route-modal" class="modal">
+  <div class="modal-content">
+    <span id="close-modal" class="close">&times;</span>
+    <h2>New Route</h2>
+    <label>Route Path:</label>
+    <input id="new-route-path" type="text" placeholder="new-route/wow">
+    <label>HTTP Code:</label>
+    <input id="new-route-http" type="number" value="200">
+    <label>HTML Response:</label>
+    <textarea id="new-route-html" rows="5">&lt;h1&gt;New Route&lt;/h1&gt;</textarea>
+    <button id="create-route-btn">Create Route</button>
+  </div>
+</div>
+
+<body>
+  <!-- Toggle sidebar for mobile -->
+  <div id="toggle-siglist-btn" aria-expanded="false" title="Signals tab">☰</div>
+
+  <!-- Sidebar: Battle Plans list -->
+  <div id="siglist">
+    <h1>Signal Server</h1>
+    <button id="back-btn">Go Back</button>
+    <button id="add-plan-btn">New Route</button>
+    <button id="theme-toggle-btn">Toggle Theme</button>
+    <input type="text" id="search-bar" placeholder="Search...">
+    <div id="sig-container">
+    </div>
+  </div>
+
+  <!-- Main editor -->
+  <main id="sig-editor-container">
+    <!-- Control buttons -->
+    <div id="controls">
+      <button id="save-btn">Save Route</button>
+      <button id="close-btn">Close Route</button>
+      <button id="open-btn">Open Route</button>
+      <button id="del-btn">Delete Route</button>
+    </div>
+
+    <div id="signal-item">
+    </div>
+  </main>
+  <!-- JS -->
+  <script src="/static/register/js/toast.js"></script>
+  <script src="/static/signals/js/navigation.js"></script>
+  <script src="/static/signals/js/routes.js"></script>
+</body>
+</html>

@@ -18,7 +18,8 @@ valid_perms = [
     'battleplans',
     'ftp_server',
     'auth_page',
-    'app_settings'
+    'app_settings',
+    'signal_server'
 ]
 
 def set_permission(permission: str):

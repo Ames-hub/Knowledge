@@ -254,6 +254,12 @@ class database:
                 "dyn_2": "INT",
                 "dyn_3": "INT",
                 "dyn_4": "INT",  # The int is strength. 1 = Weak, 2 = Normal, 3 = Strong.
+            },
+            "signalserver_items": {
+                "signal_route": "TEXT NOT NULL PRIMARY KEY",
+                "http_code":  "INT NOT NULL DEFAULT 200",
+                "html_response": "TEXT NOT NULL DEFAULT 'No Response Set'",
+                "is_closed": "BOOLEAN NOT NULL DEFAULT FALSE",
             }
         }
         for table_name, columns in table_dict.items():
