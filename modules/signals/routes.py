@@ -7,6 +7,7 @@ from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
+import datetime
 import sqlite3
 import os
 
@@ -130,7 +131,7 @@ class SaveSignalData(BaseModel):
 @router.post("/api/signals/save/html")
 @set_permission(permission="signal_server")
 async def route_save_html_response(request: Request, signal: SaveSignalData, token=Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) Has saved the HTML response for {signal.signal_route} as {signal.html_response}.")
+    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) Has saved the HTML response for {signal.signal_route} as:\n{signal.html_response}\n")
 
     success = save_html_response(signal.signal_route, signal.html_response)
 
@@ -231,6 +232,18 @@ async def load_signal(request: Request, signal: loadSignalData, token=Depends(re
     )
 
 
+def parse_placeholders(html_response:str):
+    """
+    To add logical data to your HTML response, you need to modify this function.
+    """
+    logical_data_map = {
+        "<date>": datetime.datetime.now().strftime("%m/%d/%Y"),
+        "<time>": datetime.datetime.now().strftime("%H:%M:%S"),
+    }
+    for key in logical_data_map:
+        html_response = html_response.replace(key, logical_data_map[key])
+    return html_response
+
 @router.get("/api/signals/r/{signal_route}")
 async def read_route(request: Request, signal_route):
     logbook.info(f"IP {request.client.host} Is reading route \"{signal_route}\"")
@@ -248,7 +261,9 @@ async def read_route(request: Request, signal_route):
             status_code=401
         )
 
-    return HTMLResponse(content=route_data["html_response"], status_code=route_data["http_code"])
+    html_response = parse_placeholders(route_data["html_response"])
+
+    return HTMLResponse(content=html_response, status_code=route_data["http_code"])
 
 def del_route(route):
     with sqlite3.connect(DB_PATH) as conn:
