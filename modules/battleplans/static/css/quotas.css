@@ -1,0 +1,69 @@
+#quota-info {
+  gap: 10px;
+}
+
+#quota-info label {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+#quota-info input {
+  width: 100px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid rgb(41, 41, 41);
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  font-size: 0.95rem;
+}
+
+#quota-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 8px 0;
+}
+
+/* === Quotas === */
+.quota-row {
+  display: flex;
+  flex-wrap: wrap;   /* let inputs wrap on small widths */
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.quota-row:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, rgba(125,211,252,0.08), rgba(255,255,255,0.03));
+}
+
+.quota-name {
+  flex: 1 1 80px;
+  font-weight: 600;
+}
+
+.quota-done,
+.quota-needed,
+.quota-weekly-target {
+  flex: 0 1 80px;
+  min-width: 70px;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.weekly-breakdown {
+  flex: 1 1 100%;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.quota-needed:focus,
+.quota-done:focus {
+  border-color: var(--accent);
+  background: rgba(125,211,252,0.06);
+  outline: none;
+}

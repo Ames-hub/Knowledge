@@ -1,3 +1,4 @@
+// battleplans.js
 const bpIndicator = document.getElementById("bp-indicator");
 const addPlanBtn = document.getElementById("add-plan-btn");
 let currentBPDate = getTodayStr(); // track current BP date
@@ -6,6 +7,13 @@ let currentBPId = null; // track bp_id
 let allBattlePlans = [];
 const sortDescending = true;
 
+// Modal refs
+const customDateModal = document.getElementById("custom-date-modal");
+const customDateForm = document.getElementById("custom-date-form");
+const customDateInput = document.getElementById("custom-date-input");
+const customDateCancel = document.getElementById("custom-date-cancel");
+
+// ----------- LOAD FULL BATTLEPLAN -----------
 async function loadFullBP({ day, month }, do_alert = true) {
   try {
     const year = new Date().getFullYear();
@@ -84,6 +92,7 @@ async function loadFullBP({ day, month }, do_alert = true) {
   }
 }
 
+// ----------- HELPERS -----------
 function parseMonthIndex(monthName) {
   if (!monthName) return 0;
   const m = monthName.toLowerCase().slice(0, 3);
@@ -108,11 +117,11 @@ async function loadBattlePlans() {
       const fullDateStr = `${String(dayNum).padStart(2,"0")}-${String(monthIdx+1).padStart(2,"0")}-${yearNum}`;
 
       return {
-        name: weekdayName, // display weekday
+        name: weekdayName,
         dateObj,
         realDate,
         timestamp: realDate.getTime(),
-        fullDateStr // searchable date string
+        fullDateStr
       };
     });
 
@@ -145,11 +154,8 @@ function filterBattlePlans(searchTerm) {
     const btn = document.createElement("button");
     btn.className = "bp-item";
 
-    // Highlight today\u2019s BP
     const planStr = `${realDate.getFullYear()}-${realDate.getMonth()}-${realDate.getDate()}`;
-    if (planStr === todayStr) {
-      btn.classList.add("current-bp");
-    }
+    if (planStr === todayStr) btn.classList.add("current-bp");
 
     btn.innerHTML = `<p class="bp-text">${name}</p>
       <div class="bp-date"><span class="bp-month">${dateObj.month}</span><br><span class="bp-day">${dateObj.day}</span></div>`;
@@ -158,12 +164,12 @@ function filterBattlePlans(searchTerm) {
   });
 }
 
-// Search listener
+// ----------- SEARCH SETUP -----------
 const searchBar = document.getElementById("search-bar");
 const clearSearchBtn = document.createElement("button");
 clearSearchBtn.id = "clear-search";
 clearSearchBtn.style.display = "none";
-clearSearchBtn.textContent = "�";
+clearSearchBtn.textContent = "\ufffd";
 searchBar.insertAdjacentElement('afterend', clearSearchBtn);
 
 searchBar.addEventListener("input", (e) => {
@@ -184,19 +190,16 @@ document.addEventListener("DOMContentLoaded", () => {
   loadFullBP({ day: String(new Date().getDate()).padStart(2,"0"), month: new Date().toLocaleString("default",{month:"long"}) });
 });
 
-addPlanBtn.addEventListener("click", async () => {
+// ----------- CREATE BATTLEPLAN -----------
+async function createBattlePlanForDate(day, month, year = new Date().getFullYear()) {
   try {
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, "0");
-    const month = now.toLocaleString("default", { month: "long" });
-    const dateStr = `${day}-${month}-${now.getFullYear()}`;
-
+    const dateStr = `${day}-${month}-${year}`;
     taskList.innerHTML = "";
     if (bpIndicator) bpIndicator.textContent = "";
 
     const res = await fetch(`/api/bps/create/${encodeURIComponent(dateStr)}`, { method: "GET" });
     if (res.status === 409) {
-      toast("A battle plan for today already exists, loading today's BattlePlan.", "info");
+      toast(`A battle plan for ${dateStr} already exists, loading it.`, "info");
       loadFullBP({ day, month });
       return;
     }
@@ -205,10 +208,65 @@ addPlanBtn.addEventListener("click", async () => {
     await loadBattlePlans();
     loadFullBP({ day, month });
 
-    if (doNotifySuccess) toast("New BattlePlan created", "success");
+    if (doNotifySuccess) toast(`BattlePlan created for ${dateStr}`, "success");
     if (window.innerWidth < 900) setOpenState(false);
   } catch (err) {
     console.error(err);
     toast("Failed to create new battle plan", "error");
   }
+}
+
+// ----------- SHORT CLICK / LONG PRESS -----------
+let pressTimer;
+const longPressThreshold = 700; // ms
+
+addPlanBtn.addEventListener("mousedown", startPress);
+addPlanBtn.addEventListener("touchstart", startPress);
+addPlanBtn.addEventListener("mouseup", clearPress);
+addPlanBtn.addEventListener("mouseleave", clearPress);
+addPlanBtn.addEventListener("touchend", clearPress);
+addPlanBtn.addEventListener("touchcancel", clearPress);
+
+function startPress(e) {
+  e.preventDefault();
+  pressTimer = setTimeout(() => {
+    openCustomDateModal();
+  }, longPressThreshold);
+}
+
+function clearPress(e) {
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+    if (e.type === "mouseup" || e.type === "touchend") createTodayBP();
+  }
+}
+
+function createTodayBP() {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = now.toLocaleString("default", { month: "long" });
+  createBattlePlanForDate(day, month, now.getFullYear());
+}
+
+// ----------- CUSTOM DATE MODAL -----------
+function openCustomDateModal() {
+  customDateInput.value = "";
+  customDateModal.classList.remove("hidden");
+  customDateInput.focus();
+}
+
+function closeCustomDateModal() {
+  customDateModal.classList.add("hidden");
+}
+
+customDateCancel.addEventListener("click", closeCustomDateModal);
+
+customDateForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const dateValue = customDateInput.value;
+  if (!dateValue) return;
+  const [year, monthNum, day] = dateValue.split("-");
+  const month = new Date(`${year}-${monthNum}-01`).toLocaleString("default", { month: "long" });
+  createBattlePlanForDate(String(day).padStart(2,"0"), month, year);
+  closeCustomDateModal();
 });

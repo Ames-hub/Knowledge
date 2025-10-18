@@ -4,7 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Battle Plans</title>
-  <link rel="stylesheet" href="/static/battleplans/css/battleplans.css">
+  <!-- Battle Plans CSS Files -->
+  <link rel="stylesheet" href="/static/battleplans/css/base.css">
+  <link rel="stylesheet" href="/static/battleplans/css/sidebar.css">
+  <link rel="stylesheet" href="/static/battleplans/css/editor.css">
+  <link rel="stylesheet" href="/static/battleplans/css/forms.css">
+  <link rel="stylesheet" href="/static/battleplans/css/quotas.css">
+  <link rel="stylesheet" href="/static/battleplans/css/modals.css">
+  <link rel="stylesheet" href="/static/battleplans/css/themes.css">
+  <link rel="stylesheet" href="/static/battleplans/css/responsive.css">
+
+  <!-- Other stuff -->
   <link rel="stylesheet" href="/static/register/css/toast.css">
 </head>
 <body>
@@ -139,6 +149,19 @@
       </form>
     </div>
   </div>
+
+<div id="custom-date-modal" class="hidden">
+  <div class="modal-content">
+    <h3>Select a Date</h3>
+    <form id="custom-date-form">
+      <input type="date" id="custom-date-input" required>
+      <div class="modal-actions">
+        <button type="button" id="custom-date-cancel">Cancel</button>
+        <button type="submit" id="custom-date-confirm">OK</button>
+      </div>
+    </form>
+  </div>
+</div>
   <!-- JS -->
   <script src="/static/register/js/toast.js"></script>
   <script src="/static/battleplans/js/helpers.js"></script>

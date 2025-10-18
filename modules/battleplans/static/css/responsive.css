@@ -1,0 +1,105 @@
+/* Tablet and smaller screens */
+@media (max-width: 900px){
+  body { padding: 12px; gap: 12px; }
+  #bplist { width: 320px; position: fixed; left: 12px; top: 12px; bottom: 12px; z-index: 70; transform: translateX(0); }
+  #toggle-bplist-btn { display: flex; z-index: 100; }
+  #bplist[hidden], #bplist[aria-hidden="true"] { transform: translateX(-110%); opacity:0; pointer-events:none; }
+  #toggle-bplist-btn[aria-expanded="true"] ~ #bplist { transform: translateX(0); opacity:1; pointer-events:auto; }
+  #bp-editor-container { margin-left: 0; }
+}
+
+/* Mobile screens */
+@media (max-width: 520px){
+  #bplist { width: calc(100% - 24px); min-width: auto; max-width: none; border-radius: 12px; }
+  #bp-editor-container { width: calc(100% - 24px); padding: 16px; border-radius: 12px; }
+  
+  #bp-help-modal .modal-content,
+  #bp-warning-modal .modal-content,
+  #add-quota-modal .modal-content,
+  #delete-quota-modal .modal-content {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  #new-task-form {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  #task-input {
+    flex: 1 1 100%;
+    min-width: auto;
+    order: 1;
+  }
+  
+  #task-category {
+    flex: 1;
+    min-width: auto;
+    order: 2;
+  }
+  
+  #add-task-btn {
+    flex: 1;
+    min-width: auto;
+    order: 3;
+  }
+}
+
+/* Mobile screens */
+@media (max-width: 480px) {
+  #new-task-form {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  #task-input,
+  #task-category,
+  #add-task-btn {
+    flex: 1 1 100%;
+    width: 100%;
+    order: 0; /* Reset order for natural stacking */
+  }
+}
+
+@media (max-width: 520px) {
+  #new-task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+  }
+
+  #task-input,
+  #task-category,
+  #add-task-btn {
+    width: 100%;
+    flex: none;
+    font-size: 1rem;
+    padding: 14px 12px;
+  }
+
+  #add-task-btn {
+    font-weight: 700;
+    text-align: center;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: #03202a;
+    box-shadow: 0 6px 14px rgba(92,150,180,0.2);
+  }
+
+  /* prevent horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* add breathing room below the form */
+  #task-list {
+    margin-top: 8px;
+  }
+}

@@ -107,7 +107,6 @@ for module_name in os.listdir(modules_dir):
             raise FileNotFoundError(f"No routes.py found in {module_name}")
 
 if __name__ == "__main__":
-    # The FORCE KEY is a key you can enter into the username field of login with as "<USERNAME:FORCE_KEY>" to get a login going without the password.
     # The forcekey should never be revealed.
     FORCE_KEY = secrets.token_urlsafe(16)
     print(f"THE FORCE KEY FOR THIS SESSION IS: {FORCE_KEY}")
@@ -134,6 +133,7 @@ if __name__ == "__main__":
         ssl_keyfile=ssl_keyfile_dir
     )
     server = uvicorn.Server(config)
+
     try:
         asyncio.run(server.serve())
     except KeyboardInterrupt:

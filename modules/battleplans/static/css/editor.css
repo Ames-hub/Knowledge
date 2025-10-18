@@ -1,0 +1,125 @@
+/* ---------- main editor area ---------- */
+#bp-editor-container {
+  flex: 1;
+  min-width: 300px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+/* controls row inside main */
+#controls {
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+/* buttons */
+#controls button {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 4px 10px rgba(2,6,12,0.4);
+}
+
+#controls button:hover { transform: translateY(-3px); background: linear-gradient(180deg,var(--glass), rgba(255,255,255,0.02)); box-shadow: 0 8px 22px rgba(2,6,12,0.5); }
+#controls button:active { transform: translateY(0); }
+
+/* primary button visual accent */
+#controls button:first-child {
+  background: linear-gradient(90deg, rgba(125,211,252,0.08), rgba(96,165,250,0.06));
+  border: 1px solid rgba(125,211,252,0.14);
+  color: var(--text);
+}
+
+#task-input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+  background: transparent;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+/* add task button */
+#add-task-btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight:700;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(90deg,var(--accent), var(--accent-2));
+  color: #03202a;
+  box-shadow: 0 8px 20px rgba(92,150,180,0.12);
+}
+
+/* task list */
+#task-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+/* each task row */
+.task-item {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+  border: 1px solid rgba(255,255,255,0.03);
+  align-items:center;
+}
+
+.task-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.task-text {
+  flex: 1;
+  font-size: 0.98rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.delete-task-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight:700;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.delete-task-btn:hover { color: var(--danger); transform: translateY(-2px); }
+
+/* task list scrollbar */
+#task-list::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+#task-list::-webkit-scrollbar-thumb {
+  background: rgba(125,211,252,0.12);
+  border-radius: 999px;
+}

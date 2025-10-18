@@ -1,0 +1,113 @@
+/* ---------- sidebar (bplist) ---------- */
+#bplist {
+  width: 300px;
+  min-width: 260px;
+  max-width: 360px;
+  background: linear-gradient(180deg,var(--panel), rgba(11,18,32,0.95));
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 240ms ease, opacity 240ms ease;
+  position: relative;
+}
+
+/* toggle button (small square/hamburger) */
+#toggle-bplist-btn {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--glass);
+  display: none; /* shown on small screens via media query */
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 6px 20px rgba(2,6,12,0.6);
+}
+
+/* header inside sidebar */
+#bplist h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.6px;
+  color: var(--text);
+}
+
+/* small control row top of sidebar */
+#bplist > button, #bplist > input {
+  margin-top: 6px;
+}
+
+/* controls area inside sidebar */
+#bplist button,
+#bplist input[type="text"]{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.03);
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  font-size: 0.95rem;
+}
+
+/* search bar */
+#search-bar {
+  display: block;
+  margin-top: 8px;
+}
+
+/* plans list */
+#plans-container {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding-bottom: 8px;
+}
+
+/* each battle plan item */
+.bp-item{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(125,211,252,0.03), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease;
+  color: var(--text);
+}
+
+.bp-item:hover { transform: translateY(-3px); background: linear-gradient(180deg, rgba(125,211,252,0.06), rgba(255,255,255,0.02)); }
+
+.bp-text { font-weight: 600; font-size: 0.98rem; color: var(--text); margin:0; }
+.bp-date { text-align: right; font-size: 0.72rem; color: var(--muted); line-height: 1; }
+.bp-month { font-weight:700; letter-spacing: 0.7px; display:block; color:var(--muted); }
+.bp-day { font-size:1.25rem; color:var(--text); }
+
+.bp-item.current-bp {
+  background-color: #ffd700 !important; /* gold highlight */
+  font-weight: bold;
+}
+
+/* subtle scrollbar styling */
+#plans-container::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+#plans-container::-webkit-scrollbar-thumb {
+  background: rgba(125,211,252,0.12);
+  border-radius: 999px;
+}

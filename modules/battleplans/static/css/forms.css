@@ -1,0 +1,46 @@
+/* ---------- Task Category Dropdown ---------- */
+#task-category {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+  background: linear-gradient(180deg, rgba(125,211,252,0.05), rgba(255,255,255,0.01));
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  outline: none;
+  transition: background 120ms ease, border 120ms ease, transform 120ms ease;
+}
+
+#task-category:hover {
+  background: linear-gradient(180deg, rgba(125,211,252,0.12), rgba(255,255,255,0.02));
+}
+
+#task-category:focus {
+  border-color: var(--accent);
+  background: rgba(125,211,252,0.08);
+}
+
+/* ---------- Task Form Responsiveness ---------- */
+/* Default layout (desktop) */
+#new-task-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+#task-input {
+  flex: 1;
+  min-width: 150px;
+}
+
+#task-category {
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+#add-task-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

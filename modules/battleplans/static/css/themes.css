@@ -1,0 +1,156 @@
+/* ---------- Light Theme ---------- */
+body[data-theme="light"] {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --muted: #6b7280;
+  --accent: #3b82f6;
+  --accent-2: #60a5fa;
+  --text: #111827;
+  --danger: #ef4444;
+  --glass: rgba(0,0,0,0.03);
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body[data-theme="light"] #bplist {
+  background: var(--panel);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+body[data-theme="light"] .bp-item {
+  background: #f0f4ff;
+  border: 1px solid #d1d5db;
+  color: var(--text);
+}
+body[data-theme="light"] .bp-item:hover {
+  background: #e0e7ff;
+}
+
+body[data-theme="light"] #bp-editor-container {
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+body[data-theme="light"] #controls button {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: var(--text);
+}
+body[data-theme="light"] #controls button:first-child {
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  border: 1px solid #3b82f6;
+  color: #ffffff;
+}
+
+body[data-theme="light"] .task-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: var(--text);
+}
+
+body[data-theme="light"] .delete-task-btn:hover {
+  color: var(--danger);
+}
+
+body[data-theme="light"] #bp-warning-modal .modal-content,
+body[data-theme="light"] #bp-help-modal .modal-content,
+body[data-theme="light"] #add-quota-modal .modal-content,
+body[data-theme="light"] #delete-quota-modal .modal-content {
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+body[data-theme="light"] input,
+body[data-theme="light"] #task-input,
+body[data-theme="light"] #quota-info input {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: var(--text);
+}
+
+body[data-theme="light"] #plans-container::-webkit-scrollbar-thumb,
+body[data-theme="light"] #task-list::-webkit-scrollbar-thumb,
+body[data-theme="light"] #bp-help-modal .modal-content::-webkit-scrollbar-thumb {
+  background: rgba(59,130,246,0.15);
+}
+
+body[data-theme="light"] {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8fa 100%);
+}
+
+/* Light theme overrides for quotas */
+body[data-theme="light"] .quota-row {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+body[data-theme="light"] .quota-row:hover {
+  background: #eef2ff;
+}
+body[data-theme="light"] .quota-needed,
+body[data-theme="light"] .quota-done {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: var(--text);
+}
+
+/* Light theme overrides for delete modal */
+body[data-theme="light"] #delete-quota-modal #quota-to-delete {
+  background: #f0f4ff;
+  border: 1px solid #d1d5db;
+  color: var(--text);
+}
+
+body[data-theme="light"] #delete-quota-cancel {
+  background: #6b7280;
+  color: #fff;
+}
+
+body[data-theme="light"] #delete-quota-confirm {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* Light theme for task category */
+body[data-theme="light"] #task-category {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: var(--text);
+}
+
+body[data-theme="light"] #task-category:hover {
+  background: #e0e7ff;
+}
+
+body[data-theme="light"] #task-category:focus {
+  border-color: var(--accent);
+  background: rgba(96,165,250,0.12);
+}
+
+/* ---------- Theme Toggle Button ---------- */
+#theme-toggle {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--glass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 6px 20px rgba(2,6,12,0.6);
+  transition: background 200ms ease, transform 200ms ease;
+  z-index: 150;
+}
+
+#theme-toggle:hover {
+  background: var(--accent);
+  color: #03202a;
+  transform: translateY(-2px);
+}
