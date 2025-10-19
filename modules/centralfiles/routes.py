@@ -1,16 +1,16 @@
+from fastapi.responses import JSONResponse, HTMLResponse, Response
 from modules.dianetics.routes import update_mind_class_estimation
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
 from library.auth import require_prechecks
-from fastapi.responses import HTMLResponse
 from library.logbook import LogBookHandler
-from fastapi.responses import JSONResponse
 from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
 import datetime
 import sqlite3
+import base64
 import os
 
 router = APIRouter()
@@ -428,6 +428,42 @@ class centralfiles:
             }
 
     @staticmethod
+    def get_occupation(cfid:int):
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT occupation FROM cf_occupations WHERE cfid = ?",
+                    (cfid,)
+                )
+                data = cursor.fetchone()
+                if data:
+                    return data[0]
+                else:
+                    return "Unemployed"
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error getting occupation for cfid {cfid}: {err}", exception=err)
+                return "Unemployed"
+
+    @staticmethod
+    def get_profile_image(cfid):
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT image FROM cf_profile_images WHERE cfid = ?",
+                    (cfid,)
+                )
+                data = cursor.fetchone()
+                if data:
+                    return data[0]
+                else:
+                    return None
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error getting profile image for cfid {cfid}: {err}", exception=err)
+                return None
+
+    @staticmethod
     def dupe_check(name:str):
         """
         Returns if there is someone with the same data in the database.
@@ -533,6 +569,44 @@ class centralfiles:
             finally:
                 conn.close()
 
+        def profile_image(self, image_bytes:bytes):
+            conn = sqlite3.connect(DB_PATH)
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    INSERT INTO cf_profile_images (cfid, image) VALUES (?, ?)
+                    ON CONFLICT(cfid) DO UPDATE SET image=excluded.image
+                    """,
+                    (self.cfid, image_bytes)
+                )
+                conn.commit()
+                return True
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error setting profile image for cfid {self.cfid}: {err}", exception=err)
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+
+        def occupation(self, occupation):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_occupations (cfid, occupation) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET occupation=excluded.occupation
+                        """,
+                        (self.cfid, occupation)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error setting occupation for cfid {self.cfid}: {err}", exception=err)
+                    conn.rollback()
+                    return False
+
     class notes:
         def __init__(self, note_id):
             self.note_id = int(note_id)
@@ -615,6 +689,12 @@ class centralfiles:
                 """,
                 (cfid, False)
             )
+            cursor.execute(
+                """
+                INSERT INTO cf_occupations (cfid, occupation) VALUES (?, ?)
+                """,
+                (cfid, "Unemployed")
+            )
 
             conn.commit()
             return cfid
@@ -678,7 +758,9 @@ class centralfiles:
                     (name,),
                 )
                 data = cursor.fetchall()
-                if len(data) != 1:
+                if len(data) == 0:
+                    raise centralfiles.errors.ProfileNotFound()
+                elif len(data) != 1:
                     raise centralfiles.errors.TooManyProfiles()
                 else:
                     cfid = data[0][0]
@@ -741,10 +823,22 @@ class centralfiles:
             except (TypeError, IndexError):
                 is_dn_pc = False
 
+            cursor.execute(
+                """
+                SELECT occupation FROM cf_occupations WHERE cfid = ?
+                """,
+                (cfid,),
+            )
+            try:
+                occupation = str(cursor.fetchone()[0])
+            except (TypeError, IndexError):
+                occupation = "Unemployed"
+
             profile = {
                 "cfid": cfid,
                 "name": name,
                 "age": age,
+                "occupation": occupation,
                 "pronouns": {
                     "subject_pron": subject_pron,
                     "objective_pron": objective_pron,
@@ -919,10 +1013,24 @@ async def get_file(request: Request, cfid: int, token: str = Depends(require_pre
         }
     )
 
+@router.get("/files/{cfid}/dianometry", response_class=HTMLResponse)
+@set_permission(permission="dianetics")
+async def dianometry_profile(request: Request, cfid:int, token: str = Depends(require_prechecks)):
+    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the dianometry profile page for CFID {cfid}.")
+    profile = centralfiles.get_profile(cfid=int(cfid))
+
+    return templates.TemplateResponse(
+        request,
+        "dianometry_profile.html",
+        {
+            "profile": profile,
+        }
+    )
+
 @router.post("/api/files/modify", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def modify_file(data: ModifyFileData, token: str = Depends(require_prechecks)):
-    logbook.info(f"Request from account {authbook.token_owner(token)} to modify cfid {data.cfid}: field '{data.field}' with value '{data.value}'")
+async def modify_file(request: Request, data: ModifyFileData, token: str = Depends(require_prechecks)):
+    logbook.info(f"Request from {request.client.host} ({authbook.token_owner(token)}) to modify cfid {data.cfid}: field '{data.field}' with value '{data.value}'")
 
     try:
         if data.field == "age":
@@ -938,34 +1046,37 @@ async def modify_file(data: ModifyFileData, token: str = Depends(require_prechec
             centralfiles.modify(data.cfid).name(data.value)
             success = True
         elif data.field == "is_dianetics":
-            centralfiles.modify(data.cfid).is_dn_pc(bool(data.value))
+            centralfiles.modify(data.cfid).is_dn_pc(True if data.value.lower() == "true" else False)
             success = True
         elif data.field == "last_action":
             centralfiles.dianetics.modify(data.cfid).add_action(data.value)
             success = True
         elif data.field == "sonic_shutoff":
-            centralfiles.dianetics.modify(data.cfid).is_sonic_off(bool(data.value))
+            centralfiles.dianetics.modify(data.cfid).is_sonic_off(True if data.value.lower() == "true" else False)
             success = True
         elif data.field == "visio_shutoff":
-            centralfiles.dianetics.modify(data.cfid).is_visio_off(bool(data.value))
+            centralfiles.dianetics.modify(data.cfid).is_visio_off(True if data.value.lower() == "true" else False)
             success = True
         elif data.field == "stuck_case":
-            centralfiles.dianetics.modify(data.cfid).is_stuck_case(bool(data.value))
+            centralfiles.dianetics.modify(data.cfid).is_stuck_case(True if data.value.lower() == "true" else False)
             success = True
         elif data.field == "stuck_age":
-            centralfiles.dianetics.modify(data.cfid).stuck_age(int(data.value))
+            centralfiles.dianetics.modify(data.cfid).stuck_age(True if data.value.lower() == "true" else False)
             success = True
         elif data.field == "control_case":
-            centralfiles.dianetics.modify(data.cfid).is_control_case(bool(data.value))
+            centralfiles.dianetics.modify(data.cfid).is_control_case(True if data.value.lower() == "true" else False)
             success = True
         elif data.field == "fabricator_case":
-            centralfiles.dianetics.modify(data.cfid).is_fabricator_case(bool(data.value))
+            centralfiles.dianetics.modify(data.cfid).is_fabricator_case(True if data.value.lower() == "true" else False)
             success = True
         elif data.field == "tone_level":
             centralfiles.dianetics.tonescale(data.cfid).set_level(float(data.value))
             success = True
+        elif data.field == "occupation":
+            centralfiles.modify(data.cfid).occupation(data.value)
+            success = True
         else:
-            success = False
+            raise ValueError("Invalid field specified.")
 
         if success:
             return JSONResponse(content={"success": True}, status_code=200)
@@ -1095,3 +1206,51 @@ async def submit_action(request: Request, cfid, token: str = Depends(require_pre
     logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to get all actions for cfid {cfid}")
     actions = centralfiles.dianetics.list_actions(cfid)
     return JSONResponse(content=actions, status_code=200)
+
+@router.get("/api/files/{cfid}/profile_icon")
+@set_permission(permission="central_files")
+async def get_profile_image(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to get profile image for cfid {cfid}")
+    image_data = centralfiles.get_profile_image(cfid)
+    
+    # Return the image bytes with appropriate headers
+    return Response(
+        content=image_data,
+        media_type="image/jpeg"  # or "image/png", "image/gif" depending on your image format
+    )
+
+class UploadProfileImageData(BaseModel):
+    cfid: int
+    img_bytes: bytes
+
+@router.post("/api/files/upload_profile_picture", response_class=JSONResponse)
+@set_permission(permission="central_files")
+async def upload_profile_image(request: Request, data: UploadProfileImageData, token: str = Depends(require_prechecks)):
+    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to upload profile image for cfid {data.cfid}")
+    
+    try:
+        # Decode base64 string back to bytes
+        file_bytes = base64.b64decode(data.img_bytes)
+        
+        success = centralfiles.modify(data.cfid).profile_image(file_bytes)
+        if success:
+            return JSONResponse(content={"success": True}, status_code=200)
+        else:
+            return JSONResponse(content={"success": False, "error": "Upload failed"}, status_code=400)
+
+    except base64.binascii.Error as e:
+        logbook.error(f"Base64 decoding error for cfid {data.cfid}: {e}")
+        return JSONResponse(content={"success": False, "error": "Invalid image data format"}, status_code=400)
+    except Exception as e:
+        logbook.error(f"Unexpected error uploading profile image for cfid {data.cfid}: {e}")
+        return JSONResponse(content={"success": False, "error": "Internal server error"}, status_code=500)
+
+@router.get("/api/files/{cfid}/occupation")
+@set_permission(permission="central_files")
+async def get_occupation(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to get the occupation for cfid {cfid}")
+    try:
+        occupation_data = centralfiles.get_occupation(cfid)
+    except centralfiles.errors.ProfileNotFound:
+        return JSONResponse(content={"error": "Profile not found."}, status_code=404)
+    return HTMLResponse(occupation_data, status_code=200)

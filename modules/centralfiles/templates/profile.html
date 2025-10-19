@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ profile.name }} – Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/centralfiles/css/profile.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">Knowledge</div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Navigation</div>
+      <a href="/files/" class="nav-link">
+        <i>📁</i>
+        <span>All Files</span>
+      </a>
+      <a href="#" class="nav-link active">
+        <i>👤</i>
+        <span>Profile</span>
+      </a>
+      {% if profile.is_dianetics_pc %}
+      <a href="/files/{{ profile.cfid }}/dianometry" class="nav-link">
+        <i>📊</i>
+        <span>Dianometry</span>
+      </a>
+      {% endif %}
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Tools</div>
+      <a href="#" class="nav-link">
+        <i>⚙️</i>
+        <span>Settings</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>{{ profile.name }}</h1>
+        <p>Profile Details & Management</p>
+      </div>
+      <div class="header-actions">
+        <button id="export-btn" class="btn btn-secondary">
+          <i>📥</i> Export
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-picture-section">
+        <img 
+          class="profile-image-large" 
+          src="/api/files/{{ profile.cfid }}/profile_icon" 
+          alt="{{ profile.name }}"
+          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
+        >
+        <button class="change-photo-btn" onclick="changeProfilePicture('{{ profile.cfid }}')">
+          Change Photo
+        </button>
+      </div>
+      <div class="profile-info">
+        <h2 class="profile-name">{{ profile.name }}</h2>
+        <p class="profile-occupation">{{ profile.occupation }}</p>
+        <div class="profile-meta">
+          <div class="meta-item">
+            <i>🆔</i>
+            <span>CFID: {{ profile.cfid }}</span>
+          </div>
+          <div class="meta-item">
+            <i>👤</i>
+            <span>Age: {{ profile.age }}</span>
+          </div>
+          <div class="meta-item">
+            <i>🔤</i>
+            <span>Pronouns: {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Personal Details Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Personal Details</h3>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="field">
+                <label>Central File ID</label>
+                <span id="field-cfid">{{ profile.cfid }}</span>
+              </div>
+              <div class="field">
+                <label>Name</label>
+                <span id="field-name" class="editable" onclick="makeEditable('field-name', '{{ profile.cfid }}')">{{ profile.name }}</span>
+              </div>
+              <div class="field">
+                <label>Age</label>
+                <span id="field-age" class="editable" onclick="makeEditable('field-age', '{{ profile.cfid }}')">{{ profile.age }}</span>
+              </div>
+              <div class="field">
+                <label>Pronouns</label>
+                <span id="field-pronouns" class="editable" onclick="makeEditable('field-pronouns', '{{ profile.cfid }}')">
+                  {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}
+                </span>
+              </div>
+              <div class="field">
+                <label>Is Dianetics PC</label>
+                <span id="field-is_dianetics" class="editable" onclick="makeEditable('field-is_dianetics', '{{ profile.cfid }}')">
+                  {{ profile.is_dianetics_pc }}
+                </span>
+              </div>
+              <div class="field">
+                <label>Occupation</label>
+                <span id="field-occupation" class="editable" onclick="makeEditable('field-occupation', '{{ profile.cfid }}')">
+                  {{ profile.occupation }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dianetics PC Profile -->
+        {% if profile.is_dianetics_pc %}
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h3 class="card-title">Dianetics PC Profile</h3>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="field">
+                <label>Last Action</label>
+                <span id="field-last_action">{{ dianetics.last_action }}</span>
+              </div>
+              <div class="field">
+                <label>Sonic Shut-off</label>
+                <span id="field-sonic_shutoff" class="editable" onclick="makeEditable('field-sonic_shutoff', '{{ profile.cfid }}')">{{ dianetics.is_sonic_shutoff }}</span>
+              </div>
+              <div class="field">
+                <label>Visio Shut-off</label>
+                <span id="field-visio_shutoff" class="editable" onclick="makeEditable('field-visio_shutoff', '{{ profile.cfid }}')">{{ dianetics.is_visio_shutoff }}</span>
+              </div>
+              <div class="field">
+                <label>Stuck On Time Track</label>
+                <span id="field-stuck_case" class="editable" onclick="makeEditable('field-stuck_case', '{{ profile.cfid }}')">{{ dianetics.is_stuck_case }}</span>
+              </div>
+              <div class="field">
+                <label>Latest Age Flash</label>
+                <span id="field-stuck_age" class="editable" onclick="makeEditable('field-stuck_age', '{{ profile.cfid }}')">{{ dianetics.stuck_age }}</span>
+              </div>
+              <div class="field">
+                <label>Control Circuits</label>
+                <span id="field-control_case" class="editable" onclick="makeEditable('field-control_case', '{{ profile.cfid }}')">{{ dianetics.is_control_case }}</span>
+              </div>
+              <div class="field">
+                <label>Dub-in Case</label>
+                <span id="field-fabricator_case" class="editable" onclick="makeEditable('field-fabricator_case', '{{ profile.cfid }}')">{{ dianetics.is_fabricator_case }}</span>
+              </div>
+              <div class="field">
+                <label>Estimated Tone Level</label>
+                <span id="field-tone_level" class="editable" onclick="makeEditable('field-tone_level', '{{ profile.cfid }}')">{{ dianetics.tone_level }}</span>
+              </div>
+              <div class="field">
+                <label>Actual Class of Mind</label>
+                <span>{{ dianetics.mind_class_actual }}</span>
+              </div>
+              <div class="field">
+                <label>Apparent Class of Mind</label>
+                <span>{{ dianetics.mind_class_apparent }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Invoices -->
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h3 class="card-title">Associated Invoices</h3>
+          </div>
+          <div class="card-body">
+            {% if invoices %}
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Invoice ID</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for invoice in invoices %}
+                  <tr>
+                    <td>{{ invoice.invoice_id }}</td>
+                    <td>{{ invoice.date }}</td>
+                    <td>{{ invoice.amount }}</td>
+                    <td>
+                      <span class="status-badge {{ 'status-paid' if invoice.is_paid else 'status-unpaid' }}">
+                        {{ "Paid" if invoice.is_paid else "Unpaid" }}
+                      </span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p>No invoices found for this CF.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Debts -->
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h3 class="card-title">Associated Debts</h3>
+          </div>
+          <div class="card-body">
+            {% if debts %}
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Debt ID</th>
+                    <th>Debtor</th>
+                    <th>Debtee</th>
+                    <th>Amount</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for debt in debts %}
+                  <tr>
+                    <td>{{ debt.debt_id }}</td>
+                    <td>{{ debt.debtor }}</td>
+                    <td>{{ debt.debtee }}</td>
+                    <td>{{ debt.amount }}</td>
+                    <td>{{ debt.start_date }}</td>
+                    <td>{{ debt.end_date }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p>No debts found for this CF.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Actions Record -->
+        {% if profile.is_dianetics_pc %}
+        <div class="actions-record">
+          <h3>Auditing Actions Record</h3>
+          <form id="submit_action_form" class="action-form">
+            <input id="cfid_input" type="hidden" value="{{ profile.cfid }}">
+            <input id="action_input" type="text" class="action-input" placeholder="Insert New Action" required>
+            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+          </form>
+          <ol id="action_list" class="action-list">
+            <!-- Action items will be populated here -->
+          </ol>
+        </div>
+        {% endif %}
+
+        <!-- Notes -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Notes</h3>
+            <button class="btn btn-primary btn-sm" onclick="createNewNote({{ profile.cfid }})">
+              <i>➕</i> New Note
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="notes-list" class="notes-list">
+              {% for note_id, note in profile.profile_notes.items() %}
+              <div class="note-entry" id="note-block-{{ note_id }}">
+                <div class="meta">
+                  <span>{{ note.add_date }}</span>
+                  <span>{{ note.author }}</span>
+                </div>
+                <div class="note-content" 
+                     id="note-{{ note_id }}"
+                     data-note-id="{{ note_id }}">
+                  {{ note.note }}
+                </div>
+                <div class="note-actions">
+                  <button class="btn btn-secondary btn-sm">Edit</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteNote('{{ note_id }}')">Delete</button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Picture Modal -->
+  <div id="profile-picture-modal" class="modal">
+    <div class="modal-content">
+      <h3>Change Profile Picture</h3>
+      <p>Upload a new profile picture for {{ profile.name }}</p>
+      <form id="profile-picture-form">
+        <input type="file" id="profile-picture-input" accept="image/*" required>
+        <input type="hidden" id="profile-cfid" value="{{ profile.cfid }}">
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeProfilePictureModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Upload Picture</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/centralfiles/js/themecontrol.js"></script>
+  <script src="/static/centralfiles/js/action_list.js"></script>
+  <script src="/static/centralfiles/js/profile_picture.js"></script>
+  <script src="/static/centralfiles/js/make_editable.js"></script>
+  <script src="/static/centralfiles/js/edit_note.js"></script>
+  <script src="/static/centralfiles/js/create_note.js"></script>
+  <script src="/static/centralfiles/js/delete_note.js"></script>
+  <script src="/static/centralfiles/js/export_profile.js"></script>
+</body>
+</html>

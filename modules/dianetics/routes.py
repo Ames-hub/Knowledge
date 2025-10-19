@@ -55,9 +55,6 @@ class Dianetics_CF:
                     (cfid,)
                 )
                 pc_name = cursor.fetchone()[0]
-                cursor.execute(
-                    "SELECT cfid FROM cf_names WHERE cfid = ?",
-                )
             except Exception as err:
                 logbook.error(f"Error while fetching PC data: {err}", exception=err)
 
@@ -73,6 +70,7 @@ async def show_index(request: Request, token: str = Depends(require_prechecks)):
     return templates.TemplateResponse(request, "dianetics.html")
 
 @router.get("/api/dianetics/preclear/list")
+@set_permission(permission="dianetics")
 async def list_preclears(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) Is listing all preclears.")
 
@@ -121,7 +119,7 @@ chart_to_db_map = {
     "M. REALITY (AGREEMENT)": "reality",
     "N. CONDITION OF TRACK AND VALENCES": "condition_track_valences",
     "O. MANIFESTATION OF ENGRAMS AND LOCKS": "manifestation_engrams_and_locks",
-    # Note. This is not "sexual behavior toward children" It is "Sexual behavior, and their attitude toward children."
+    # Note. This is not "sexual behavior toward children" It is "Sexual behavior (Are they violent during it for example,) and their attitude toward children."
     "P. SEXUAL BEHAVIOR\nATTITUDE TOWARD CHILDREN.": "sexual_behavior_and_attitude_to_children",
     "Q. COMMAND OVER ENVIRONMENT": "command_over_environ",
     "R. ACTUAL WORTH TO SOCIETY COMPARED TO APPARENT WORTH": "actual_worth_apparent_worth",
@@ -155,6 +153,7 @@ chart_to_db_map = {
 chart_columns = chart_to_db_map.keys()
 
 @router.get("/api/dianetics/dianometry/get-chart/{cfid}")
+@set_permission(permission="dianetics")
 async def get_chart(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(
         f"IP {request.client.host} ({authbook.token_owner(token)}) is fetching the chart data for CFID {cfid}."
@@ -334,6 +333,7 @@ def update_mind_class_estimation(cfid):
             return False
 
 @router.post("/api/dianetics/dianometry/update-chart")
+@set_permission(permission="dianetics")
 async def update_chart(request: Request, data: update_chart_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is updating the chart data for CFID {data.cfid}, column {data.column_name}, tone level {data.tone_level}")
 
@@ -376,6 +376,7 @@ dynamic_map = {
 }
 
 @router.post("/api/dianetics/dianometry/dyn_strengths/set")
+@set_permission(permission="dianetics")
 async def dyn_strengths(request: Request, data: dyn_strengths_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is setting dyn strengths for {data.cfid}.")
 
@@ -402,6 +403,7 @@ async def dyn_strengths(request: Request, data: dyn_strengths_data, token: str =
             return JSONResponse({"success": False, "error": "Database error occurred while updating dyn strengths."}, status_code=500)
 
 @router.get("/api/dianetics/dianometry/dyn_strengths/get/{cfid}")
+@set_permission(permission="dianetics")
 async def get_dyn_strengths(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting all dyn strengths for {cfid}.")
 
@@ -444,6 +446,7 @@ class shutoffs_data(BaseModel):
     state: bool
 
 @router.post("/api/dianetics/dianometry/shutoffs/set")
+@set_permission(permission="dianetics")
 async def set_shutoffs(request: Request, data: shutoffs_data, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is setting shutoff {data.name} for {data.cfid} to {data.state}.")
 
@@ -468,6 +471,7 @@ async def set_shutoffs(request: Request, data: shutoffs_data, token: str = Depen
             return JSONResponse({"success": False, "error": "Database error occurred while updating shutoffs."}, status_code=500)
 
 @router.get("/api/dianetics/dianometry/shutoffs/get/{cfid}")
+@set_permission(permission="dianetics")
 async def get_shutoffs(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting all shutoffs for {cfid}.")
 
@@ -511,6 +515,7 @@ mind_level_map = {
 }
 
 @router.get("/api/dianetics/dianometry/get_mind_class/{cfid}")
+@set_permission(permission="dianetics")
 async def get_mind_class(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting mind class for {cfid}.")
     with sqlite3.connect(DB_PATH) as conn:

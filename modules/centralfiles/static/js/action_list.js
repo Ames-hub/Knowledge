@@ -25,32 +25,34 @@ async function loadActions() {
   }
 }
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+if (form !== null) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const actionValue = input.value.trim();
-  if (!actionValue) return;
+    const actionValue = input.value.trim();
+    if (!actionValue) return;
 
-  try {
-    const response = await fetch("/api/files/submit_action", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: actionValue, cfid: cfidInput.value })
-    });
+    try {
+      const response = await fetch("/api/files/submit_action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: actionValue, cfid: cfidInput.value })
+      });
 
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      // Load the new action
+      loadActions()
+
+      input.value = "";
+    } catch (err) {
+      console.error("Failed to submit action:", err);
+      alert("Could not submit action. Please try again.");
     }
+  });
 
-    // Load the new action
-    loadActions()
-
-    input.value = "";
-  } catch (err) {
-    console.error("Failed to submit action:", err);
-    alert("Could not submit action. Please try again.");
-  }
-});
-
-// Load actions when page loads
-document.addEventListener("DOMContentLoaded", loadActions);
+  // Load actions when page loads
+  document.addEventListener("DOMContentLoaded", loadActions);
+}

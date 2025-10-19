@@ -12,7 +12,7 @@ import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
-logbook = LogBookHandler("Technical Archives")
+logbook = LogBookHandler("Textbook")
 
 class SavePDFRequestWithID(BaseModel):
     archive_id: int | None = None
@@ -32,12 +32,13 @@ def check_archive_exists(archive_id):
         )
         return cursor.fetchone() is not None
 
-@router.get("/archives")
+@router.get("/textbook")
 @set_permission(permission="bulletin_archives")
 async def load_index(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the bulletins / tech memory section.")
     return templates.TemplateResponse("index.html", {"request": request})
 
+# TODO: Need to change all "archive" to "textbook" later on.
 @set_permission(permission="bulletin_archives")
 @router.post("/api/archives/save")
 async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = Depends(require_prechecks)):

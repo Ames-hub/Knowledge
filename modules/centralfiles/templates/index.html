@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Central Files</title>
+  <link rel="stylesheet" href="/static/centralfiles/css/index.css">
+  <style>
+    /* Modal styles */
+    .delete-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .modal-content h3 {
+      margin: 0 0 1rem 0;
+      color: #333;
+    }
+
+    .modal-content p {
+      margin: 0 0 1.5rem 0;
+      color: #666;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+
+    /* Person card container with delete button */
+    .person-card-container {
+      position: relative;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      color: #666;
+    }
+
+    .person-card-container:hover .delete-btn {
+      opacity: 1;
+    }
+
+    .delete-btn:hover {
+      background: #f56565;
+      color: white;
+    }
+
+    /* Update person-card to work with new structure */
+    .person-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1 class="app-title">Central Files</h1>
+      <a class="back-btn" href="/">
+        <span>←</span> Back to Dashboard
+      </a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Search Section -->
+      <section class="search-section">
+        <div class="search-container">
+          <div class="search-icon">🔍</div>
+          <input type="text" id="search-input" placeholder="Search people..." oninput="filterNames()">
+        </div>
+      </section>
+
+      <!-- People Section -->
+      <section class="people-section">
+        <h2 class="section-title">People Directory</h2>
+        <div id="people-list" class="people-grid">
+          <!-- Dynamic name cards will populate here -->
+          <div class="empty-state">
+            <div class="empty-icon">👤</div>
+            <p>No people found. Add someone to get started.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Controls Section -->
+      <section class="controls-section">
+        <h2 class="controls-title">Manage People</h2>
+        <div class="controls-grid">
+          <input type="text" id="name-input" placeholder="Enter full name">
+          <button class="btn btn-primary" onclick="addName()">Add Person</button>
+          <!-- Remove Name button has been removed -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/centralfiles/js/people_manage.js"></script>
+  <script src="/static/centralfiles/js/filter_names.js"></script>
+  <script src="/static/centralfiles/js/themecontrol.js"></script>
+</body>
+</html>

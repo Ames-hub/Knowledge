@@ -118,7 +118,7 @@ class database:
             },
             "finance_transactions": {
                 "transaction_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "account_id": "INTEGER NOT NULL REFERENCES finance_accounts(account_id)",
+                "account_id": "INTEGER NOT NULL",
                 "amount": "REAL NOT NULL",
                 "is_expense": "BOOLEAN NOT NULL",
                 "description": "TEXT NOT NULL",
@@ -126,7 +126,7 @@ class database:
                 "time": "TIME NOT NULL DEFAULT CURRENT_TIME",
             },
             "transaction_receipts": {
-                "transaction_id": "INTEGER NOT NULL REFERENCES transactions(transaction_id)",
+                "transaction_id": "INTEGER NOT NULL",
                 # A photo of the receipt
                 "receipt": "BLOB NOT NULL",
                 "receipt_mimetype": "TEXT NOT NULL",
@@ -148,7 +148,7 @@ class database:
             },
             "debt_records": {
                 "record_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "debt_id": "INTEGER NOT NULL REFERENCES debts(debt_id)",
+                "debt_id": "INTEGER NOT NULL",
                 "start_date": "DATE NOT NULL DEFAULT CURRENT_DATE",
                 "amount": "REAL NOT NULL",
                 "description": "TEXT NOT NULL",
@@ -161,7 +161,7 @@ class database:
             },
             "bp_tasks": {
                 "task_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
-                "date": "DATE NOT NULL REFERENCES battleplans(date)",
+                "date": "DATE NOT NULL",
                 "task": "TEXT NOT NULL",
                 "is_done": "BOOLEAN NOT NULL DEFAULT FALSE",
                 "owner": "TEXT NOT NULL",
@@ -260,6 +260,14 @@ class database:
                 "http_code":  "INT NOT NULL DEFAULT 200",
                 "html_response": "TEXT NOT NULL DEFAULT 'No Response Set'",
                 "is_closed": "BOOLEAN NOT NULL DEFAULT FALSE",
+            },
+            "cf_profile_images": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "image": "BLOB NOT NULL",
+            },
+            "cf_occupations": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "occupation": "TEXT NOT NULL",
             }
         }
         for table_name, columns in table_dict.items():
