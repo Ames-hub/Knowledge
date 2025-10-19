@@ -268,6 +268,10 @@ class database:
             "cf_occupations": {
                 "cfid": "INTEGER PRIMARY KEY NOT NULL",
                 "occupation": "TEXT NOT NULL",
+            },
+            "cf_dates_of_birth": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "date_of_birth": "DATE NOT NULL DEFAULT '01/01/1950'"
             }
         }
         for table_name, columns in table_dict.items():

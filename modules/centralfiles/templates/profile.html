@@ -106,6 +106,12 @@
                 <span id="field-name" class="editable" onclick="makeEditable('field-name', '{{ profile.cfid }}')">{{ profile.name }}</span>
               </div>
               <div class="field">
+                <label>Date of Birth</label>
+                <span id="field-dob" class="editable" onclick="makeEditable('field-dob', '{{ profile.cfid }}')">
+                  {{ profile.person_date_of_birth }}
+                </span>
+              </div>
+              <div class="field">
                 <label>Age</label>
                 <span id="field-age" class="editable" onclick="makeEditable('field-age', '{{ profile.cfid }}')">{{ profile.age }}</span>
               </div>

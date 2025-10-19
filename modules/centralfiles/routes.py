@@ -495,6 +495,24 @@ class centralfiles:
         def __init__(self, cfid):
             self.cfid = int(cfid)
 
+        def date_of_birth(self, date_of_birth):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_dates_of_birth (cfid, date_of_birth) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET date_of_birth=excluded.date_of_birth
+                        """,
+                        (self.cfid, date_of_birth)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid} on what their Date of Birth is: {err}", exception=err)
+                    conn.rollback()
+                    return False
+
         def is_dn_pc(self, new_value:bool):
             with sqlite3.connect(DB_PATH) as conn:
                 try:
@@ -511,6 +529,7 @@ class centralfiles:
                 except sqlite3.OperationalError as err:
                     logbook.error(f"Error updating cfid {self.cfid} on is_dn_pc: {err}")
                     conn.rollback()
+                    return False
 
         def name(self, new_name):
             conn = sqlite3.connect(DB_PATH)
@@ -748,110 +767,144 @@ class centralfiles:
         if name is None and cfid is None:
             raise ValueError("Name and CFID cannot both be None!")
 
-        conn = sqlite3.connect(DB_PATH)
-
-        try:
-            cursor = conn.cursor()
-            if cfid is None:
-                cursor.execute(
-                    "SELECT cfid, name FROM cf_names WHERE name = ?",
-                    (name,),
-                )
-                data = cursor.fetchall()
-                if len(data) == 0:
-                    raise centralfiles.errors.ProfileNotFound()
-                elif len(data) != 1:
-                    raise centralfiles.errors.TooManyProfiles()
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cursor = conn.cursor()
+                if cfid is None:
+                    cursor.execute(
+                        "SELECT cfid, name FROM cf_names WHERE name = ?",
+                        (name,),
+                    )
+                    data = cursor.fetchall()
+                    if len(data) == 0:
+                        raise centralfiles.errors.ProfileNotFound()
+                    elif len(data) != 1:
+                        raise centralfiles.errors.TooManyProfiles()
+                    else:
+                        cfid = data[0][0]
+                        name = data[0][1]
                 else:
-                    cfid = data[0][0]
-                    name = data[0][1]
-            else:
+                    cursor.execute(
+                        "SELECT cfid, name FROM cf_names WHERE cfid = ?",
+                        (cfid,),
+                    )
+                    data = cursor.fetchone()
+                    cfid = data[0]
+                    name = data[1]
+
+                cfid = int(cfid)
+                name = str(name)
+
+                # Gets the age, pronouns, and all case notes.
                 cursor.execute(
-                    "SELECT cfid, name FROM cf_names WHERE cfid = ?",
+                    """
+                    SELECT age from cf_ages WHERE cfid = ?
+                    """,
+                    (cfid,),
+                )
+                age = cursor.fetchone()[0]
+
+                cursor.execute(
+                    """
+                    SELECT subjective, objective FROM cf_pronouns WHERE cfid = ?
+                    """,
                     (cfid,),
                 )
                 data = cursor.fetchone()
-                cfid = data[0]
-                name = data[1]
+                subject_pron = data[0]
+                objective_pron = data[1]
 
-            cfid = int(cfid)
-            name = str(name)
+                cursor.execute(
+                    """
+                    SELECT note_id, note, add_date, author FROM cf_profile_notes WHERE cfid = ?
+                    """,
+                    (cfid,),
+                )
+                data = cursor.fetchall()
+                profile_notes = {}
+                for item in data:
+                    note_id = item[0]
+                    profile_notes[note_id] = {
+                        "note": item[1],
+                        "add_date": item[2],
+                        "author": item[3],
+                    }
 
-            # Gets the age, pronouns, and all case notes.
-            cursor.execute(
-                """
-                SELECT age from cf_ages WHERE cfid = ?
-                """,
-                (cfid,),
-            )
-            age = cursor.fetchone()[0]
+                cursor.execute(
+                    """
+                    SELECT is_dn_pc FROM cf_is_dianetics_pc WHERE cfid = ?
+                    """,
+                    (cfid,),
+                )
+                try:
+                    is_dn_pc = bool(cursor.fetchone()[0])
+                except (TypeError, IndexError):
+                    is_dn_pc = False
 
-            cursor.execute(
-                """
-                SELECT subjective, objective FROM cf_pronouns WHERE cfid = ?
-                """,
-                (cfid,),
-            )
-            data = cursor.fetchone()
-            subject_pron = data[0]
-            objective_pron = data[1]
+                cursor.execute(
+                    """
+                    SELECT occupation FROM cf_occupations WHERE cfid = ?
+                    """,
+                    (cfid,),
+                )
+                try:
+                    occupation = str(cursor.fetchone()[0])
+                except (TypeError, IndexError):
+                    occupation = "Unemployed"
 
-            cursor.execute(
-                """
-                SELECT note_id, note, add_date, author FROM cf_profile_notes WHERE cfid = ?
-                """,
-                (cfid,),
-            )
-            data = cursor.fetchall()
-            profile_notes = {}
-            for item in data:
-                note_id = item[0]
-                profile_notes[note_id] = {
-                    "note": item[1],
-                    "add_date": item[2],
-                    "author": item[3],
-                }
+                cursor.execute(
+                    """
+                    SELECT date_of_birth FROM cf_dates_of_birth WHERE cfid = ?
+                    """,
+                    (cfid,)
+                )
+                try:
+                    date_of_birth = cursor.fetchone()[0]
+                except (TypeError, IndexError):
+                    date_of_birth = None
 
-            cursor.execute(
-                """
-                SELECT is_dn_pc FROM cf_is_dianetics_pc WHERE cfid = ?
-                """,
-                (cfid,),
-            )
-            try:
-                is_dn_pc = bool(cursor.fetchone()[0])
-            except (TypeError, IndexError):
-                is_dn_pc = False
+                # Parse and store original datetime for age calculation
+                dob_for_age = None
+                if type(date_of_birth) is str:
+                    dob_for_age = datetime.datetime.strptime(date_of_birth, "%Y-%m-%d %H:%M:%S")
+                    date_of_birth = dob_for_age.strftime("%d/%m/%Y")
+                elif type(date_of_birth) == datetime.datetime:
+                    dob_for_age = date_of_birth
+                    date_of_birth = date_of_birth.strftime("%d/%m/%Y")
 
-            cursor.execute(
-                """
-                SELECT occupation FROM cf_occupations WHERE cfid = ?
-                """,
-                (cfid,),
-            )
-            try:
-                occupation = str(cursor.fetchone()[0])
-            except (TypeError, IndexError):
-                occupation = "Unemployed"
+                # Calculate age if we have a valid date of birth
+                if dob_for_age:
+                    today = datetime.datetime.now()
+                    age = today.year - dob_for_age.year - ((today.month, today.day) < (dob_for_age.month, dob_for_age.day))
+                    # Update the age in the database
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_ages (cfid, age) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET age=excluded.age
+                        """,
+                        (cfid, age)
+                    )
+                    conn.commit()
 
-            profile = {
-                "cfid": cfid,
-                "name": name,
-                "age": age,
-                "occupation": occupation,
-                "pronouns": {
-                    "subject_pron": subject_pron,
-                    "objective_pron": objective_pron,
-                },
-                "profile_notes": profile_notes,
-                "is_dianetics_pc": is_dn_pc
-            }
+            except TypeError as err:
+                logbook.error("Something went wrong fetching the data for a profile!", exception=err)
+                raise err
 
-            return profile
-        except TypeError:
-            raise centralfiles.errors.ProfileNotFound()
-        finally:
-            conn.close()
+        profile = {
+            "cfid": cfid,
+            "name": name,
+            "age": age,
+            "occupation": occupation,
+            "pronouns": {
+                "subject_pron": subject_pron,
+                "objective_pron": objective_pron,
+            },
+            "profile_notes": profile_notes,
+            "is_dianetics_pc": is_dn_pc,
+            "person_date_of_birth": date_of_birth
+        }
+
+        return profile
 
     @staticmethod
     def get_all_profiles():
@@ -1013,20 +1066,6 @@ async def get_file(request: Request, cfid: int, token: str = Depends(require_pre
         }
     )
 
-@router.get("/files/{cfid}/dianometry", response_class=HTMLResponse)
-@set_permission(permission="dianetics")
-async def dianometry_profile(request: Request, cfid:int, token: str = Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the dianometry profile page for CFID {cfid}.")
-    profile = centralfiles.get_profile(cfid=int(cfid))
-
-    return templates.TemplateResponse(
-        request,
-        "dianometry_profile.html",
-        {
-            "profile": profile,
-        }
-    )
-
 @router.post("/api/files/modify", response_class=JSONResponse)
 @set_permission(permission="central_files")
 async def modify_file(request: Request, data: ModifyFileData, token: str = Depends(require_prechecks)):
@@ -1035,6 +1074,12 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
     try:
         if data.field == "age":
             centralfiles.modify(data.cfid).age(int(data.value))
+            success = True
+        elif data.field == "dob":
+            datetime_obj = datetime.datetime.now().strptime(data.value.lower(), "%d/%m/%Y")  # Day month year
+            centralfiles.modify(data.cfid).date_of_birth(
+                date_of_birth=datetime_obj
+            )
             success = True
         elif data.field == "pronouns":
             centralfiles.modify(data.cfid).pronouns(
