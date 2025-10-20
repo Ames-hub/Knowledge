@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ profile.name }} – Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/centralfiles/css/pc_profile.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">Knowledge</div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Navigation</div>
+      <a href="/files/" class="nav-link">
+        <i>📁</i>
+        <span>All Files</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}" class="nav-link">
+        <i>👤</i>
+        <span>Profile</span>
+      </a>
+      {% if profile.is_dianetics_pc %}
+      <a href="/files/get/{{ profile.cfid }}/auditing" class="nav-link active">
+        <i>🧠</i>
+        <span>PC Folder</span>
+      </a>
+      {% endif %}
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Tools</div>
+      <a href="#" class="nav-link">
+        <i>⚙️</i>
+        <span>Settings</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>{{ profile.name }}</h1>
+        <p>Profile Details & Management</p>
+      </div>
+      <div class="header-actions">
+        <button id="export-btn" class="btn btn-secondary">
+          <i>📥</i> Export
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-picture-section">
+        <img 
+          class="profile-image-large" 
+          src="/api/files/{{ profile.cfid }}/profile_icon" 
+          alt="{{ profile.name }}"
+          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
+        >
+      </div>
+      <div class="profile-info">
+        <h2 class="profile-name">{{ profile.name }}</h2>
+        <p class="profile-occupation">{{ profile.occupation }}</p>
+        <div class="profile-meta">
+          <div class="meta-item">
+            <i>🆔</i>
+            <span>CFID: {{ profile.cfid }}</span>
+          </div>
+          <div class="meta-item">
+            <i>👤</i>
+            <span>Age: {{ profile.age }}</span>
+          </div>
+          <div class="meta-item">
+            <i>🔤</i>
+            <span>Pronouns: {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Dianetics PC Profile -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Dianetics PC Profile</h3>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="field">
+                <label>Last Action</label>
+                <span id="field-last_action">{{ dianetics.last_action }}</span>
+              </div>
+              <div class="field">
+                <label>Sonic Shut-off</label>
+                <span id="field-sonic_shutoff" class="editable" onclick="makeEditable('field-sonic_shutoff', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_sonic_shutoff }}</span>
+              </div>
+              <div class="field">
+                <label>Visio Shut-off</label>
+                <span id="field-visio_shutoff" class="editable" onclick="makeEditable('field-visio_shutoff', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_visio_shutoff }}</span>
+              </div>
+              <div class="field">
+                <label>Stuck On Time Track</label>
+                <span id="field-stuck_case" class="editable" onclick="makeEditable('field-stuck_case', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_stuck_case }}</span>
+              </div>
+              <div class="field">
+                <label>Latest Age Flash</label>
+                <span id="field-stuck_age" class="editable" onclick="makeEditable('field-stuck_age', '{{ profile.cfid }}', 'number')">{{ dianetics.stuck_age }}</span>
+              </div>
+              <div class="field">
+                <label>Control Circuits</label>
+                <span id="field-control_case" class="editable" onclick="makeEditable('field-control_case', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_control_case }}</span>
+              </div>
+              <div class="field">
+                <label>Dub-in Case</label>
+                <span id="field-fabricator_case" class="editable" onclick="makeEditable('field-fabricator_case', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_fabricator_case }}</span>
+              </div>
+              <div class="field">
+                <label>Estimated Tone Level</label>
+                <span id="field-tone_level" class="editable" onclick="makeEditable('field-tone_level', '{{ profile.cfid }}')">{{ dianetics.tone_level }}</span>
+              </div>
+              <div class="field">
+                <label>Actual Class of Mind</label>
+                <span>{{ dianetics.mind_class_actual }}</span>
+              </div>
+              <div class="field">
+                <label>Apparent Class of Mind</label>
+                <span>{{ dianetics.mind_class_apparent }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="mindclass_estimation" class="hidden">
+          <h2>Class of Mind Estimation</h2>
+          <div class="estimation-content">
+            <p><strong>Estimated Actual Level:</strong> <span id="estimated-actual-level">Loading...</span></p>
+            <p><strong>Estimated Apparent Level:</strong> <span id="estimated-apparent-level">Loading...</span></p>
+          </div>
+        </div>
+        <!-- Potential Value Estimation -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Potential Value Estimation</h3>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="field">
+                <label>Despite current case level, is this PC capable of handling life?</label>
+                <span id="field-can_handle_life" class="editable" onclick="makeEditable('field-can_handle_life', '{{ profile.cfid }}', 'bool')">{{ dianetics.can_handle_life }}</span>
+              </div>
+              <div class="field">
+                <label>Enter an estimation of Theta endowment.<hr>Average: 500</label>
+                <input type="range" id="field-theta_endowment" min="1" max="1000" value="{{ dianetics.theta_endowment }}" oninput="updateThetaDisplay(this.value)">
+                <span id="theta_display">{{ dianetics.theta_endowment }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Actions Record -->
+        <div class="actions-record">
+          <h3>Auditing Actions Record</h3>
+          <form id="submit_action_form" class="action-form">
+            <input id="cfid_input" type="hidden" value="{{ profile.cfid }}">
+            <input id="action_input" type="text" class="action-input" placeholder="Insert New Action" required>
+            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+          </form>
+          <ol id="action_list" class="action-list">
+            <!-- Action items will be populated here -->
+          </ol>
+        </div>
+
+        <div id="dynamic-strength-selector">
+          <h2>Select Dynamic Strengths</h2>
+
+          <div class="dynamic-option">
+              <label for="dynamic-self">Self:</label>
+              <select id="dynamic-self">
+                  <option value="0">Undecided</option>
+                  <option value="1">Weak</option>
+                  <option value="2">Medium</option>
+                  <option value="3">Strong</option>
+              </select>
+          </div>
+
+          <div class="dynamic-option">
+              <label for="dynamic-sex-family">Sex and Family:</label>
+              <select id="dynamic-sex-family">
+                  <option value="0">Undecided</option>
+                  <option value="1">Weak</option>
+                  <option value="2">Medium</option>
+                  <option value="3">Strong</option>
+              </select>
+          </div>
+
+          <div class="dynamic-option">
+              <label for="dynamic-groups">Groups:</label>
+              <select id="dynamic-groups">
+                  <option value="0">Undecided</option>
+                  <option value="1">Weak</option>
+                  <option value="2">Medium</option>
+                  <option value="3">Strong</option>
+              </select>
+          </div>
+
+          <div class="dynamic-option">
+              <label for="dynamic-mankind">Mankind:</label>
+              <select id="dynamic-mankind">
+                  <option value="0">Undecided</option>
+                  <option value="1">Weak</option>
+                  <option value="2">Medium</option>
+                  <option value="3">Strong</option>
+              </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const FileCFID = parseInt("{{ profile.cfid }}")
+    let theta_endowment = parseInt("{{ dianetics.theta_endowment }}")
+  </script>
+  <script src="/static/centralfiles/js/potential_value.js"></script>
+  <script src="/static/centralfiles/js/themecontrol.js"></script>
+  <script src="/static/centralfiles/js/action_list.js"></script>
+  <script src="/static/centralfiles/js/make_editable.js"></script>
+  <script src="/static/centralfiles/js/dn_export_profile.js"></script>
+  <script src="/static/centralfiles/js/dynamics-strength.js"></script>
+  <script src="/static/centralfiles/js/mindclass_loader.js"></script>
+</body>
+</html>

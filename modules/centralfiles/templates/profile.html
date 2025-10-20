@@ -22,9 +22,9 @@
         <span>Profile</span>
       </a>
       {% if profile.is_dianetics_pc %}
-      <a href="/files/{{ profile.cfid }}/dianometry" class="nav-link">
-        <i>📊</i>
-        <span>Dianometry</span>
+      <a href="/files/get/{{ profile.cfid }}/auditing" class="nav-link">
+        <i>🧠</i>
+        <span>PC Folder</span>
       </a>
       {% endif %}
     </div>
@@ -44,7 +44,7 @@
     <div class="page-header">
       <div class="page-title">
         <h1>{{ profile.name }}</h1>
-        <p>Profile Details & Management</p>
+        <p>PC Folder Record & Management</p>
       </div>
       <div class="header-actions">
         <button id="export-btn" class="btn btn-secondary">
@@ -107,13 +107,13 @@
               </div>
               <div class="field">
                 <label>Date of Birth</label>
-                <span id="field-dob" class="editable" onclick="makeEditable('field-dob', '{{ profile.cfid }}')">
+                <span id="field-dob" class="editable" onclick="makeEditable('field-dob', '{{ profile.cfid }}', 'date')">
                   {{ profile.person_date_of_birth }}
                 </span>
               </div>
               <div class="field">
                 <label>Age</label>
-                <span id="field-age" class="editable" onclick="makeEditable('field-age', '{{ profile.cfid }}')">{{ profile.age }}</span>
+                <span id="field-age" class="editable" onclick="makeEditable('field-age', '{{ profile.cfid }}', 'number')">{{ profile.age }}</span>
               </div>
               <div class="field">
                 <label>Pronouns</label>
@@ -123,7 +123,7 @@
               </div>
               <div class="field">
                 <label>Is Dianetics PC</label>
-                <span id="field-is_dianetics" class="editable" onclick="makeEditable('field-is_dianetics', '{{ profile.cfid }}')">
+                <span id="field-is_dianetics" class="editable" onclick="makeEditable('field-is_dianetics', '{{ profile.cfid }}', 'bool')">
                   {{ profile.is_dianetics_pc }}
                 </span>
               </div>
@@ -151,27 +151,27 @@
               </div>
               <div class="field">
                 <label>Sonic Shut-off</label>
-                <span id="field-sonic_shutoff" class="editable" onclick="makeEditable('field-sonic_shutoff', '{{ profile.cfid }}')">{{ dianetics.is_sonic_shutoff }}</span>
+                <span id="field-sonic_shutoff" class="editable" onclick="makeEditable('field-sonic_shutoff', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_sonic_shutoff }}</span>
               </div>
               <div class="field">
                 <label>Visio Shut-off</label>
-                <span id="field-visio_shutoff" class="editable" onclick="makeEditable('field-visio_shutoff', '{{ profile.cfid }}')">{{ dianetics.is_visio_shutoff }}</span>
+                <span id="field-visio_shutoff" class="editable" onclick="makeEditable('field-visio_shutoff', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_visio_shutoff }}</span>
               </div>
               <div class="field">
                 <label>Stuck On Time Track</label>
-                <span id="field-stuck_case" class="editable" onclick="makeEditable('field-stuck_case', '{{ profile.cfid }}')">{{ dianetics.is_stuck_case }}</span>
+                <span id="field-stuck_case" class="editable" onclick="makeEditable('field-stuck_case', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_stuck_case }}</span>
               </div>
               <div class="field">
                 <label>Latest Age Flash</label>
-                <span id="field-stuck_age" class="editable" onclick="makeEditable('field-stuck_age', '{{ profile.cfid }}')">{{ dianetics.stuck_age }}</span>
+                <span id="field-stuck_age" class="editable" onclick="makeEditable('field-stuck_age', '{{ profile.cfid }}', 'number')">{{ dianetics.stuck_age }}</span>
               </div>
               <div class="field">
                 <label>Control Circuits</label>
-                <span id="field-control_case" class="editable" onclick="makeEditable('field-control_case', '{{ profile.cfid }}')">{{ dianetics.is_control_case }}</span>
+                <span id="field-control_case" class="editable" onclick="makeEditable('field-control_case', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_control_case }}</span>
               </div>
               <div class="field">
                 <label>Dub-in Case</label>
-                <span id="field-fabricator_case" class="editable" onclick="makeEditable('field-fabricator_case', '{{ profile.cfid }}')">{{ dianetics.is_fabricator_case }}</span>
+                <span id="field-fabricator_case" class="editable" onclick="makeEditable('field-fabricator_case', '{{ profile.cfid }}', 'bool')">{{ dianetics.is_fabricator_case }}</span>
               </div>
               <div class="field">
                 <label>Estimated Tone Level</label>

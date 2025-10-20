@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PDF Editor</title>
-    <link rel="stylesheet" href="/static/archives/css/index.css" />
+    <link rel="stylesheet" href="/static/textbook/css/index.css" />
 </head>
 <body>
 <div id="toast-container"></div>
@@ -14,7 +14,7 @@
         <a id="return_btn" href="/">⟵ Return</a>
         <button id="new-doc-btn" onclick="createNewDocument()">📝 New Document</button>
         <input type="text" id="search-input" placeholder="Search by title or ID..." oninput="filterArchives()">
-        <h2>Saved Archives</h2>
+        <h2>Saved Texts</h2>
         <ul id="archive-list">
             <li>Loading...</li>
         </ul>
@@ -83,6 +83,6 @@
 
 <!--suppress JSUnresolvedLibraryURL -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="/static/archives/js/index.js"></script>
+<script src="/static/textbook/js/index.js"></script>
 </body>
 </html>

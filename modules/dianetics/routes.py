@@ -272,18 +272,29 @@ def calculate_mind_class_estimation(cfid):
 
     try:
         dyn_1 = data[0]
+        if isinstance(dyn_1, None):
+            raise TypeError
     except TypeError:
         dyn_1 = 0
+
     try:
         dyn_2 = data[1]
+        if isinstance(dyn_2, None):
+            raise TypeError
     except TypeError:
         dyn_2 = 0
+
     try:
         dyn_3 = data[2]
+        if isinstance(dyn_3, None):
+            raise TypeError
     except TypeError:
         dyn_3 = 0
+
     try:
         dyn_4 = data[3]
+        if isinstance(dyn_4, None):
+            raise TypeError
     except TypeError:
         dyn_4 = 0
 

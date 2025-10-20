@@ -88,6 +88,24 @@ class centralfiles:
             def __init__(self, cfid):
                 self.cfid = int(cfid)
 
+            def set_theta_count(self, count:int):
+                with sqlite3.connect(DB_PATH) as conn:
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            """
+                            INSERT INTO cf_pc_theta_endowments (cfid, endowment) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET endowment=excluded.endowment
+                            """,
+                            (self.cfid, count)
+                        )
+                        conn.commit()
+                        return True
+                    except sqlite3.OperationalError as err:
+                        logbook.error(f"Error setting CFID {self.cfid}'s theta count to {count}: {err}", exception=err)
+                        conn.rollback()
+                        return False
+
             def add_action(self, action:str):
                 datenow = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 with sqlite3.connect(DB_PATH) as conn:
@@ -406,6 +424,38 @@ class centralfiles:
                     update_mind_class_estimation(cfid)
                     actual_class, apparent_class = 0, 0
 
+                try:
+                    cursor.execute(
+                        """
+                        SELECT endowment FROM cf_pc_theta_endowments WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    theta_endowment = cursor.fetchone()[0]
+                    theta_endowment = int(theta_endowment)
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting the theta endowment for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    theta_endowment = 0
+                except TypeError:
+                    theta_endowment = 0
+
+                try:
+                    cursor.execute(
+                        """
+                        SELECT value FROM cf_pc_can_handle_life WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    can_handle_life = cursor.fetchone()[0]
+                    can_handle_life = bool(can_handle_life)
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting if the PC can handle life or not for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    can_handle_life = True
+                except TypeError:
+                    can_handle_life = True
+
             mind_class_map = {
                 0: "Undetermined",
                 1: "Class A",
@@ -425,6 +475,8 @@ class centralfiles:
                 "last_action": last_action,
                 "mind_class_actual": mind_class_map[actual_class],
                 "mind_class_apparent": mind_class_map[apparent_class],
+                "theta_endowment": theta_endowment,
+                "can_handle_life": can_handle_life,
             }
 
     @staticmethod
@@ -494,6 +546,24 @@ class centralfiles:
     class modify:
         def __init__(self, cfid):
             self.cfid = int(cfid)
+
+        def can_handle_life(self, value:bool):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_pc_can_handle_life (cfid, is_handleable) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET is_handleable=excluded.is_handleable
+                        """,
+                        (self.cfid, value)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid} on whether or not they can usually handle life: {err}", exception=err)
+                    conn.rollback()
+                    return False
 
         def date_of_birth(self, date_of_birth):
             with sqlite3.connect(DB_PATH) as conn:
@@ -802,7 +872,7 @@ class centralfiles:
                     """,
                     (cfid,),
                 )
-                age = cursor.fetchone()[0]
+                stored_age = cursor.fetchone()[0]
 
                 cursor.execute(
                     """
@@ -873,17 +943,20 @@ class centralfiles:
                     date_of_birth = date_of_birth.strftime("%d/%m/%Y")
 
                 # Calculate age if we have a valid date of birth
+                # We calculate this each time so the age is ALWAYS accurate.
                 if dob_for_age:
                     today = datetime.datetime.now()
-                    age = today.year - dob_for_age.year - ((today.month, today.day) < (dob_for_age.month, dob_for_age.day))
+                    calced_age = today.year - dob_for_age.year - ((today.month, today.day) < (dob_for_age.month, dob_for_age.day))
                     # Update the age in the database
-                    cursor.execute(
-                        """
-                        INSERT INTO cf_ages (cfid, age) VALUES (?, ?)
-                        ON CONFLICT(cfid) DO UPDATE SET age=excluded.age
-                        """,
-                        (cfid, age)
-                    )
+                    if calced_age > stored_age:
+                        cursor.execute(
+                            """
+                            INSERT INTO cf_ages (cfid, age) VALUES (?, ?)
+                            ON CONFLICT(cfid) DO UPDATE SET age=excluded.age
+                            """,
+                            (cfid, calced_age)
+                        )
+                        stored_age = calced_age
                     conn.commit()
 
             except TypeError as err:
@@ -893,7 +966,7 @@ class centralfiles:
         profile = {
             "cfid": cfid,
             "name": name,
-            "age": age,
+            "age": stored_age,
             "occupation": occupation,
             "pronouns": {
                 "subject_pron": subject_pron,
@@ -1120,8 +1193,11 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
         elif data.field == "occupation":
             centralfiles.modify(data.cfid).occupation(data.value)
             success = True
+        elif data.field == "can_handle_life":
+            centralfiles.modify(data.cfid).can_handle_life(data.value)
+            success = True
         else:
-            raise ValueError("Invalid field specified.")
+            raise ValueError(f"Invalid field specified, {data.field}")
 
         if success:
             return JSONResponse(content={"success": True}, status_code=200)
@@ -1299,3 +1375,34 @@ async def get_occupation(request: Request, cfid: int, token: str = Depends(requi
     except centralfiles.errors.ProfileNotFound:
         return JSONResponse(content={"error": "Profile not found."}, status_code=404)
     return HTMLResponse(occupation_data, status_code=200)
+
+# A Webpage for full PC Management
+@router.get("/files/get/{cfid}/auditing")
+@set_permission(permission="central_files")
+async def load_pc_file(request: Request, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the PC folder of {cfid}")
+    profile = centralfiles.get_profile(cfid=int(cfid))
+    dianetics_profile = centralfiles.dianetics.get_profile(cfid=cfid)
+    return templates.TemplateResponse(
+        request,
+        "pc_profile.html",
+        {
+            "profile": profile,
+            "dianetics": dianetics_profile
+        }
+    )
+
+class SetThetaData(BaseModel):
+    cfid: int
+    theta_count: int
+
+@router.post("/api/files/set_theta")
+@set_permission(permission="central_files")
+async def set_theta(request: Request, post_data: SetThetaData, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting CFID {post_data.cfid}'s Theta Count to {post_data.theta_count}")
+    success = centralfiles.dianetics.modify(post_data.cfid).set_theta_count(post_data.theta_count)
+
+    return JSONResponse(
+        content={"success": success},
+        status_code=200 if success else 500
+    )

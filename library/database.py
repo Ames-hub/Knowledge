@@ -272,6 +272,17 @@ class database:
             "cf_dates_of_birth": {
                 "cfid": "INTEGER PRIMARY KEY NOT NULL",
                 "date_of_birth": "DATE NOT NULL DEFAULT '01/01/1950'"
+            },
+            # Theta endowment is a number measuring how "big" a person is basically.
+            # For instance, a being with a theta endowment of 1000 could witness an awful atrocity and still be able to solve problems rationally,
+            # And is awful hard to upset.
+            "cf_pc_theta_endowments": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "endowment": "INT NOT NULL DEFAULT 0"
+            },
+            "cf_pc_can_handle_life": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                "is_handleable": "BOOLEAN NOT NULL DEFAULT TRUE"
             }
         }
         for table_name, columns in table_dict.items():
