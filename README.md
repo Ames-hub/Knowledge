@@ -1,6 +1,11 @@
-# Knowledge
+<div align="center">
+
+# Knowledge  
+*Keep it simple*  
 
 A simple, personal command centre for your life. Write notes, plan your day, track money, and keep logs all in one place behind a login.
+
+</div>
 
 ---
 
@@ -15,30 +20,56 @@ willing to pay for or find a free hosted solution.
 
 ## What you can do
 
-- Home Dashboard
+To show you how built-out each system is, we'll show you a number from 1 to 5!<br>
+1 Being barely developed, 5 being highly developed.
+1 Also being not too great, and 5 being very good!
+
+- Home Dashboard (4/5)
   - See all modules at a glance and jump right in.
 
-- Notes & Docs (Bulletins/Archives)
-  - Write and format pages in a WYSIWYG editor.
+- Central Files (4/5)
+  - A Workable CRM
+  - Keep track of people's names, their faces, age, D.o.b, and more!
+  - See what debts are connected to them
+  - See all the invoices you've made for this person!
+  - If you are a Dianetics Auditor, keep track of their case!
+  - Track all agreements with this person
+
+- Notes & Docs Textbook (3/5)
+  - Write and format pages in a nice editor.
   - Tag, search, update, delete, and export to PDF.
 
-- People (Central Files)
-  - Keep simple profiles for people: name, age, pronouns.
-  - Add timestamped notes to each profile.
+- Log Viewer (2/5)
+  - Browse the app’s daily logs and search them if needed.
+  Good for accountability when someone does something weird.
 
-- Money (Ledger)
+- Ledger (4/5)
   - Create accounts and record income/expenses.
-  - Plan recurring costs and see totals and charts.
+  - Plan recurring costs and see totals and charts. (Also called a "Financial Plan No. 1")
   - Track debts and payments between people.
+  - Create custom, modular invoices!
 
-- Daily Plans (Battle Plans)
+- Dianetics (2/5) (W.I.P.)
+  - Track each individual preclear you have
+  - Keep a record of their Dianometry
+  - Keep a virtual record of where they're placed on any one of the many columns of the Hubbard Chart of Human Evaluation and Dianetic Processing
+  - Few features at the moment, its still a work in progress.
+  - Keep a record of each session they have had!
+
+- Daily Plans (Battle Plans) (5/5)
   - Make a daily to‑do list with quotas (how much you aim to get done).
   - View your last week’s productivity at a glance.
   - Import the incomplete parts of yesterday’s plan to today's
+  - Auto-Calculate how much you need each day to reach a weekly target
+  - Set which day is the day your week starts on!
+  - Export it to a nice looking PDF!
 
-- Logs (Log Viewer)
-  - Browse the app’s daily logs and search them if needed.
-  Good for accountability when someone does something weird.
+- FTP Server (2/5)
+  - Upload files and folders
+  - Browse directories
+  - View or Edit text files without downloading them first
+
+
 
 ---
 

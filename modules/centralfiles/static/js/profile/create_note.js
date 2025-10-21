@@ -1,4 +1,5 @@
 async function createNewNote(cfid) {
+    cfid = parseInt(cfid)
     const defaultText = "Click me to modify your new note!";
     const res = await fetch("/api/files/note/create", {
         method: "POST",
@@ -31,7 +32,9 @@ async function createNewNote(cfid) {
     noteDiv.id = `note-${noteId}`;
     noteDiv.tabIndex = 0;
     noteDiv.innerText = defaultText;
-    noteDiv.onclick = () => editNote(noteId);
+    
+    // Set up editing event handlers
+    noteDiv.addEventListener("click", () => editNote(noteId));
     noteDiv.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();

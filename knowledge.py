@@ -1,14 +1,31 @@
+from library import settings
+import os
+
+if __name__ == "__main__":
+    if not os.path.exists(settings.SETTINGS_PATH):
+        print("We've detected this is the first time the app has started.")
+        print("So we'll need to ask a couple questions to get you started.\n")
+        print("Question 1: Do you want us to use SSL? (It makes your connection secure and safer from hackers)\nAnswer 'Yes' or 'No'")
+        if (use_ssl := input(">>> ").lower()) == "yes":
+            print("Enabling SSL.")
+            settings.save("use_ssl", True)
+        else:
+            print("Keeping SSL Disabled.")
+            settings.save("use_ssl", False)
+
+        print("Configuration Complete. Further configuration available in 'settings' module of web app.\n")
+        print("Thank you for choosing us, And welcome to Knowledge!")
+
+from library.auth import generate_self_signed_cert
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from library.logbook import LogBookHandler
 from library.database import database
 from fastapi import Request, FastAPI
-from library import settings
 import importlib
 import uvicorn
 import asyncio
 import secrets
-import os
 
 #==============CONFIG==============#
 WEB_PORT = 8020
@@ -118,6 +135,13 @@ if __name__ == "__main__":
     if settings.get.use_ssl() is True:
         ssl_certfile_dir = os.path.abspath("certs/cert.pem")
         ssl_keyfile_dir = os.path.abspath("certs/key.pem")
+        if not os.path.exists(ssl_certfile_dir) and not os.path.exists(ssl_keyfile_dir):
+            print("We need to generate some security certfiicates.\nWhat's the base URL people will use to connect to this app on the web? (Default: localhost)")
+            common_name = input(">>> ")
+            if not common_name:  # Entered nothing.
+                common_name = "localhost"
+            os.makedirs('certs')
+            generate_self_signed_cert(common_name=common_name)
     else:
         ssl_certfile_dir = None
         ssl_keyfile_dir = None

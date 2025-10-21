@@ -886,7 +886,7 @@ class centralfiles:
 
                 cursor.execute(
                     """
-                    SELECT note_id, note, add_date, author FROM cf_profile_notes WHERE cfid = ?
+                    SELECT note_id, note, add_date, author FROM cf_profile_notes WHERE cfid = ? ORDER BY add_date DESC
                     """,
                     (cfid,),
                 )
@@ -1405,4 +1405,18 @@ async def set_theta(request: Request, post_data: SetThetaData, token: str = Depe
     return JSONResponse(
         content={"success": success},
         status_code=200 if success else 500
+    )
+
+# A Webpage for full PC Management
+@router.get("/files/get/{cfid}/agreements")
+@set_permission(permission="central_files")
+async def load_pc_file(request: Request, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the PC folder of {cfid}")
+    profile = centralfiles.get_profile(cfid=int(cfid))
+    return templates.TemplateResponse(
+        request,
+        "agreements.html",
+        {
+            "profile": profile,
+        }
     )

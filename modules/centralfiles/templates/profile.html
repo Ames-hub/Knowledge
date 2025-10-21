@@ -17,7 +17,7 @@
         <i>📁</i>
         <span>All Files</span>
       </a>
-      <a href="#" class="nav-link active">
+      <a href="/files/get/{{ profile.cfid }}" class="nav-link active">
         <i>👤</i>
         <span>Profile</span>
       </a>
@@ -27,6 +27,10 @@
         <span>PC Folder</span>
       </a>
       {% endif %}
+      <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link">
+        <i>🤝</i>
+        <span>Agreements</span>
+      </a>
     </div>
     
     <div class="nav-section">
@@ -44,7 +48,7 @@
     <div class="page-header">
       <div class="page-title">
         <h1>{{ profile.name }}</h1>
-        <p>PC Folder Record & Management</p>
+        <p>Profile Details & Management</p>
       </div>
       <div class="header-actions">
         <button id="export-btn" class="btn btn-secondary">
@@ -290,8 +294,8 @@
         <div class="card">
           <div class="card-header">
             <h3 class="card-title">Notes</h3>
-            <button class="btn btn-primary btn-sm" onclick="createNewNote({{ profile.cfid }})">
-              <i>➕</i> New Note
+            <button class="btn btn-primary btn-sm" onclick="createNewNote('{{ profile.cfid }}')">
+              New Note
             </button>
           </div>
           <div class="card-body">
@@ -302,15 +306,12 @@
                   <span>{{ note.add_date }}</span>
                   <span>{{ note.author }}</span>
                 </div>
-                <div class="note-content" 
-                     id="note-{{ note_id }}"
-                     data-note-id="{{ note_id }}">
+                <div class="editable-note" 
+                    id="note-{{ note_id }}"
+                    tabindex="0">
                   {{ note.note }}
                 </div>
-                <div class="note-actions">
-                  <button class="btn btn-secondary btn-sm">Edit</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteNote('{{ note_id }}')">Delete</button>
-                </div>
+                <button class="delete-note-btn" onclick="deleteNote('{{ note_id }}')">Delete</button>
               </div>
               {% endfor %}
             </div>
@@ -336,13 +337,13 @@
     </div>
   </div>
 
-  <script src="/static/centralfiles/js/themecontrol.js"></script>
-  <script src="/static/centralfiles/js/action_list.js"></script>
-  <script src="/static/centralfiles/js/profile_picture.js"></script>
-  <script src="/static/centralfiles/js/make_editable.js"></script>
-  <script src="/static/centralfiles/js/edit_note.js"></script>
-  <script src="/static/centralfiles/js/create_note.js"></script>
-  <script src="/static/centralfiles/js/delete_note.js"></script>
-  <script src="/static/centralfiles/js/export_profile.js"></script>
+  <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
+  <script src="/static/centralfiles/js/shared/action_list.js"></script>
+  <script src="/static/centralfiles/js/profile/modify_profile_picture.js"></script>
+  <script src="/static/centralfiles/js/shared/make_editable.js"></script>
+  <script src="/static/centralfiles/js/profile/edit_note.js"></script>
+  <script src="/static/centralfiles/js/profile/create_note.js"></script>
+  <script src="/static/centralfiles/js/profile/delete_note.js"></script>
+  <script src="/static/centralfiles/js/profile/export_profile.js"></script>
 </body>
 </html>

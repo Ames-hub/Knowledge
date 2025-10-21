@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ profile.name }} – Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/centralfiles/css/agreements.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">Knowledge</div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Navigation</div>
+      <a href="/files/" class="nav-link">
+        <i>📁</i>
+        <span>All Files</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}" class="nav-link ">
+        <i>👤</i>
+        <span>Profile</span>
+      </a>
+      {% if profile.is_dianetics_pc %}
+      <a href="/files/get/{{ profile.cfid }}/auditing" class="nav-link">
+        <i>🧠</i>
+        <span>PC Folder</span>
+      </a>
+      {% endif %}
+      <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link active">
+        <i>🤝</i>
+        <span>Agreements</span>
+      </a>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Tools</div>
+      <a href="#" class="nav-link">
+        <i>⚙️</i>
+        <span>Settings</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>{{ profile.name }}</h1>
+        <p>Profile Details & Management</p>
+      </div>
+      <div class="header-actions">
+        <button id="export-btn" class="btn btn-secondary">
+          <i>📥</i> Export
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-picture-section">
+        <img 
+          class="profile-image-large" 
+          src="/api/files/{{ profile.cfid }}/profile_icon" 
+          alt="{{ profile.name }}"
+          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
+        >
+        <button class="change-photo-btn" onclick="changeProfilePicture('{{ profile.cfid }}')">
+          Change Photo
+        </button>
+      </div>
+      <div class="profile-info">
+        <h2 class="profile-name">{{ profile.name }}</h2>
+        <p class="profile-occupation">{{ profile.occupation }}</p>
+        <div class="profile-meta">
+          <div class="meta-item">
+            <i>🆔</i>
+            <span>CFID: {{ profile.cfid }}</span>
+          </div>
+          <div class="meta-item">
+            <i>👤</i>
+            <span>Age: {{ profile.age }}</span>
+          </div>
+          <div class="meta-item">
+            <i>🔤</i>
+            <span>Pronouns: {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Notes</h3>
+            <button class="btn btn-primary btn-sm" onclick="createNewNote('{{ profile.cfid }}')">
+              New Note
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="notes-list" class="notes-list">
+              {% for note_id, note in profile.profile_notes.items() %}
+              <div class="note-entry" id="note-block-{{ note_id }}">
+                <div class="meta">
+                  <span>{{ note.add_date }}</span>
+                  <span>{{ note.author }}</span>
+                </div>
+                <div class="editable-note" 
+                    id="note-{{ note_id }}"
+                    tabindex="0">
+                  {{ note.note }}
+                </div>
+                <button class="delete-note-btn" onclick="deleteNote('{{ note_id }}')">Delete</button>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
+  <script src="/static/centralfiles/js/profile/edit_note.js"></script>
+  <script src="/static/centralfiles/js/profile/create_note.js"></script>
+  <script src="/static/centralfiles/js/profile/delete_note.js"></script>
+</body>
+</html>

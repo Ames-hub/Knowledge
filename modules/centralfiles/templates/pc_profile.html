@@ -27,6 +27,10 @@
         <span>PC Folder</span>
       </a>
       {% endif %}
+      <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link">
+        <i>🤝</i>
+        <span>Agreements</span>
+      </a>
     </div>
     
     <div class="nav-section">
@@ -44,7 +48,7 @@
     <div class="page-header">
       <div class="page-title">
         <h1>{{ profile.name }}</h1>
-        <p>Profile Details & Management</p>
+        <p>PC Folder Record & Management</p>
       </div>
       <div class="header-actions">
         <button id="export-btn" class="btn btn-secondary">
@@ -145,7 +149,7 @@
           </div>
         </div>
         <!-- Potential Value Estimation -->
-        <div class="card">
+        <div class="card" style="margin-top: 1.5rem;">
           <div class="card-header">
             <h3 class="card-title">Potential Value Estimation</h3>
           </div>
@@ -156,8 +160,15 @@
                 <span id="field-can_handle_life" class="editable" onclick="makeEditable('field-can_handle_life', '{{ profile.cfid }}', 'bool')">{{ dianetics.can_handle_life }}</span>
               </div>
               <div class="field">
-                <label>Enter an estimation of Theta endowment.<hr>Average: 500</label>
-                <input type="range" id="field-theta_endowment" min="1" max="1000" value="{{ dianetics.theta_endowment }}" oninput="updateThetaDisplay(this.value)">
+                <label>Enter an estimation of Theta endowment.<hr>High Average: 600<br>Median Average: 450<br>Low Average: 200</label>
+                <input
+                  type="range"
+                  id="field-theta_endowment"
+                  min="1" max="1000"
+                  value="{{ dianetics.theta_endowment }}"
+                  oninput="updateThetaDisplay(this.value)"
+                  title="A Mostly arbitrary number used to help show how much of life this person can take. If this number is >700, the individual is likely very valuable to society already, And could be even more so with their case removed."
+                >
                 <span id="theta_display">{{ dianetics.theta_endowment }}</span>
               </div>
             </div>
@@ -231,12 +242,12 @@
     const FileCFID = parseInt("{{ profile.cfid }}")
     let theta_endowment = parseInt("{{ dianetics.theta_endowment }}")
   </script>
-  <script src="/static/centralfiles/js/potential_value.js"></script>
-  <script src="/static/centralfiles/js/themecontrol.js"></script>
-  <script src="/static/centralfiles/js/action_list.js"></script>
-  <script src="/static/centralfiles/js/make_editable.js"></script>
-  <script src="/static/centralfiles/js/dn_export_profile.js"></script>
-  <script src="/static/centralfiles/js/dynamics-strength.js"></script>
-  <script src="/static/centralfiles/js/mindclass_loader.js"></script>
+  <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
+  <script src="/static/centralfiles/js/shared/action_list.js"></script>
+  <script src="/static/centralfiles/js/shared/make_editable.js"></script>
+  <script src="/static/centralfiles/js/dn_profile/potential_value.js"></script>
+  <script src="/static/centralfiles/js/dn_profile/dn_export_profile.js"></script>
+  <script src="/static/centralfiles/js/dn_profile/dynamics-strength.js"></script>
+  <script src="/static/centralfiles/js/dn_profile/mindclass_loader.js"></script>
 </body>
 </html>
