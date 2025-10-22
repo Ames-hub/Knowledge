@@ -456,6 +456,22 @@ class centralfiles:
                 except TypeError:
                     can_handle_life = True
 
+                try:
+                    cursor.execute(
+                        """
+                        SELECT on_chem_assist FROM cf_chem_assist WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    on_chem_assist = cursor.fetchone()[0]
+                    on_chem_assist = bool(on_chem_assist)
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error getting if the PC is on a chemical assist for cfid {cfid}: {err}", exception=err)
+                    conn.rollback()
+                    on_chem_assist = True
+                except TypeError:
+                    on_chem_assist = True
+
             mind_class_map = {
                 0: "Undetermined",
                 1: "Class A",
@@ -477,11 +493,30 @@ class centralfiles:
                 "mind_class_apparent": mind_class_map[apparent_class],
                 "theta_endowment": theta_endowment,
                 "can_handle_life": can_handle_life,
+                "chem_assist": on_chem_assist
             }
 
     class modify:
         def __init__(self, cfid):
             self.cfid = int(cfid)
+
+        def chem_assist(self, value):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_chem_assist (cfid, on_chem_assist) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET on_chem_assist=excluded.on_chem_assist
+                        """,
+                        (self.cfid, value)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid} on whether or not they're on a chemical assist: {err}", exception=err)
+                    conn.rollback()
+                    return False
 
         def can_handle_life(self, value:bool):
             with sqlite3.connect(DB_PATH) as conn:
@@ -1276,6 +1311,9 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
             success = True
         elif data.field == "can_handle_life":
             centralfiles.modify(data.cfid).can_handle_life(data.value)
+            success = True
+        elif data.field == "chem_assist":
+            centralfiles.modify(data.cfid).chem_assist(data.value)
             success = True
         else:
             raise ValueError(f"Invalid field specified, {data.field}")

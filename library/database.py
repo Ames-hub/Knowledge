@@ -313,6 +313,11 @@ class database:
                 "incident": "TEXT NOT NULL",
                 "somatic": "TEXT NOT NULL",
                 "incident_age": "INTEGER NOT NULL"
+            },
+            "cf_chem_assist": {
+                "cfid": "INTEGER PRIMARY KEY NOT NULL",
+                # A 'chemical assist' is just vitamins and minerals and stuff needed to survive. It helps with Auditing.
+                "on_chem_assist": "BOOLEAN NOT NULL DEFAULT FALSE"
             }
         }
         
