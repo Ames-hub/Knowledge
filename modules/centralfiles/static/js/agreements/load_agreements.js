@@ -60,8 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
         textCell.textContent = agreement.agreement;
 
         row.appendChild(fulfilledCell);
-        row.appendChild(textCell);
         row.appendChild(dateCell);
+        row.appendChild(textCell);
 
         table.appendChild(row);
       });

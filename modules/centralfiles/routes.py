@@ -1488,10 +1488,11 @@ def get_agreements(cfid):
         
     parsed_data = []
     for row in data:
+        date_agreed = datetime.datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
         parsed_data.append({
             "agreement_id": row[0],
-            "date": row[1],
-            "agreement": row[2],
+            "agreement": row[1],
+            "date": date_agreed,
             "fulfilled": row[3]
         })
     return parsed_data
