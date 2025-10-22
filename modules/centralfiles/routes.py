@@ -1964,7 +1964,6 @@ async def route_set_session_details(request: Request, cfid, session_id, data: se
     
     success = AuditingLog.session(session_id).set_session_details(
         preclear_cfid=cfid,
-        session_id=session_id,
         date=data.date,
         summary=data.summary,
         duration=data.duration,
