@@ -32,6 +32,10 @@
         <i>🧠</i>
         <span>PC Folder</span>
       </a>
+      <a href="/files/get/{{ profile.cfid }}/sessions" class="nav-link">
+        <i>📋</i>
+        <span>Sessions</span>
+      </a>
       {% endif %}
       <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link">
         <i>🤝</i>
@@ -165,7 +169,7 @@
           <div class="card-body">
             <div class="detail-grid">
               <div class="field">
-                <label>Despite current case level, is this PC capable of handling life?</label>
+                <label>Despite current case level, is this PC capable of handling life fairly well?</label>
                 <span id="field-can_handle_life" class="editable" onclick="makeEditable('field-can_handle_life', '{{ profile.cfid }}', 'bool')">{{ dianetics.can_handle_life }}</span>
               </div>
               <div class="field">
@@ -206,10 +210,10 @@
           <div class="dynamic-option">
               <label for="dynamic-self">Self:</label>
               <select id="dynamic-self">
-                  <option value="0">Undecided</option>
-                  <option value="1">Weak</option>
-                  <option value="2">Medium</option>
-                  <option value="3">Strong</option>
+                <option value="0">Undecided</option>
+                <option value="1">Weak</option>
+                <option value="2">Medium</option>
+                <option value="3">Strong</option>
               </select>
           </div>
 
@@ -226,10 +230,10 @@
           <div class="dynamic-option">
               <label for="dynamic-groups">Groups:</label>
               <select id="dynamic-groups">
-                  <option value="0">Undecided</option>
-                  <option value="1">Weak</option>
-                  <option value="2">Medium</option>
-                  <option value="3">Strong</option>
+                <option value="0">Undecided</option>
+                <option value="1">Weak</option>
+                <option value="2">Medium</option>
+                <option value="3">Strong</option>
               </select>
           </div>
 

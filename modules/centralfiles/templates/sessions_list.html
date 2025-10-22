@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>{{ profile.name }} – Profile</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/static/centralfiles/css/agreements.css">
+  <link rel="stylesheet" href="/static/centralfiles/css/sessions.css">
   <link rel="stylesheet" href="/static/centralfiles/css/sidebar.css">
 </head>
 <body>
@@ -32,12 +32,12 @@
         <i>🧠</i>
         <span>PC Folder</span>
       </a>
-      <a href="/files/get/{{ profile.cfid }}/sessions" class="nav-link">
+      <a href="/files/get/{{ profile.cfid }}/sessions" class="nav-link active">
         <i>📋</i>
         <span>Sessions</span>
       </a>
       {% endif %}
-      <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link active">
+      <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link">
         <i>🤝</i>
         <span>Agreements</span>
       </a>
@@ -102,78 +102,90 @@
 
     <!-- Main Grid -->
     <div class="main-grid">
-      <!-- Left Column -->
-      <div class="left-column">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Agreements</h3>
-            <button class="btn btn-primary btn-sm" onclick="createNewAgreement('{{ profile.cfid }}')">
-              New Agreement
-            </button>
-          </div>
-          <table>
-            <tr>
-              <th>Fulfilled</th>
-              <th>Date Promised</th>
-              <th>Agreement</th>
-              <th>Actions</th>
-            </tr>
-            <tr>
-            </tr>
-            <tr>
-            </tr>
-          </table>
-        </div>
+    <!-- Left Column -->
+    <div class="left-column">
+      <!-- Sessions List -->
+      <div class="sessions-list">
+      <div class="list-header">
+        <h3 class="list-title">Sessions</h3>
+        <button class="btn btn-primary" id="add-session-btn">
+        ➕ Add Session
+        </button>
       </div>
-
-      <!-- Right Column -->
-      <div class="right-column">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Notes</h3>
-            <button class="btn btn-primary btn-sm" onclick="createNewNote('{{ profile.cfid }}')">
-              New Note
-            </button>
+      
+      <div class="sessions-container" id="sessionsContainer">
+        <!-- Session cards will be dynamically added here -->
+        
+        <!-- Example Session Card -->
+        <div class="session-card">
+          <div class="session-card-header">
+            <div class="session-info">
+            <h4 class="session-title">Session #1</h4>
+            <div class="session-meta">
+                <span class="session-date">December 15, 2024</span>
+                <span class="session-duration">45 minutes</span>
+            </div>
+            </div>
+            <div class="session-status status-completed">
+            Completed
+            </div>
           </div>
-          <div class="card-body">
-            <div id="notes-list" class="notes-list">
-              {% for note_id, note in profile.profile_notes.items() %}
-              <div class="note-entry" id="note-block-{{ note_id }}">
-                <div class="meta">
-                  <span>{{ note.add_date }}</span>
-                  <span>{{ note.author }}</span>
-                </div>
-                <div class="editable-note" 
-                    id="note-{{ note_id }}"
-                    tabindex="0">
-                  {{ note.note }}
-                </div>
-                <button class="delete-note-btn" onclick="deleteNote('{{ note_id }}')">Delete</button>
+
+          <div class="session-card-body">
+            <p class="session-summary">Initial assessment and goal setting. Client discussed primary concerns and established baseline metrics.</p>
+            
+            <div class="session-actions">
+            <button class="btn btn-sm btn-secondary">
+              📝 Edit
+            </button>
+            <button class="btn btn-sm btn-secondary">
+              👁️ View Details
+            </button>
+            <button class="btn btn-sm btn-danger">
+              🗑️ Delete
+            </button>
+            </div>
+          </div>
+        </div>
+
+          <!-- Another Example Session Card -->
+        <div class="session-card">
+          <div class="session-card-header">
+            <div class="session-info">
+              <h4 class="session-title">Session #2</h4>
+              <div class="session-meta">
+                  <span class="session-date">December 22, 2024</span>
+                  <span class="session-duration">60 minutes</span>
               </div>
-              {% endfor %}
+            </div>
+            <div class="session-status status-scheduled">
+              Scheduled
+            </div>
+          </div>
+          
+          <div class="session-card-body">
+            <p class="session-summary">Upcoming session focused on progress review and technique implementation.</p>
+            
+            <div class="session-actions">
+            <button class="btn btn-sm btn-secondary">
+              📝 Edit
+            </button>
+            <button class="btn btn-sm btn-secondary">
+              👁️ View Details
+            </button>
+            <button class="btn btn-sm btn-danger">
+              🗑️ Delete
+            </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Agreement Modal -->
-  <div id="agreementModal" class="modal-overlay" style="display:none;">
-    <div class="modal">
-      <h2>New Agreement</h2>
-      <label>
-        Agreement:
-        <textarea id="agreement-text"></textarea>
-      </label>
-      <label>
-        Date Promised:
-        <input type="date" id="agreement-date" />
-      </label>
-      <div class="modal-actions">
-        <button id="agreement-cancel-btn">Cancel</button>
-        <button id="agreement-submit-btn">Add</button>
       </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+    </div>
     </div>
   </div>
 
@@ -182,7 +194,7 @@
   </script>
   <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
   <script src="/static/centralfiles/js/shared/sidebar.js"></script>
-  <script src="/static/centralfiles/js/agreements/modal.js"></script>
-  <script src="/static/centralfiles/js/agreements/load_agreements.js"></script>
+  <script src="/static/centralfiles/js/session_list/list_all_sessions.js"></script>
+  <script src="/static/centralfiles/js/session_list/create_session.js"></script>
 </body>
 </html>

@@ -290,8 +290,32 @@ class database:
                 "agreement": "TEXT NOT NULL",
                 "date_of_agreement": "DATE NOT NULL",
                 "fulfilled": "BOOLEAN NOT NULL DEFAULT FALSE"
+            },
+            "sessions_list": {
+                "session_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "preclear_cfid": "INTEGER NOT NULL",  # Who the session was for
+                "date": "DATE NOT NULL",
+                "summary": "TEXT NOT NULL",
+                "duration": "INTEGER NOT NULL",  # In minutes
+                "auditor": "TEXT NOT NULL",
+                "remarks": "TEXT NOT NULL DEFAULT 'No recorded remarks'"
+            },
+            "session_actions": {
+                "action_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "session_id": "INTEGER NOT NULL",
+                "action": "TEXT NOT NULL",
+                "completed": "BOOLEAN NOT NULL"
+            },
+            "session_engrams": {
+                "engram_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "session_id": "INTEGER NOT NULL",
+                "actions": "TEXT NOT NULL",
+                "incident": "TEXT NOT NULL",
+                "somatic": "TEXT NOT NULL",
+                "incident_age": "INTEGER NOT NULL"
             }
         }
+        
         for table_name, columns in table_dict.items():
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()

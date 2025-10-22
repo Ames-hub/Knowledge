@@ -240,6 +240,23 @@ def update_tonescale_estimation(cfid):
     else:
         logbook.warning(f"CFID {cfid} not found in CF_hubbard_chard_of_eval table.")
 
+def get_can_handle_life(cfid):
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """
+                SELECT value FROM cf_pc_can_handle_life WHERE cfid = ?
+                """,
+                (cfid,)
+            )
+            can_handle_life = cur.fetchone()[0]
+        except sqlite3.OperationalError as err:
+            logbook.error(f"An error occured with getting if the PC can handle their life from the DB. Err: {err}", exception=err) 
+            return False
+
+    return bool(can_handle_life)
+
 def calculate_mind_class_estimation(cfid):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
@@ -298,6 +315,8 @@ def calculate_mind_class_estimation(cfid):
     except TypeError:
         dyn_4 = 0
 
+    can_handle_life = get_can_handle_life(cfid)
+
     dynamics_score = (dyn_1 + dyn_2 + dyn_3 + dyn_4)
     if dynamics_score <= 5:
         apparent_class = 3  # Class C
@@ -310,6 +329,8 @@ def calculate_mind_class_estimation(cfid):
         actual_class = apparent_class
         if apparent_class == 3:
             actual_class = 2
+            if can_handle_life:
+                actual_class = 1  # If they can handle their own life in spite of being class C, and have a visio/sonic shut off, they're likely class A
         if apparent_class == 2 and dynamics_score >= 7:
             actual_class = 1
     else:

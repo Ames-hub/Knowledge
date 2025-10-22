@@ -444,11 +444,7 @@ body {
 }
 
 /* Very Small Screens */
-@media (max-width: 360px) {
-  .sidebar {
-    width: 100%;
-  }
-  
+@media (max-width: 360px) {  
   .profile-header {
     padding: 1rem;
   }
@@ -457,87 +453,6 @@ body {
   .card-body {
     padding: 0.75rem;
   }
-}
-
-/* Notes Section */
-.notes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.note-entry {
-  position: relative;
-  border: 1px solid #e1e5e9;
-  border-radius: 8px;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-/* Textarea for editing - matches the note size */
-.editable-textarea {
-  width: 100%;
-  border: 1px solid #e1e5e9;
-  border-radius: 8px;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  transition: all 0.2s ease;
-  position: relative;
-  resize: vertical;
-}
-
-.editable-textarea:focus {
-  outline: none;
-  border-color: #0056b3;
-  box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.25);
-}
-
-/* Delete button */
-.delete-note-btn {
-  margin-top: 10px;
-  padding: 0.375rem 0.75rem;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  align-self: flex-start;
-}
-
-.delete-note-btn:hover {
-  background-color: #c82333;
-  transform: translateY(-1px);
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-th, td {
-  border: 1px solid #aaa;
-  padding: 6px 10px;
-}
-th:first-child,
-td:first-child,
-th:nth-child(2),
-td:nth-child(2),
-th:nth-child(4),
-td:nth-child(4) {
-  width: 1%;
-  white-space: nowrap;
-}
-
-th:nth-child(3) {
-  text-align: left;
-}
-
-input[type="checkbox"] {
-  display: block;
-  margin: auto;
 }
 
 /* Main Content adjustments for mobile */
@@ -561,126 +476,138 @@ input[type="checkbox"] {
   }
 }
 
-/* Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: none; /* hidden by default */
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-/* Modal Box */
-.modal {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 360px;
-  max-width: 90%;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  font-family: 'Arial', sans-serif;
+.session-info {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-/* Modal Header */
-.modal h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #333;
-  text-align: center;
+.info-row {
+  display: flex;
+  align-items: center;
 }
 
-/* Labels */
-.modal label {
+.info-row label {
+  width: 80px;
+  font-weight: 500;
+}
+
+.session-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+}
+
+.remarks-container {
   display: flex;
   flex-direction: column;
-  font-size: 0.9rem;
-  color: #555;
+  gap: 1rem;
+}
+
+.remarks-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.actions-list, .engrams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.action-item, .engram-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--accent-light);
+  border-radius: var(--radius);
+}
+
+.action-checkbox {
+  margin: 0;
+}
+
+.action-label {
+  flex: 1;
+  margin: 0;
+}
+
+.action-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
   margin-bottom: 0.5rem;
 }
 
-/* Textarea */
-#agreement-text {
-  resize: vertical;
-  min-height: 80px;
-  max-height: 200px;
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  margin-top: 0.25rem;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-/* Input for date */
-#agreement-date {
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  margin-top: 0.25rem;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-/* Modal actions */
-.modal-actions {
+.action-form-buttons, .engram-form-buttons {
   display: flex;
-  justify-content: flex-end;
   gap: 0.5rem;
-  margin-top: 1rem;
 }
 
-/* Buttons */
-.modal-actions button {
-  padding: 0.45rem 1rem;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
+.engram-content {
+  flex: 1;
 }
 
-/* Cancel button */
-#agreement-cancel-btn {
-  background: #f0f0f0;
-  color: #333;
-}
-#agreement-cancel-btn:hover {
-  background: #e0e0e0;
+.engram-input-group {
+  margin-bottom: 1rem;
 }
 
-/* Submit button */
-#agreement-submit-btn {
-  background: #007bff;
-  color: white;
-}
-#agreement-submit-btn:hover {
-  background: #0056b3;
+.engram-input-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
 }
 
-@media (max-width: 400px) {
-  .modal {
-    width: 95%;
-    padding: 1.5rem;
+.engram-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+}
+
+.engram-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.summary-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
-}
-
-.delete-agreement-btn {
-  background-color: #f44336;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.delete-agreement-btn:hover {
-  background-color: #d32f2f;
+  
+  .info-row label {
+    width: 100%;
+  }
+  
+  .action-item, .engram-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .action-item .action-delete, .engram-item .engram-delete {
+    align-self: flex-end;
+  }
 }

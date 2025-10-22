@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ profile.name }} – Sessions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/centralfiles/css/session.css">
+  <link rel="stylesheet" href="/static/centralfiles/css/sidebar.css">
+</head>
+<body>
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <i>☰</i>
+  </button>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">Knowledge</div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Navigation</div>
+      <a href="/files/" class="nav-link">
+        <i>📁</i>
+        <span>All Files</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}" class="nav-link">
+        <i>👤</i>
+        <span>Profile</span>
+      </a>
+      {% if profile.is_dianetics_pc %}
+      <a href="/files/get/{{ profile.cfid }}/auditing" class="nav-link">
+        <i>🧠</i>
+        <span>PC Folder</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}/sessions" class="nav-link active">
+        <i>📋</i>
+        <span>Sessions</span>
+      </a>
+      {% endif %}
+      <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link">
+        <i>🤝</i>
+        <span>Agreements</span>
+      </a>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Tools</div>
+      <a href="#" class="nav-link">
+        <i>⚙️</i>
+        <span>Settings</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>{{ profile.name }} - Sessions</h1>
+        <p>Dianetics Counseling Session Records</p>
+      </div>
+      <div class="header-actions">
+        <button id="del-session-btn" class="btn btn-danger">
+          🗑️ Delete Session
+        </button>
+        <button id="export-btn" class="btn btn-secondary">
+          📥 Export
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-picture-section">
+        <img 
+          class="profile-image-large" 
+          src="/api/files/{{ profile.cfid }}/profile_icon" 
+          alt="{{ profile.name }}"
+          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
+        >
+      </div>
+      <div class="profile-info">
+        <h2 class="profile-name">{{ profile.name }}</h2>
+        <p class="profile-occupation">{{ profile.occupation }}</p>
+        <div class="profile-meta">
+          <div class="meta-item">
+            <i>🆔</i>
+            <span>CFID: {{ profile.cfid }}</span>
+          </div>
+          <div class="meta-item">
+            <i>👤</i>
+            <span>Age: {{ profile.age }}</span>
+          </div>
+          <div class="meta-item">
+            <i>🔤</i>
+            <span>Pronouns: {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Session Details Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Session #{{ session.session_id }}</h3>
+          </div>
+          <div class="card-body">
+            <div class="session-info">
+              <div class="info-row">
+                <label>Date:</label>
+                <input type="date" id="session-date" class="session-input" value="{{ session.date }}">
+              </div>
+              <div class="info-row">
+                <label>Duration:</label>
+                <input type="text" id="session-duration" class="session-input" placeholder="e.g., 2 hours" value="{{ session.duration }}">
+              </div>
+              <div class="info-row">
+                <label>Auditor:</label>
+                <input type="text" id="session-auditor" class="session-input" placeholder="Auditor name" value="{{ session.auditor }}">
+              </div>
+              <div class="info-row">
+                <textarea id="session-summary" class="summary-textarea" placeholder="Overall summary of the session, progress made, and observations...">{{ session.summary }}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Remarks Card -->
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <!-- Anything that was said in the session -->
+            <h3 class="card-title">Session Remarks</h3>
+          </div>
+          <div class="card-body">
+            <div class="remarks-container">
+              <div class="remarks-input-section">
+                <textarea id="patient-remarks" class="remarks-textarea" placeholder="Record patient statements, observations, and reactions during the session...">{{ session.remarks }}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Planned Actions Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Planned Actions</h3>
+            <button id="add-action-btn" class="btn btn-primary btn-sm">
+              <i>➕</i> Add
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="actions-list" id="actions-list">
+              <!-- Actions will be added here dynamically -->
+              <div class="action-item">
+                <input type="checkbox" id="action1" class="action-checkbox">
+                <label for="action1" class="action-label">Review engram from previous session</label>
+                <button class="btn btn-danger btn-sm action-delete">✕</button>
+              </div>
+              <div class="action-item">
+                <input type="checkbox" id="action2" class="action-checkbox">
+                <label for="action2" class="action-label">Address somatic in left shoulder</label>
+                <button class="btn btn-danger btn-sm action-delete">✕</button>
+              </div>
+            </div>
+            <div class="add-action-form" id="add-action-form" style="display: none;">
+              <input type="text" id="new-action-input" class="action-input" placeholder="Enter new action...">
+              <div class="action-form-buttons">
+                <button id="save-action-btn" class="btn btn-primary btn-sm">Save</button>
+                <button id="cancel-action-btn" class="btn btn-secondary btn-sm">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Engram Records Card -->
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h3 class="card-title">Engram Records</h3>
+            <button id="add-engram-btn" class="btn btn-primary btn-sm">
+              <i>➕</i> Add
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="engrams-list" id="engrams-list">
+              <!-- Engrams will be added here dynamically -->
+              <div class="engram-item">
+                <div class="engram-content">
+                  <strong>Incident:</strong> Fall from bicycle at age 7
+                  <br>
+                  <strong>Description:</strong> Patient recalls pain in left knee and embarrassment
+                </div>
+                <button class="btn btn-danger btn-sm engram-delete">✕</button>
+              </div>
+              <div class="engram-item">
+                <div class="engram-content">
+                  <strong>Incident:</strong> Argument with father at age 12
+                  <br>
+                  <strong>Description:</strong> Patient felt misunderstood and suppressed anger
+                </div>
+                <button class="btn btn-danger btn-sm engram-delete">✕</button>
+              </div>
+            </div>
+            <div class="add-engram-form" id="add-engram-form" style="display: none;">
+              <div class="engram-input-group">
+                <label for="new-engram-actions">Actions:</label>
+                <input type="text" id="new-engram-actions" class="engram-input" placeholder="Actions to perform for this engram">
+              </div>
+              <div class="engram-input-group">
+                <label for="new-engram-incident">Incident:</label>
+                <input type="text" id="new-engram-incident" class="engram-input" placeholder="Brief description of the incident">
+              </div>
+              <div class="engram-input-group">
+                <label for="new-engram-somatic">Somatic:</label>
+                <textarea id="new-engram-somatic" class="engram-textarea" placeholder="What was the somatic?"></textarea>
+              </div>
+              <div class="engram-input-group">
+                <label for="new-engram-age">Age:</label>
+                <input type="number" id="new-engram-age" class="engram-input" placeholder="Age during the incident">
+              </div>
+              <div class="engram-form-buttons">
+                <button id="save-engram-btn" class="btn btn-primary btn-sm">Save</button>
+                <button id="cancel-engram-btn" class="btn btn-secondary btn-sm">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const FileCFID = parseInt("{{ profile.cfid }}") 
+    const sessionId = parseInt("{{ session.session_id }}")
+  </script>
+  <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
+  <script src="/static/centralfiles/js/shared/sidebar.js"></script>
+  <script src="/static/centralfiles/js/session/set_session_details.js"></script>
+  <script src="/static/centralfiles/js/session/set_session_remarks.js"></script>
+  <script src="/static/centralfiles/js/session/add_engram.js"></script>
+  <script src="/static/centralfiles/js/session/list_engrams.js"></script>
+  <script src="/static/centralfiles/js/session/session_actions.js"></script>
+</body>
+</html>

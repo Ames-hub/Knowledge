@@ -479,70 +479,6 @@ class centralfiles:
                 "can_handle_life": can_handle_life,
             }
 
-    @staticmethod
-    def get_occupation(cfid:int):
-        with sqlite3.connect(DB_PATH) as conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT occupation FROM cf_occupations WHERE cfid = ?",
-                    (cfid,)
-                )
-                data = cursor.fetchone()
-                if data:
-                    return data[0]
-                else:
-                    return "Unemployed"
-            except sqlite3.OperationalError as err:
-                logbook.error(f"Error getting occupation for cfid {cfid}: {err}", exception=err)
-                return "Unemployed"
-
-    @staticmethod
-    def get_profile_image(cfid):
-        with sqlite3.connect(DB_PATH) as conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT image FROM cf_profile_images WHERE cfid = ?",
-                    (cfid,)
-                )
-                data = cursor.fetchone()
-                if data:
-                    return data[0]
-                else:
-                    return None
-            except sqlite3.OperationalError as err:
-                logbook.error(f"Error getting profile image for cfid {cfid}: {err}", exception=err)
-                return None
-
-    @staticmethod
-    def dupe_check(name:str):
-        """
-        Returns if there is someone with the same data in the database.
-        """
-        conn = sqlite3.connect(DB_PATH)
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT cfid FROM cf_names WHERE name = ?",
-                (name,)
-            )
-            data = cursor.fetchall()
-
-            cfid_list = [item[0] for item in data]
-            return {
-                "exists": len(cfid_list) != 0,
-                "cfids": cfid_list
-            }
-        except sqlite3.OperationalError as err:
-            logbook.error(f"Error checking for duplicates: {err}")
-            return {
-                "exists": False,
-                "error": "Database error occurred while checking for duplicates."
-            }
-        finally:
-            conn.close()
-
     class modify:
         def __init__(self, cfid):
             self.cfid = int(cfid)
@@ -750,6 +686,151 @@ class centralfiles:
                 return False
             finally:
                 conn.close()
+
+    class agreements:
+        @staticmethod
+        def delete(cfid:int, agreement_id:int):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        DELETE FROM cf_agreements WHERE cfid = ? AND agreement_id = ?;
+                        """,
+                        (cfid, agreement_id,)
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error while trying to delete the agreement with ID \"{agreement_id}\" from the Database for CFID {cfid}: {err}", exception=err)
+                    return False
+
+        @staticmethod
+        def get_agreements(cfid):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        SELECT agreement_id, agreement, date_of_agreement, fulfilled FROM cf_agreements WHERE cfid = ?
+                        """,
+                        (cfid,)
+                    )
+                    data = cur.fetchall()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
+                    return False
+
+            parsed_data = []
+            for row in data:
+                date_agreed = datetime.datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
+                parsed_data.append({
+                    "agreement_id": row[0],
+                    "agreement": row[1],
+                    "date": date_agreed,
+                    "fulfilled": row[3]
+                })
+            return parsed_data
+
+        @staticmethod
+        def set_fulfilled_status(value:bool, agreement_id, cfid):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        UPDATE cf_agreements 
+                        SET fulfilled = ? 
+                        WHERE agreement_id = ? AND cfid = ?
+                        """,
+                        (value, agreement_id, cfid)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
+                    return False
+
+        def add_agreement(cfid:int, agreement:str, date_agreed:datetime.datetime):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO cf_agreements (cfid, agreement, date_of_agreement, fulfilled)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        (cfid, agreement, date_agreed, False)
+                    )
+                    conn.commit()
+                    success = True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
+                    success = False
+            return success
+
+    @staticmethod
+    def get_occupation(cfid:int):
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT occupation FROM cf_occupations WHERE cfid = ?",
+                    (cfid,)
+                )
+                data = cursor.fetchone()
+                if data:
+                    return data[0]
+                else:
+                    return "Unemployed"
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error getting occupation for cfid {cfid}: {err}", exception=err)
+                return "Unemployed"
+
+    @staticmethod
+    def get_profile_image(cfid):
+        with sqlite3.connect(DB_PATH) as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT image FROM cf_profile_images WHERE cfid = ?",
+                    (cfid,)
+                )
+                data = cursor.fetchone()
+                if data:
+                    return data[0]
+                else:
+                    return None
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error getting profile image for cfid {cfid}: {err}", exception=err)
+                return None
+
+    @staticmethod
+    def dupe_check(name:str):
+        """
+        Returns if there is someone with the same data in the database.
+        """
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT cfid FROM cf_names WHERE name = ?",
+                (name,)
+            )
+            data = cursor.fetchall()
+
+            cfid_list = [item[0] for item in data]
+            return {
+                "exists": len(cfid_list) != 0,
+                "cfids": cfid_list
+            }
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Error checking for duplicates: {err}")
+            return {
+                "exists": False,
+                "error": "Database error occurred while checking for duplicates."
+            }
+        finally:
+            conn.close()
 
     @staticmethod
     def add_name(name):
@@ -1407,7 +1488,6 @@ async def set_theta(request: Request, post_data: SetThetaData, token: str = Depe
         status_code=200 if success else 500
     )
 
-# A Webpage for full PC Management
 @router.get("/files/get/{cfid}/agreements")
 @set_permission(permission="central_files")
 async def load_agreements_page(request: Request, cfid, token: str = Depends(require_prechecks)):
@@ -1425,24 +1505,6 @@ class add_agreement_data(BaseModel):
     agreement: str
     date_promised: str
 
-def add_agreement(cfid:int, agreement:str, date_agreed:datetime.datetime):
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        try:
-            cur.execute(
-                """
-                INSERT INTO cf_agreements (cfid, agreement, date_of_agreement, fulfilled)
-                VALUES (?, ?, ?, ?)
-                """,
-                (cfid, agreement, date_agreed, False)
-            )
-            conn.commit()
-            success = True
-        except sqlite3.OperationalError as err:
-            logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
-            success = False
-    return success
-
 @router.post("/api/files/{cfid}/agreements/add")
 @set_permission(permission="central_files")
 async def route_add_agreement(request: Request, data:add_agreement_data, cfid, token: str = Depends(require_prechecks)):
@@ -1458,7 +1520,7 @@ async def route_add_agreement(request: Request, data:add_agreement_data, cfid, t
             status_code=400
         )
 
-    success = add_agreement(
+    success = centralfiles.agreements.add_agreement(
         cfid=cfid,
         agreement=data.agreement,
         date_agreed=data.date_promised
@@ -1471,40 +1533,14 @@ async def route_add_agreement(request: Request, data:add_agreement_data, cfid, t
         status_code=200
     )
 
-def get_agreements(cfid):
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        try:
-            cur.execute(
-                """
-                SELECT agreement_id, agreement, date_of_agreement, fulfilled FROM cf_agreements WHERE cfid = ?
-                """,
-                (cfid,)
-            )
-            data = cur.fetchall()
-        except sqlite3.OperationalError as err:
-            logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
-            return False
-        
-    parsed_data = []
-    for row in data:
-        date_agreed = datetime.datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
-        parsed_data.append({
-            "agreement_id": row[0],
-            "agreement": row[1],
-            "date": date_agreed,
-            "fulfilled": row[3]
-        })
-    return parsed_data
-
 @router.get('/api/files/{cfid}/agreements/get')
 @set_permission(permission="central_files")
 async def route_get_agreements(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
 
-    agreements_list:list = get_agreements(cfid=cfid)
+    agreements_list:list = centralfiles.agreements.get_agreements(cfid=cfid)
 
-    if not agreements_list:
+    if agreements_list is False:
         return JSONResponse(
             content={'error': "Couldn't get the list of agreements."},
             status_code=400
@@ -1515,24 +1551,6 @@ async def route_get_agreements(request: Request, cfid, token: str = Depends(requ
         status_code=200
     )
 
-def set_fulfilled_status(value:bool, agreement_id, cfid):
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        try:
-            cur.execute(
-                """
-                UPDATE cf_agreements 
-                SET fulfilled = ? 
-                WHERE agreement_id = ? AND cfid = ?
-                """,
-                (value, agreement_id, cfid)
-            )
-            conn.commit()
-            return True
-        except sqlite3.OperationalError as err:
-            logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
-            return False
-
 class SetFulfilledData(BaseModel):
     agreement_id: int
     value: bool
@@ -1542,9 +1560,569 @@ class SetFulfilledData(BaseModel):
 async def route_set_fulfilled_status(request: Request, data: SetFulfilledData, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
 
-    success = set_fulfilled_status(cfid=int(cfid), agreement_id=int(data.agreement_id), value=bool(data.value))
+    success = centralfiles.agreements.set_fulfilled_status(cfid=int(cfid), agreement_id=int(data.agreement_id), value=bool(data.value))
 
     return HTMLResponse(
         content=str(success),
         status_code=200
+    )
+
+class DelAgreementData(BaseModel):
+    agreement_id: int
+
+@router.post('/api/files/{cfid}/agreements/delete')
+@set_permission(permission="central_files")
+async def route_set_fulfilled_status(request: Request, data: DelAgreementData, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
+
+    success = centralfiles.agreements.delete(cfid=cfid, agreement_id=int(data.agreement_id))
+
+    return HTMLResponse(
+        content=str(success),
+        status_code=200
+    )
+
+class AuditingLog:
+    def list_all_sessions(cfid):
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    """
+                    SELECT session_id, date, summary, duration FROM sessions_list WHERE preclear_cfid = ?
+                    """,
+                    (cfid,)
+                )
+                data = cur.fetchall()
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error while fetching all session actions for CFID {cfid}", exception=err)
+                return False
+            
+        parsed_data = []
+        for row in data:
+            parsed_data.append({
+                "session_id": row[0],
+                "date": row[1],
+                "summary": str(row[2]),
+                "duration": int(row[3]),
+            })
+        return parsed_data
+
+    def new_session(date:datetime.datetime, cfid:int, auditor:str):
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    """
+                    INSERT INTO sessions_list (date, summary, duration, auditor, preclear_cfid)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (date, "Enter a summary!", 0, auditor, cfid)
+                )
+                conn.commit()
+                session_id = cur.lastrowid
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error while fetching all session actions for CFID {cfid}", exception=err)
+                return False
+
+        return session_id
+
+    class session:
+        def __init__(self, session_id):
+            self.session_id = int(session_id)
+            self.data = self.get_data()
+            if self.data is False:
+                raise LookupError("Could not find session")  # Session non-existent.
+
+        def delete_action(self, action_id:int):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        DELETE FROM session_actions WHERE action_id = ?
+                        """,
+                        (int(action_id),)
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Couldn't delete an action from the DB: {err}", exception=err)
+                    return False
+            return True
+
+        def set_action_status(self, status, action_id):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        UPDATE session_actions
+                        SET completed = ? WHERE action_id = ?
+                        """,
+                        (bool(status), int(action_id))
+                    )
+                    conn.commit()
+                    return cur.lastrowid
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Couldn't set an action's status for the DB: {err}", exception=err)
+                    return False
+
+        def add_action(self, action_text):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO session_actions (session_id, action, completed)
+                        VALUES (?, ?, ?)
+                        """,
+                        (self.session_id, action_text, False)
+                    )
+                    conn.commit()
+                    return cur.lastrowid
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Couldn't add an action to the DB: {err}", exception=err)
+                    return False
+
+        def delete_engram(self, engram_id):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        DELETE FROM session_engrams WHERE session_id = ? AND engram_id = ?
+                        """,
+                        (self.session_id, engram_id,)
+                    )
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Couldn't delete an engram from the DB: {err}", exception=err)
+                    return False
+
+        def list_engrams(self):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        SELECT engram_id, actions, incident, somatic, incident_age FROM session_engrams WHERE session_id = ?
+                        """,
+                        (self.session_id,)
+                    )
+                    data = cur.fetchall()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Couldn't add an engram to the DB: {err}", exception=err)
+                    return False
+            
+            parsed_data = []
+            for engram in data:
+                parsed_data.append({
+                    "engram_id": engram[0],
+                    "actions": engram[1],
+                    "incident": engram[2],
+                    "somatic": engram[3],
+                    "incident_age": engram[4],
+                })
+            return parsed_data
+
+        def get_data(self):
+            session_details = self.get_session_details()
+            if not session_details:
+                return False
+            return {
+                "session_id": self.session_id,
+                "actions": self.list_planned_actions(),
+                "preclear_cfid": session_details['preclear_cfid'],
+                "date": session_details['date'],
+                "duration": session_details['duration'],
+                "summary": session_details['summary'],
+                "auditor": session_details['auditor'],
+                "remarks": session_details['remarks']
+            }
+
+        def get_session_details(self):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        SELECT session_id, preclear_cfid, date, summary, duration, auditor, remarks FROM sessions_list WHERE session_id = ?
+                        """,
+                        (self.session_id,)
+                    )
+                    data = cur.fetchone()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error while fetching all session actions for session ID {self.session_id}", exception=err)
+                    return False
+                
+            if not data:
+                return False
+            
+            return {
+                "session_id": data[0],
+                "preclear_cfid": data[1],
+                "date": data[2],
+                "summary": data[3],
+                "duration": data[4],
+                "auditor": data[5],
+                "remarks": data[6]
+            }
+
+        def list_planned_actions(self):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        SELECT action_id, action, completed FROM session_actions WHERE session_id = ?
+                        """,
+                        (self.session_id,)
+                    )
+                    data = cur.fetchall()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error while fetching all session actions for session ID {self.session_id}", exception=err)
+                    return False
+
+            parsed_data = []
+            for row in data:
+                parsed_data.append({
+                    "session_id": self.session_id,
+                    "action_id": row[0],
+                    "action_text": row[1],
+                    "completed": bool(row[2])
+                })
+            return parsed_data
+
+        def add_engram(self, actions:str, incident:str, somatic:str, incident_age:int):
+            session_id = self.session_id
+            actions = str(actions)
+            incident = str(incident)
+            somatic = str(somatic)
+            incident_age = int(incident_age)
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO session_engrams (session_id, actions, incident, somatic, incident_age)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (session_id, actions, incident, somatic, incident_age)
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Couldn't add an engram to the DB: {err}", exception=err)
+                    return False
+            return True
+
+        def set_remarks_value(self, text_value:str):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        UPDATE sessions_list
+                        SET remarks = ?
+                        WHERE session_id = ?
+                        """,
+                        (text_value, self.session_id,)
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Failed to update the session's saved remarks: {err}", exception=err)
+                    return False
+            return True
+
+        def set_session_details(self, preclear_cfid, date, summary, duration, auditor):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        UPDATE sessions_list
+                        SET date = ?, summary = ?, duration = ?, auditor = ?
+                        WHERE session_id = ? AND preclear_cfid = ?
+                        """,
+                        (date, summary, duration, auditor, self.session_id, preclear_cfid)
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Failed to set session details for the session: {err}", exception=err)
+                    return False
+            return True
+        
+        def delete_session(self):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        DELETE FROM sessions_list WHERE session_id = ?
+                        """,
+                        (self.session_id,)
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Failed to delete the session {self.session_id}: {err}", exception=err)
+                    return False
+            return True
+
+@router.get("/files/get/{cfid}/sessions")
+@set_permission(permission="central_files")
+async def load_sessions_page(request: Request, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the session records of {cfid}")
+    profile = centralfiles.get_profile(cfid=int(cfid))
+    return templates.TemplateResponse(
+        request,
+        "sessions_list.html",
+        {
+            "profile": profile,
+        }
+    )
+
+@router.get("/api/files/get/{cfid}/sessions/list_all")
+@set_permission(permission="central_files")
+async def list_all_sessions(request: Request, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the session records of {cfid}")
+    
+    all_sessions = AuditingLog.list_all_sessions(cfid)
+
+    return JSONResponse(
+        content=all_sessions,
+        status_code=200
+    )
+
+@router.get("/api/files/get/{cfid}/sessions/create/{date}")
+@set_permission(permission="central_files")
+async def create_session(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
+    username = authbook.token_owner(token)
+    logbook.info(f"{request.client.host} ({username}) Has accessed the session records of {cfid}")
+    
+    try:
+        cfid = int(cfid)
+    except ValueError:
+        return HTMLResponse(
+            content={
+                "error": "Incorrect cfid type. Expected INT"
+            },
+            status_code=400
+        )
+    try:
+        date = datetime.datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        return HTMLResponse(
+            content={
+                "error": "Incorrect date format. Expected str -> YYYY/MM/DD"
+            },
+            status_code=400
+        )
+
+    new_session_id = AuditingLog.new_session(
+        date=date,
+        cfid=cfid,
+        auditor=username
+    )
+
+    return HTMLResponse(
+        content=str(new_session_id),
+        status_code=200
+    )
+
+@router.get("/files/get/{cfid}/sessions/{session_id}")
+@set_permission(permission="central_files")
+async def load_sessions_page(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed to access the specific session {session_id} for {cfid}")
+    
+    try:
+        session = AuditingLog.session(session_id=session_id)
+    except LookupError:
+        with open("modules/404.html", "r") as file:
+            content = file.read()
+        return HTMLResponse(content, status_code=404)
+
+    profile = centralfiles.get_profile(cfid=int(cfid))
+
+    return templates.TemplateResponse(
+        request,
+        "session.html",
+        context={
+            "session": session.get_data(),
+            "profile": profile
+        }
+    )
+
+class set_details_data(BaseModel):
+    date: str
+    duration: int
+    auditor: str
+    summary: str
+
+@router.post("/files/get/{cfid}/sessions/{session_id}/set_details")
+@set_permission(permission="central_files")
+async def route_set_session_details(request: Request, cfid, session_id, data: set_details_data, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
+    
+    success = AuditingLog.session(session_id).set_session_details(
+        preclear_cfid=cfid,
+        session_id=session_id,
+        date=data.date,
+        summary=data.summary,
+        duration=data.duration,
+        auditor=data.auditor
+    )
+
+    return JSONResponse(
+        content={
+            "success": success,
+        },
+        status_code=200 if success else 500
+    )
+
+class set_remarks_data(BaseModel):
+    text_value: str
+
+@router.post("/api/files/get/{cfid}/sessions/{session_id}/set_remarks")
+@set_permission(permission="central_files")
+async def route_set_session_details(request: Request, cfid, session_id, data: set_remarks_data, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
+
+    success = AuditingLog.session(session_id).set_remarks_value(session_id, data.text_value)
+
+    return JSONResponse(
+        content={
+            "success": success
+        },
+        status_code=200 if success else 500
+    )
+
+class AddEngramData(BaseModel):
+    actions: str
+    incident: str
+    somatic: str
+    incident_age: int
+
+@router.post("/api/files/get/{cfid}/sessions/{session_id}/add_engram")
+@set_permission(permission="central_files")
+async def route_add_engram(request: Request, cfid, session_id, data: AddEngramData, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
+
+    success = AuditingLog.session(session_id).add_engram(data.actions, data.incident, data.somatic, data.incident_age)
+
+    return JSONResponse(
+        content={
+            "success": success
+        },
+        status_code=200 if success else 500
+    )
+
+@router.get("/api/files/get/{cfid}/sessions/{session_id}/list_engrams")
+@set_permission(permission="central_files")
+async def route_list_engrams(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
+
+    engrams = AuditingLog.session(session_id).list_engrams()
+
+    return JSONResponse(
+        content={
+            "success": True,
+            "engrams": engrams
+        },
+        status_code=200
+    )
+
+@router.delete("/api/files/get/{cfid}/sessions/{session_id}/delete_engram/{engram_id}")
+@set_permission(permission="central_files")
+async def route_delete_engram(request: Request, cfid, session_id, engram_id, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is attempting to delete engram {engram_id} for session {session_id}, CFID {cfid}")
+    success = AuditingLog.session(session_id=session_id).delete_engram(engram_id)
+    return JSONResponse(
+        content={
+            "success": success
+        },
+        status_code=200 if success else 500
+    )
+
+@router.delete("/api/files/get/{cfid}/delete/session/{session_id}")
+@set_permission(permission="central_files")
+async def delete_session(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is attempting to delete the session {session_id} for {cfid}")
+    success = AuditingLog.session(session_id).delete_session()
+    return JSONResponse(
+        content={
+            "success": success
+        },
+        status_code=200 if success else 500
+    )
+
+@router.get("/api/files/get/{cfid}/sessions/{session_id}/list_actions")
+@set_permission(permission="central_files")
+async def list_session_actions(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) is listing planned actions for session {session_id} (CFID {cfid})")
+    
+    actions_list = AuditingLog.session(session_id).list_planned_actions()
+    
+    if actions_list is False:
+        return JSONResponse(
+            content={"success": False, "error": "Database query failed"},
+            status_code=500
+        )
+
+    return JSONResponse(
+        content={
+            "success": True,
+            "actions": actions_list
+        },
+        status_code=200
+    )
+
+class AddActionData(BaseModel):
+    action_text: str
+
+@router.post("/api/files/get/{cfid}/sessions/{session_id}/add_action")
+@set_permission(permission="central_files")
+async def add_session_action(request: Request, cfid, session_id, data: AddActionData, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
+    
+    action_id = AuditingLog.session(session_id=session_id).add_action(data.action_text)
+
+    return JSONResponse(
+        content={
+            "action_id": action_id
+        },
+        status_code=200
+    )
+
+class CompletedActionData(BaseModel):
+    completed: bool
+
+@router.post("/api/files/get/{cfid}/sessions/{session_id}/update_action/{action_id}")
+@set_permission(permission="central_files")
+async def update_session_action(request: Request, cfid, session_id, action_id, data: CompletedActionData, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
+    
+    action_id = AuditingLog.session(session_id=session_id).set_action_status(data.completed, action_id=action_id)
+
+    return JSONResponse(
+        content={
+            "action_id": action_id
+        },
+        status_code=200
+    )
+
+@router.delete("/api/files/get/{cfid}/sessions/{session_id}/delete_action/{action_id}")
+@set_permission(permission="central_files")
+async def delete_session_action(request: Request, cfid, session_id, action_id, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
+    
+    session_id = int(session_id)
+    cfid = int(cfid)
+    action_id = int(action_id)
+
+    success = AuditingLog.session(session_id).delete_action(action_id)
+
+    return JSONResponse(
+        content={
+            "success": success
+        },
+        status_code=200 if success else 400
     )
