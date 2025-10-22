@@ -5,10 +5,16 @@
   <title>{{ profile.name }} – Profile</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/centralfiles/css/agreements.css">
+  <link rel="stylesheet" href="/static/centralfiles/css/sidebar.css">
 </head>
 <body>
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <i>☰</i>
+  </button>
+
   <!-- Sidebar -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo">Knowledge</div>
     
     <div class="nav-section">
@@ -17,7 +23,7 @@
         <i>📁</i>
         <span>All Files</span>
       </a>
-      <a href="/files/get/{{ profile.cfid }}" class="nav-link ">
+      <a href="/files/get/{{ profile.cfid }}" class="nav-link">
         <i>👤</i>
         <span>Profile</span>
       </a>
@@ -41,6 +47,9 @@
       </a>
     </div>
   </div>
+
+  <!-- Overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- Main Content -->
   <div class="main-content">
@@ -66,9 +75,6 @@
           alt="{{ profile.name }}"
           onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
         >
-        <button class="change-photo-btn" onclick="changeProfilePicture('{{ profile.cfid }}')">
-          Change Photo
-        </button>
       </div>
       <div class="profile-info">
         <h2 class="profile-name">{{ profile.name }}</h2>
@@ -94,6 +100,31 @@
     <div class="main-grid">
       <!-- Left Column -->
       <div class="left-column">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Agreements</h3>
+            <button class="btn btn-primary btn-sm" onclick="createNewAgreement('{{ profile.cfid }}')">
+              New Agreement
+            </button>
+          </div>
+          <table>
+            <tr>
+              <th>Fulfilled</th>
+              <th>Date Promised</th>
+              <th>Agreement</th>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></input></td>
+              <td>20/10/2025 12:00 PM</td>
+              <td>Free Auditing Session!</td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></input></td>
+              <td>18/09/2025 04:00 PM</td>
+              <td>Next payment, 50% Off!</td>
+            </tr>
+          </table>
+        </div>
       </div>
 
       <!-- Right Column -->
@@ -128,9 +159,31 @@
     </div>
   </div>
 
+  <!-- Agreement Modal -->
+  <div id="agreementModal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>New Agreement</h2>
+      <label>
+        Agreement:
+        <textarea id="agreement-text"></textarea>
+      </label>
+      <label>
+        Date Promised:
+        <input type="date" id="agreement-date" />
+      </label>
+      <div class="modal-actions">
+        <button id="agreement-cancel-btn">Cancel</button>
+        <button id="agreement-submit-btn">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let FileCFID = parseInt("{{ profile.cfid }}") 
+  </script>
   <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
-  <script src="/static/centralfiles/js/profile/edit_note.js"></script>
-  <script src="/static/centralfiles/js/profile/create_note.js"></script>
-  <script src="/static/centralfiles/js/profile/delete_note.js"></script>
+  <script src="/static/centralfiles/js/shared/sidebar.js"></script>
+  <script src="/static/centralfiles/js/agreements/modal.js"></script>
+  <script src="/static/centralfiles/js/agreements/load_agreements.js"></script>
 </body>
 </html>

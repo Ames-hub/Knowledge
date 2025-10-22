@@ -1410,7 +1410,7 @@ async def set_theta(request: Request, post_data: SetThetaData, token: str = Depe
 # A Webpage for full PC Management
 @router.get("/files/get/{cfid}/agreements")
 @set_permission(permission="central_files")
-async def load_pc_file(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def load_agreements_page(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the PC folder of {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     return templates.TemplateResponse(
@@ -1419,4 +1419,131 @@ async def load_pc_file(request: Request, cfid, token: str = Depends(require_prec
         {
             "profile": profile,
         }
+    )
+
+class add_agreement_data(BaseModel):
+    agreement: str
+    date_promised: str
+
+def add_agreement(cfid:int, agreement:str, date_agreed:datetime.datetime):
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """
+                INSERT INTO cf_agreements (cfid, agreement, date_of_agreement, fulfilled)
+                VALUES (?, ?, ?, ?)
+                """,
+                (cfid, agreement, date_agreed, False)
+            )
+            conn.commit()
+            success = True
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
+            success = False
+    return success
+
+@router.post("/api/files/{cfid}/agreements/add")
+@set_permission(permission="central_files")
+async def route_add_agreement(request: Request, data:add_agreement_data, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has added an agreement for CFID {cfid}, that agreement being \"{data.agreement}\"")
+    
+    try:
+        data.date_promised = datetime.datetime.strptime(data.date_promised, "%Y-%m-%d")
+    except ValueError as err:
+        return JSONResponse(
+            content={
+                "error": str(err)
+            },
+            status_code=400
+        )
+
+    success = add_agreement(
+        cfid=cfid,
+        agreement=data.agreement,
+        date_agreed=data.date_promised
+    )
+
+    return JSONResponse(
+        content={
+            "success": success
+        },
+        status_code=200
+    )
+
+def get_agreements(cfid):
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """
+                SELECT agreement_id, agreement, date_of_agreement, fulfilled FROM cf_agreements WHERE cfid = ?
+                """,
+                (cfid,)
+            )
+            data = cur.fetchall()
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
+            return False
+        
+    parsed_data = []
+    for row in data:
+        parsed_data.append({
+            "agreement_id": row[0],
+            "date": row[1],
+            "agreement": row[2],
+            "fulfilled": row[3]
+        })
+    return parsed_data
+
+@router.get('/api/files/{cfid}/agreements/get')
+@set_permission(permission="central_files")
+async def route_get_agreements(request: Request, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
+
+    agreements_list:list = get_agreements(cfid=cfid)
+
+    if not agreements_list:
+        return JSONResponse(
+            content={'error': "Couldn't get the list of agreements."},
+            status_code=400
+        )
+
+    return JSONResponse(
+        content=agreements_list,
+        status_code=200
+    )
+
+def set_fulfilled_status(value:bool, agreement_id, cfid):
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """
+                UPDATE cf_agreements 
+                SET fulfilled = ? 
+                WHERE agreement_id = ? AND cfid = ?
+                """,
+                (value, agreement_id, cfid)
+            )
+            conn.commit()
+            return True
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Error while trying to fetch agreements from the Database for CFID {cfid}: {err}", exception=err)
+            return False
+
+class SetFulfilledData(BaseModel):
+    agreement_id: int
+    value: bool
+
+@router.post('/api/files/{cfid}/agreements/set')
+@set_permission(permission="central_files")
+async def route_set_fulfilled_status(request: Request, data: SetFulfilledData, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
+
+    success = set_fulfilled_status(cfid=int(cfid), agreement_id=int(data.agreement_id), value=bool(data.value))
+
+    return HTMLResponse(
+        content=str(success),
+        status_code=200
     )

@@ -283,6 +283,13 @@ class database:
             "cf_pc_can_handle_life": {
                 "cfid": "INTEGER PRIMARY KEY NOT NULL",
                 "is_handleable": "BOOLEAN NOT NULL DEFAULT TRUE"
+            },
+            "cf_agreements": {
+                "agreement_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "cfid": "INTEGER NOT NULL",
+                "agreement": "TEXT NOT NULL",
+                "date_of_agreement": "DATE NOT NULL",
+                "fulfilled": "BOOLEAN NOT NULL DEFAULT FALSE"
             }
         }
         for table_name, columns in table_dict.items():

@@ -1,3 +1,4 @@
+/* pc_profile.css */
 :root {
   --bg: #f8fafc;
   --panel: #ffffff;
@@ -29,84 +30,6 @@ body {
   line-height: 1.5;
   display: flex;
   min-height: 100vh;
-}
-
-/* Sidebar */
-.sidebar {
-  width: var(--sidebar-width);
-  background: var(--panel);
-  border-right: 1px solid #e2e8f0;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  height: 100vh;
-  overflow-y: auto;
-  z-index: 10;
-  transition: transform 0.3s ease;
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.nav-section {
-  margin-bottom: 2rem;
-}
-
-.nav-title {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  color: var(--text);
-  text-decoration: none;
-  border-radius: var(--radius);
-  margin-bottom: 0.25rem;
-  transition: all 0.2s;
-}
-
-.nav-link:hover, .nav-link.active {
-  background-color: var(--accent-light);
-  color: var(--accent);
-}
-
-.nav-link i {
-  margin-right: 0.75rem;
-  width: 20px;
-  text-align: center;
-}
-
-/* Mobile Menu Toggle */
-.mobile-menu-toggle {
-  display: none;
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 20;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  width: 40px;
-  height: 40px;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: var(--shadow);
 }
 
 /* Main Content */
@@ -424,10 +347,6 @@ body {
     grid-template-columns: 1fr;
   }
   
-  .sidebar {
-    width: 240px;
-  }
-  
   .main-content {
     margin-left: 240px;
     max-width: calc(100vw - 240px);
@@ -448,19 +367,6 @@ body {
 
 /* Mobile - Sidebar becomes overlay */
 @media (max-width: 768px) {
-  .mobile-menu-toggle {
-    display: flex;
-  }
-  
-  .sidebar {
-    transform: translateX(-100%);
-    width: 280px;
-  }
-  
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
-  
   .main-content {
     margin-left: 0;
     max-width: 100vw;
@@ -577,10 +483,6 @@ body {
 
 /* Very Small Screens */
 @media (max-width: 360px) {
-  .sidebar {
-    width: 100%;
-  }
-  
   .profile-header {
     padding: 1rem;
   }
@@ -597,8 +499,6 @@ body {
 
 /* Print Styles */
 @media print {
-  .sidebar,
-  .mobile-menu-toggle,
   .header-actions,
   .change-photo-btn {
     display: none !important;

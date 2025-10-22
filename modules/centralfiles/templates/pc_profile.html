@@ -5,10 +5,16 @@
   <title>{{ profile.name }} – Profile</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/static/centralfiles/css/pc_profile.css">
+  <link rel="stylesheet" href="/static/centralfiles/css/sidebar.css">
 </head>
 <body>
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <i>☰</i>
+  </button>
+
   <!-- Sidebar -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo">Knowledge</div>
     
     <div class="nav-section">
@@ -41,6 +47,9 @@
       </a>
     </div>
   </div>
+
+  <!-- Overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- Main Content -->
   <div class="main-content">
@@ -245,6 +254,7 @@
   <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
   <script src="/static/centralfiles/js/shared/action_list.js"></script>
   <script src="/static/centralfiles/js/shared/make_editable.js"></script>
+  <script src="/static/centralfiles/js/shared/sidebar.js"></script>
   <script src="/static/centralfiles/js/dn_profile/potential_value.js"></script>
   <script src="/static/centralfiles/js/dn_profile/dn_export_profile.js"></script>
   <script src="/static/centralfiles/js/dn_profile/dynamics-strength.js"></script>
