@@ -468,9 +468,9 @@ class centralfiles:
                 except sqlite3.OperationalError as err:
                     logbook.error(f"Error getting if the PC is on a chemical assist for cfid {cfid}: {err}", exception=err)
                     conn.rollback()
-                    on_chem_assist = True
+                    on_chem_assist = False
                 except TypeError:
-                    on_chem_assist = True
+                    on_chem_assist = False
 
             mind_class_map = {
                 0: "Undetermined",
