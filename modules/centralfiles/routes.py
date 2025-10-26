@@ -2163,3 +2163,13 @@ async def delete_session_action(request: Request, cfid, session_id, action_id, t
         },
         status_code=200 if success else 400
     )
+
+@router.get("/files/get/{cfid}/scheduling")
+@set_permission("central_files")
+async def open_scheduling_page(request: Request, cfid, token: str = Depends(require_prechecks))
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the scheduling page for {cfid}")
+    return TemplateResponse(
+        request,
+        "scheduling.html",
+        context={}
+    )
