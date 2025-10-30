@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{{ profile.name }} – Profile</title>
+  <title>{{ profile.name }} – Sessions</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/static/centralfiles/css/sessions.css">
+  <link rel="stylesheet" href="/static/centralfiles/css/flags.css">
   <link rel="stylesheet" href="/static/centralfiles/css/sidebar.css">
 </head>
 <body>
@@ -32,7 +32,7 @@
         <i>🧠</i>
         <span>PC Folder</span>
       </a>
-      <a href="/files/get/{{ profile.cfid }}/sessions" class="nav-link active">
+      <a href="/files/get/{{ profile.cfid }}/sessions" class="nav-link">
         <i>📋</i>
         <span>Sessions</span>
       </a>
@@ -53,7 +53,7 @@
         <i>⚙️</i>
         <span>Settings</span>
       </a>
-      <a href="/files/get/{{ profile.cfid }}/flags" class="nav-link">
+      <a href="/files/get/{{ profile.cfid }}/flags" class="nav-link active">
         <i>🚩</i>
         <span>Flags</span>
       </a>
@@ -69,11 +69,14 @@
     <div class="page-header">
       <div class="page-title">
         <h1>{{ profile.name }} - Sessions</h1>
-        <p>Profile Details & Management</p>
+        <p>Assign flags to the individuals folder.</p>
       </div>
       <div class="header-actions">
+        <button id="del-session-btn" class="btn btn-danger">
+          🗑️ Delete Session
+        </button>
         <button id="export-btn" class="btn btn-secondary">
-          <i>📥</i> Export
+          📥 Export
         </button>
       </div>
     </div>
@@ -110,99 +113,20 @@
 
     <!-- Main Grid -->
     <div class="main-grid">
-    <!-- Left Column -->
-    <div class="left-column">
-      <!-- Sessions List -->
-      <div class="sessions-list">
-      <div class="list-header">
-        <h3 class="list-title">Sessions</h3>
-        <button class="btn btn-primary" id="add-session-btn">
-        ➕ Add Session
-        </button>
+      <!-- Left Column -->
+      <div class="left-column">
       </div>
-      
-      <div class="sessions-container" id="sessionsContainer">
-        <!-- Session cards will be dynamically added here -->
-        
-        <!-- Example Session Card -->
-        <div class="session-card">
-          <div class="session-card-header">
-            <div class="session-info">
-            <h4 class="session-title">Session #1</h4>
-            <div class="session-meta">
-                <span class="session-date">December 15, 2024</span>
-                <span class="session-duration">45 minutes</span>
-            </div>
-            </div>
-            <div class="session-status status-completed">
-            Completed
-            </div>
-          </div>
 
-          <div class="session-card-body">
-            <p class="session-summary">Initial assessment and goal setting. Client discussed primary concerns and established baseline metrics.</p>
-            
-            <div class="session-actions">
-            <button class="btn btn-sm btn-secondary">
-              📝 Edit
-            </button>
-            <button class="btn btn-sm btn-secondary">
-              👁️ View Details
-            </button>
-            <button class="btn btn-sm btn-danger">
-              🗑️ Delete
-            </button>
-            </div>
-          </div>
-        </div>
-
-          <!-- Another Example Session Card -->
-        <div class="session-card">
-          <div class="session-card-header">
-            <div class="session-info">
-              <h4 class="session-title">Session #2</h4>
-              <div class="session-meta">
-                  <span class="session-date">December 22, 2024</span>
-                  <span class="session-duration">60 minutes</span>
-              </div>
-            </div>
-            <div class="session-status status-scheduled">
-              Scheduled
-            </div>
-          </div>
-          
-          <div class="session-card-body">
-            <p class="session-summary">Upcoming session focused on progress review and technique implementation.</p>
-            
-            <div class="session-actions">
-            <button class="btn btn-sm btn-secondary">
-              📝 Edit
-            </button>
-            <button class="btn btn-sm btn-secondary">
-              👁️ View Details
-            </button>
-            <button class="btn btn-sm btn-danger">
-              🗑️ Delete
-            </button>
-            </div>
-          </div>
-        </div>
+      <!-- Right Column -->
+      <div class="right-column">
       </div>
-      </div>
-    </div>
-
-    <!-- Right Column -->
-    <div class="right-column">
-    </div>
     </div>
   </div>
 
   <script>
-    let FileCFID = parseInt("{{ profile.cfid }}") 
+    const FileCFID = parseInt("{{ profile.cfid }}") 
   </script>
   <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
   <script src="/static/centralfiles/js/shared/sidebar.js"></script>
-  <script src="/static/centralfiles/js/session_list/list_all_sessions.js"></script>
-  <script src="/static/centralfiles/js/session_list/create_session.js"></script>
 </body>
 </html>

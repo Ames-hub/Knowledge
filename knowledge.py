@@ -136,7 +136,7 @@ if __name__ == "__main__":
         ssl_certfile_dir = os.path.abspath("certs/cert.pem")
         ssl_keyfile_dir = os.path.abspath("certs/key.pem")
         if not os.path.exists(ssl_certfile_dir) and not os.path.exists(ssl_keyfile_dir):
-            print("We need to generate some security certfiicates.\nWhat's the base URL people will use to connect to this app on the web? (Default: localhost)")
+            print("We need to generate some security certificates.\nWhat's the base URL people will use to connect to this app on the web? (Default: localhost)")
             common_name = input(">>> ")
             if not common_name:  # Entered nothing.
                 common_name = "localhost"

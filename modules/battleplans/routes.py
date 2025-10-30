@@ -615,18 +615,30 @@ async def get_weekly_production(request: Request, data: weekly_prod_get, token: 
     except ValueError:
         return HTMLResponse("Invalid date format. Use DD-MM-YYYY.", status_code=400)
 
-    week_start = settings.get.weekday_end()
-    if week_start < 1 or week_start > 7:
-        return HTMLResponse("week_start must be 1 (Monday) to 7 (Sunday).", status_code=400)
+    weekday_end = settings.get.weekday_end()
+    if weekday_end < 1 or weekday_end > 7:
+        return HTMLResponse("weekday_end must be 1 (Monday) to 7 (Sunday).", status_code=400)
 
-    # Calculate the week range
-    current_weekday = date_obj.isoweekday()  # 1=Monday, 7=Sunday
-    delta_days = (current_weekday - week_start) % 7
-    start_of_week = date_obj - datetime.timedelta(days=delta_days)
-    # So that we don't count the weekday end past, we add 1 day.
-    start_of_week = start_of_week + datetime.timedelta(days=1)
-
-    # Generate all dates in the week
+    # Calculate the current weekday (1=Monday, 7=Sunday)
+    current_weekday = date_obj.isoweekday()
+    
+    # Calculate days to the most recent week start
+    # Week starts the day AFTER weekday_end
+    week_start_day = weekday_end + 1
+    if week_start_day > 7:
+        week_start_day = 1  # Wrap around to Monday if Sunday+1
+    
+    # Calculate how many days to go back to reach the start of this week
+    if current_weekday >= week_start_day:
+        days_to_week_start = current_weekday - week_start_day
+    else:
+        # If current day is before week_start_day in ISO week, 
+        # we need to go into previous ISO week
+        days_to_week_start = current_weekday + (7 - week_start_day)
+    
+    start_of_week = date_obj - datetime.timedelta(days=days_to_week_start)
+    
+    # Generate all dates in the week (7 days from start_of_week)
     week_dates = [
         (start_of_week + datetime.timedelta(days=i)).strftime("%d-%m-%Y")
         for i in range(7)

@@ -318,6 +318,15 @@ class database:
                 "cfid": "INTEGER PRIMARY KEY NOT NULL",
                 # A 'chemical assist' is just vitamins and minerals and stuff needed to survive. It helps with Auditing.
                 "on_chem_assist": "BOOLEAN NOT NULL DEFAULT FALSE"
+            },
+            "schedule_data": {
+                "schedule_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "cfid": "INTEGER NOT NULL",
+                "date": "DATE NOT NULL",
+                "time_str": "TEXT NOT NULL",
+                "activity": "TEXT NOT NULL",
+                "auditor": "TEXT NOT NULL",
+                "room": "TEXT NOT NULL"
             }
         }
         

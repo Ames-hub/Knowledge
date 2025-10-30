@@ -36,6 +36,10 @@
         <i>📋</i>
         <span>Sessions</span>
       </a>
+      <a href="/files/get/{{ profile.cfid }}/scheduling" class="nav-link">
+        <i>🗓️</i>
+        <span>Scheduling</span>
+      </a>
       {% endif %}
       <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link active">
         <i>🤝</i>
@@ -45,9 +49,13 @@
     
     <div class="nav-section">
       <div class="nav-title">Tools</div>
-      <a href="#" class="nav-link">
+      <a href="/files/get/{{ profile.cfid }}/settings" class="nav-link">
         <i>⚙️</i>
         <span>Settings</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}/flags" class="nav-link">
+        <i>🚩</i>
+        <span>Flags</span>
       </a>
     </div>
   </div>
@@ -60,7 +68,7 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="page-title">
-        <h1>{{ profile.name }}</h1>
+        <h1>{{ profile.name }} - Agreements</h1>
         <p>Profile Details & Management</p>
       </div>
       <div class="header-actions">

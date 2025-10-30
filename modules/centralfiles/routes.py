@@ -443,7 +443,7 @@ class centralfiles:
                 try:
                     cursor.execute(
                         """
-                        SELECT value FROM cf_pc_can_handle_life WHERE cfid = ?
+                        SELECT is_handleable FROM cf_pc_can_handle_life WHERE cfid = ?
                         """,
                         (cfid,)
                     )
@@ -2166,10 +2166,75 @@ async def delete_session_action(request: Request, cfid, session_id, action_id, t
 
 @router.get("/files/get/{cfid}/scheduling")
 @set_permission("central_files")
-async def open_scheduling_page(request: Request, cfid, token: str = Depends(require_prechecks))
+async def open_scheduling_page(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the scheduling page for {cfid}")
-    return TemplateResponse(
+    profile = centralfiles.get_profile(cfid=int(cfid))
+    return templates.TemplateResponse(
         request,
         "scheduling.html",
-        context={}
+        context={
+            "profile": profile
+        }
+    )
+
+def get_scheduling_data(cfid, date):
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """
+                SELECT cfid, date, time_str, activity, auditor, room FROM schedule_data
+                WHERE cfid = ?
+                AND date = ?
+                """,
+                (cfid, date)
+            )
+            schedule_data = cur.fetchall()
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Error getting Schedule data from the DB for {cfid} on {date}", exception=err)
+
+    schedule_parsed = {}
+    for schedule in schedule_data:
+        schedule_parsed[schedule['time']] = {
+            "time": schedule['time'],
+            "activity": schedule['activity'],
+            "auditor": schedule['auditor'],
+            "room": schedule['room']
+        }
+
+    return schedule_parsed
+
+@router.get("/api/files/get/{cfid}/scheduling/fetch/{date}")
+@set_permission("central_files")
+async def open_scheduling_page(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the set scheduling for {cfid}")
+    
+    try:
+        date = datetime.datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        return JSONResponse(
+            content={
+                "error": "Date format invalid."
+            },
+            status_code=400
+        )
+    
+    schedule_data = get_scheduling_data(cfid, date)
+    
+    return JSONResponse(
+        content=schedule_data,
+        status_code=200
+    )
+
+@router.get("/files/get/{cfid}/flags")
+@set_permission("central_files")
+async def open_flags_page(request: Request, cfid, token: str = Depends(require_prechecks)):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the scheduling page for {cfid}")
+    profile = centralfiles.get_profile(cfid=int(cfid))
+    return templates.TemplateResponse(
+        request,
+        "flags.html",
+        context={
+            "profile": profile
+        }
     )

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ profile.name }} – Sessions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/centralfiles/css/scheduling.css">
+  <link rel="stylesheet" href="/static/centralfiles/css/sidebar.css">
+  <style>
+    /* Simple timetable styling */
+    .timetable {
+      border-collapse: collapse;
+      width: 100%;
+      background: #f9f9f9;
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.95rem;
+      max-height: 400px;
+      display: block;
+      overflow-y: auto;
+    }
+
+    .timetable thead,
+    .timetable tbody {
+      display: block;
+    }
+
+    .timetable tbody {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .timetable th, .timetable td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .timetable th {
+      background-color: #e7e9ec;
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+
+    .timetable tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    .timetable tr:hover td {
+      background-color: #f1f1f1;
+    }
+
+    .time-col, #time_th {
+      width: 120px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .activity-col {
+      color: #333;
+      text-align: left;
+    }
+
+    .left-column h3 {
+      margin-bottom: 10px;
+    }
+
+    /* Filter controls styling */
+    .filter-controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #555;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      font-size: 0.9rem;
+      min-width: 150px;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    }
+
+    /* Loading and status styles */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .status-message {
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .status-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    /* Editable field styles */
+    .editable-field {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .editable-field:hover {
+      background-color: #f0f8ff;
+    }
+
+    .editable-field:after {
+      content: '✏️';
+      margin-left: 5px;
+      font-size: 0.8em;
+      opacity: 0.7;
+    }
+
+    .edit-input {
+      width: 100%;
+      padding: 4px 8px;
+      border: 1px solid #4a90e2;
+      border-radius: 3px;
+      font-size: 0.9rem;
+    }
+
+    .save-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .save-btn:hover {
+      background-color: #218838;
+    }
+
+    .save-btn:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <i>☰</i>
+  </button>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">Knowledge</div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Navigation</div>
+      <a href="/files/" class="nav-link">
+        <i>📁</i>
+        <span>All Files</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}" class="nav-link">
+        <i>👤</i>
+        <span>Profile</span>
+      </a>
+      {% if profile.is_dianetics_pc %}
+      <a href="/files/get/{{ profile.cfid }}/auditing" class="nav-link">
+        <i>🧠</i>
+        <span>PC Folder</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}/sessions" class="nav-link">
+        <i>📋</i>
+        <span>Sessions</span>
+      </a>
+      {% endif %}
+      <a href="/files/get/{{ profile.cfid }}/agreements" class="nav-link">
+        <i>🤝</i>
+        <span>Agreements</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}/scheduling" class="nav-link active">
+        <i>🗓️</i>
+        <span>Scheduling</span>
+      </a>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-title">Tools</div>
+      <a href="/files/get/{{ profile.cfid }}/settings" class="nav-link">
+        <i>⚙️</i>
+        <span>Settings</span>
+      </a>
+      <a href="/files/get/{{ profile.cfid }}/flags" class="nav-link">
+        <i>🚩</i>
+        <span>Flags</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>{{ profile.name }} - Scheduling</h1>
+        <p>A Full record of the schedule of {{ profile.name }}</p>
+      </div>
+      <div class="header-actions">
+        <button id="save-btn" class="save-btn" disabled>
+          💾 Save Changes
+        </button>
+        <button id="export-btn" class="btn btn-secondary">
+          📥 Export
+        </button>
+      </div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="status-message" class="status-message" style="display: none;"></div>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-picture-section">
+        <img 
+          class="profile-image-large" 
+          src="/api/files/{{ profile.cfid }}/profile_icon" 
+          alt="{{ profile.name }}"
+          onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
+        >
+      </div>
+      <div class="profile-info">
+        <h2 class="profile-name">{{ profile.name }}</h2>
+        <p class="profile-occupation">{{ profile.occupation }}</p>
+        <div class="profile-meta">
+          <div class="meta-item">
+            <i>🆔</i>
+            <span>CFID: {{ profile.cfid }}</span>
+          </div>
+          <div class="meta-item">
+            <i>👤</i>
+            <span>Age: {{ profile.age }}</span>
+          </div>
+          <div class="meta-item">
+            <i>🔤</i>
+            <span>Pronouns: {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+        <h3>Daily Schedule</h3>
+        
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label class="filter-label" for="room-filter">Filter by Room:</label>
+            <select id="room-filter" class="filter-select">
+              <option value="all">All Rooms</option>
+              <option value="room1">Room 1 - Main Auditing</option>
+              <option value="room2">Room 2 - Co-audit</option>
+              <option value="room3">Room 3 - Training</option>
+              <option value="room4">Room 4 - Consultation</option>
+              <option value="room5">Room 5 - Solo Processing</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label" for="date-filter">Date:</label>
+            <input type="date" id="date-filter" class="filter-select">
+          </div>
+        </div>
+
+        <table class="timetable">
+          <thead>
+            <tr>
+              <th id="time_th">Time</th>
+              <th id="activity_th">Activity</th>
+              <th id="auditor_th">Auditor</th>
+              <th id="room_th">Room</th>
+            </tr>
+          </thead>
+          <tbody id="schedule-body">
+            <!-- Schedule data will be dynamically loaded here -->
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 20px;">
+                Loading schedule...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <div class="card">
+          <h4>Schedule Information</h4>
+          <p>Click on any activity, auditor, or room to edit the schedule.</p>
+          <p>Changes are saved automatically when you click "Save Changes".</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const FileCFID = parseInt("{{ profile.cfid }}");
+  </script>
+  <script src="/static/centralfiles/js/scheduling/schedule.js"></script>
+  <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
+  <script src="/static/centralfiles/js/shared/sidebar.js"></script>
+</body>
+</html>

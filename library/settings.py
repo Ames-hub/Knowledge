@@ -51,7 +51,7 @@ class get:
 
     @staticmethod
     def allow_registration():
-        return bool(get.get("registration_allowed", False))
+        return bool(get.get("registration_allowed", True))
 
     @staticmethod
     def lookback_length():
@@ -59,6 +59,9 @@ class get:
 
 def save(key, value):
     settings = {}
+
+    if key not in valid_settings.keys():
+        raise KeyError("This is a bad key for settings!")
 
     if key == "allow_registration":
         value = bool(value)

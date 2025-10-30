@@ -27,8 +27,11 @@ class SettingsData(BaseModel):
 async def save_settings(request: Request, data: SettingsData, token=Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is saving settings. New config: {data.config}")
     for setting, value in data.config.items():
+        setting = str(setting).lower()
+        if setting not in settings.valid_settings.keys():
+            return HTMLResponse(f"ERR: Setting key \"{setting}\" Invalid.", status_code=400)
         settings.save(
-            key=setting.lower(),
+            key=setting,
             value=value,
         )
     return HTMLResponse(content="Settings saved successfully.", status_code=200)

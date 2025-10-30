@@ -246,7 +246,7 @@ def get_can_handle_life(cfid):
         try:
             cur.execute(
                 """
-                SELECT value FROM cf_pc_can_handle_life WHERE cfid = ?
+                SELECT is_handleable FROM cf_pc_can_handle_life WHERE cfid = ?
                 """,
                 (cfid,)
             )
@@ -254,6 +254,9 @@ def get_can_handle_life(cfid):
         except sqlite3.OperationalError as err:
             logbook.error(f"An error occured with getting if the PC can handle their life from the DB. Err: {err}", exception=err) 
             return False
+        except TypeError:
+            # No data
+            return True
 
     return bool(can_handle_life)
 
