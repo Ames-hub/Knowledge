@@ -11,6 +11,7 @@ import sqlite3
 import secrets
 import bcrypt
 import time
+import os
 
 logbook = LogBookHandler('AUTH')
 expiration_hours = 168  # 1 Week
@@ -19,9 +20,13 @@ expiration_hours = 168  # 1 Week
 _login_attempts = {}
 arrested_ips = []
 
-def generate_self_signed_cert(common_name="localhost", valid_days=365):
+def generate_self_signed_cert(country_name, province_name, locality_name, organisation_name, common_name="localhost", valid_days=365):
     key_file = "certs/key.pem"
     cert_file = "certs/cert.pem"
+
+    if os.path.exists(key_file) or os.path.exists(cert_file):
+        os.remove('certs')
+        os.makedirs('certs')
 
     # Generate private key
     key = rsa.generate_private_key(
@@ -31,10 +36,10 @@ def generate_self_signed_cert(common_name="localhost", valid_days=365):
 
     # Generate a self-signed certificate
     subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"California"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"My Organization"),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, u"{}".format(country_name)),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"{}".format(province_name)),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, u"{}".format(locality_name)),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"{}".format(organisation_name)),
         x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ])
 

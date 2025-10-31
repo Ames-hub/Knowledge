@@ -97,9 +97,23 @@
 .bp-month { font-weight:700; letter-spacing: 0.7px; display:block; color:var(--muted); }
 .bp-day { font-size:1.25rem; color:var(--text); }
 
+/* sidebar.css - Add to the existing .bp-item styles */
 .bp-item.current-bp {
-  background-color: #ffd700 !important; /* gold highlight */
+  background-color: #ffd700 !important; /* gold highlight for today */
   font-weight: bold;
+  color: #000;
+}
+
+.bp-item.selected-bp {
+  border: 2px solid #3b82f6; /* blue border for selected */
+  background-color: rgba(59, 130, 246, 0.15) !important; /* light blue background */
+  font-weight: bold;
+}
+
+/* If a BP is both current and selected, current styling takes priority */
+.bp-item.current-bp.selected-bp {
+  background-color: #ffd700 !important; /* keep gold background */
+  border: 2px solid #3b82f6; /* but keep blue border */
 }
 
 /* subtle scrollbar styling */

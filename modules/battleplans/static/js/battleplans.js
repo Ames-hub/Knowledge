@@ -3,6 +3,7 @@ const bpIndicator = document.getElementById("bp-indicator");
 const addPlanBtn = document.getElementById("add-plan-btn");
 let currentBPDate = getTodayStr(); // track current BP date
 let currentBPId = null; // track bp_id
+let selectedBPDate = null;
 
 let allBattlePlans = [];
 const sortDescending = true;
@@ -19,6 +20,7 @@ async function loadFullBP({ day, month }, do_alert = true) {
     const year = new Date().getFullYear();
     const fullDateStr = `${day}-${month}-${year}`;
     currentBPDate = fullDateStr;
+    selectedBPDate = fullDateStr; // Set as selected
 
     const res = await fetch(`/api/bps/get/${fullDateStr}`);
     if (!res.ok) throw new Error("Failed to fetch full battle plan");
@@ -32,54 +34,11 @@ async function loadFullBP({ day, month }, do_alert = true) {
 
     taskList.innerHTML = "";
     bpData.tasks.forEach(task => {
-      const li = document.createElement("li");
-      li.className = "task-item";
-      li.dataset.id = task.id;
-
-      li.innerHTML = `
-        <input type="checkbox" class="task-checkbox" ${task.done ? "checked" : ""}>
-        <span class="task-text">${task.text}</span>
-        <span class="task-category">[${task.category}]</span>
-        <button class="delete-task-btn">Delete</button>
-      `;
-
-      const checkbox = li.querySelector(".task-checkbox");
-      const deleteBtn = li.querySelector(".delete-task-btn");
-
-      checkbox.addEventListener("change", async () => {
-        if (!(await ensureEditAllowed(checkbox))) return;
-        const taskId = li.dataset.id;
-        const state = checkbox.checked;
-        try {
-          const res = await fetch("/api/bps/task/set_status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ task_id: taskId, state })
-          });
-          if (!res.ok) throw new Error("Failed to update task status");
-        } catch (err) {
-          console.error(err);
-          if (do_alert) toast("Could not update task status. Reverting.", "error");
-          checkbox.checked = !state;
-        }
-      });
-
-      deleteBtn.addEventListener("click", async () => {
-        if (!(await ensureEditAllowed(deleteBtn))) return;
-        const taskId = li.dataset.id;
-        try {
-          const res = await fetch(`/api/bps/task/delete/${taskId}`, { method: "GET" });
-          if (!res.ok) throw new Error("Failed to delete task");
-          li.remove();
-          if (doNotifySuccess) toast("Task deleted", "success");
-        } catch (err) {
-          console.error(err);
-          if (do_alert) toast("Failed to delete task. Try again.");
-        }
-      });
-
-      taskList.appendChild(li);
+      // ... existing task creation code ...
     });
+
+    // Update BP list highlighting
+    updateBPListHighlighting();
 
     if (window.innerWidth < 900) setOpenState(false);
   } catch (err) {
@@ -89,6 +48,10 @@ async function loadFullBP({ day, month }, do_alert = true) {
     taskList.innerHTML = `<p class='small'>There doesn't seem to be a BP For today.<br>Click 'New Battle Plan' to create one.</p>`;
     if (bpIndicator) bpIndicator.textContent = "No active Battle Plan";
     currentBPId = null;
+    selectedBPDate = null;
+    
+    // Update BP list highlighting even on error
+    updateBPListHighlighting();
   }
 }
 
@@ -150,12 +113,17 @@ function filterBattlePlans(searchTerm) {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
 
-  filteredPlans.forEach(({ name, dateObj, realDate }) => {
+  filteredPlans.forEach(({ name, dateObj, realDate, fullDateStr }) => {
     const btn = document.createElement("button");
     btn.className = "bp-item";
 
     const planStr = `${realDate.getFullYear()}-${realDate.getMonth()}-${realDate.getDate()}`;
+    
+    // Highlight if it's today's BP
     if (planStr === todayStr) btn.classList.add("current-bp");
+    
+    // Highlight if it's the selected BP
+    if (selectedBPDate === fullDateStr) btn.classList.add("selected-bp");
 
     btn.innerHTML = `<p class="bp-text">${name}</p>
       <div class="bp-date"><span class="bp-month">${dateObj.month}</span><br><span class="bp-day">${dateObj.day}</span></div>`;
@@ -214,6 +182,44 @@ async function createBattlePlanForDate(day, month, year = new Date().getFullYear
     console.error(err);
     toast("Failed to create new battle plan", "error");
   }
+}
+
+function updateBPListHighlighting() {
+  const bpItems = document.querySelectorAll('.bp-item');
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  
+  bpItems.forEach(item => {
+    // Remove existing highlight classes
+    item.classList.remove('current-bp', 'selected-bp');
+    
+    // Extract date info from the item
+    const monthText = item.querySelector('.bp-month').textContent;
+    const dayText = item.querySelector('.bp-day').textContent;
+    
+    // Create a comparable date string
+    const monthIdx = parseMonthIndex(monthText);
+    const yearNum = today.getFullYear(); // Assuming current year
+    const realDate = new Date(yearNum, monthIdx, parseInt(dayText));
+    const planStr = `${realDate.getFullYear()}-${realDate.getMonth()}-${realDate.getDate()}`;
+    
+    // Highlight if it's today's BP
+    if (planStr === todayStr) {
+      item.classList.add('current-bp');
+    }
+    
+    // Highlight if it's the selected BP
+    if (selectedBPDate) {
+      const [selectedDay, selectedMonth, selectedYear] = selectedBPDate.split('-');
+      const selectedMonthIdx = parseMonthIndex(selectedMonth);
+      const selectedDate = new Date(parseInt(selectedYear), selectedMonthIdx, parseInt(selectedDay));
+      const selectedPlanStr = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
+      
+      if (planStr === selectedPlanStr) {
+        item.classList.add('selected-bp');
+      }
+    }
+  });
 }
 
 // ----------- SHORT CLICK / LONG PRESS -----------

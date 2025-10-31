@@ -23,13 +23,14 @@ if __name__ == "__main__":
             WEB_PORT = input(">>> ")
             if WEB_PORT == "":
                 WEB_PORT = 8020
-            elif type(WEB_PORT) is not int:
+            elif not str(WEB_PORT).isdigit():
                 print("Invalid port type. Must be a number.")
+                continue
             WEB_PORT = int(WEB_PORT)
             break
 
         print("Configuration Complete. Further configuration available in 'settings' module of web app.\n")
-        print("Thank you for choosing us, And welcome to Knowledge!")
+        print("Thank you for choosing us, And welcome to Knowledge!\n")
 
 from library.auth import generate_self_signed_cert
 from fastapi.staticfiles import StaticFiles
@@ -147,12 +148,38 @@ if __name__ == "__main__":
         ssl_certfile_dir = os.path.abspath("certs/cert.pem")
         ssl_keyfile_dir = os.path.abspath("certs/key.pem")
         if not os.path.exists(ssl_certfile_dir) and not os.path.exists(ssl_keyfile_dir):
-            print("We need to generate some security certificates.\nWhat's the base URL people will use to connect to this app on the web? (Default: localhost)")
+            print("To do that, we need to ask some questions.\n1. What's the base URL people will use to connect to this app on the web? (Default: localhost)")
             common_name = input(">>> ")
             if not common_name:  # Entered nothing.
                 common_name = "localhost"
+
+            while True:
+                print("2. What is the code for the name of your country? (Eg, 'US')")
+                country_name = input(">>> ")
+                if len(country_name) != 2:
+                    print("This must be a country code, eg, 'AU' or 'US', not a country name")
+                    continue
+                break
+
+            print("3. What is the name of your province? (Eg, 'California')")
+            province_name = input(">>> ")
+
+            print("4. What is your locality? (Eg, 'San Francisco')")
+            locality_name = input(">>> ")
+
+            print("5. What is your organisation name? (If you don't have one, leave it blank.)")
+            organisation_name = input(">>> ")
+            if not organisation_name:
+                organisation_name = "N/A"
+            
             os.makedirs('certs')
-            generate_self_signed_cert(common_name=common_name)
+            generate_self_signed_cert(
+                country_name=country_name,
+                province_name=province_name,
+                locality_name=locality_name,
+                organisation_name=organisation_name,
+                common_name=common_name,
+            )
     else:
         ssl_certfile_dir = None
         ssl_keyfile_dir = None
