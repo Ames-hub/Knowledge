@@ -8,6 +8,7 @@ import fcntl
 import json
 import time
 import os
+import re
 
 logbook = LogBookHandler("AUTH-PERMS")
 
@@ -56,10 +57,10 @@ def lock_and_write_settings(path: str, data: dict):
                 fcntl.flock(f, fcntl.LOCK_UN)
 
 
-def set_permission(permission: str):
+def set_permission(permission):
     """
-    Used for adding a permission requirement to a route at launch.
-    Automatically uses the route template, ignoring dynamic parameters.
+    Add permission requirement(s) to a route at launch.
+    Supports multiple permissions (list or single string).
     """
     if not os.path.exists(SETTINGS_PATH):
         make_settings_file()
@@ -73,10 +74,12 @@ def set_permission(permission: str):
                 path = path[:-1]
 
             data = lock_and_load_settings(SETTINGS_PATH)
-
             if data.get("route_perms") is None:
                 data['route_perms'] = {}
-            data['route_perms'][path] = permission
+
+            # Normalize permissions into a list
+            perms = permission if isinstance(permission, list) else [permission]
+            data['route_perms'][path] = perms
 
             lock_and_write_settings(SETTINGS_PATH, data)
 
@@ -87,13 +90,26 @@ def set_permission(permission: str):
 
 
 def get_permission(route: str):
+    """Return the permission(s) required for a given route."""
     if not os.path.exists('settings.json'):
         return None
     data = lock_and_load_settings('settings.json')
     route_perms = data.get("route_perms")
     if not route_perms:
         return None
-    return route_perms.get(route)
+
+    # Exact match first
+    if route in route_perms:
+        return route_perms[route]
+
+    # Fallback: try to match dynamic path templates like /api/files/{id}/profile_icon
+    for pattern_route, perms in route_perms.items():
+        # Convert {param} or :param style placeholders into regex wildcards
+        pattern = re.sub(r"\{[^/]+\}", r"[^/]+", pattern_route)
+        if re.fullmatch(pattern, route):
+            return perms
+
+    return None
 
 
 excepted_routes = [
@@ -114,18 +130,20 @@ class AuthPerms:
         if requested_route in excepted_routes:
             return True
 
-        for perm_name in user_perms:
-            needed_perm = get_permission(requested_route)
-            if not needed_perm:
-                logbook.info(
-                    f"Route \"{requested_route}\" is missing permission requirements, please consider adding them. "
-                    "If you won't, add them to exceptions."
-                )
-                return True
+        needed_perms = get_permission(requested_route)
+        if not needed_perms:
+            # Only log missing perms if no dynamic pattern matched
+            # (means truly undefined, not just dynamic route)
+            logbook.info(
+                f"Route \"{requested_route}\" has no defined permission set. "
+                "If it's intentional, add it to exceptions."
+            )
+            return True
 
-            if perm_name == needed_perm:
-                if user_perms[perm_name] is True:
-                    return True
+        # Normalize user perms
+        for perm in needed_perms:
+            if perm in user_perms and user_perms[perm] is True:
+                return True
         return False
 
     @staticmethod
@@ -156,8 +174,10 @@ class AuthPerms:
                 cur.execute("SELECT permission, allowed FROM auth_permissions WHERE username = ?", (username,))
                 perms_data = cur.fetchall()
             except sqlite3.OperationalError as err:
-                logbook.error(f"Database error occurred while listing the user, their perms and arrested status: {err}",
-                              exception=err)
+                logbook.error(
+                    f"Database error occurred while listing perms for user {username}: {err}",
+                    exception=err
+                )
                 conn.rollback()
                 perms_data = []
 
@@ -166,7 +186,7 @@ class AuthPerms:
                 if row[0] in valid_perms:
                     user_perms[row[0]] = bool(row[1])
                 else:
-                    logbook.warning(f"User {username} has an invalid, illegal permission: {row[0]}")
+                    logbook.warning(f"User {username} has an invalid permission: {row[0]}")
 
             if fill_not_set:
                 for valid_perm in valid_perms:

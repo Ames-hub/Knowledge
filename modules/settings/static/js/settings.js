@@ -54,7 +54,7 @@ function loadConfig() {
 			};
 			
 			// Convert from number to text
-			data.weekday_start = weekdays_map[data.weekday_start]
+			data.weekday_end = weekdays_map[data.weekday_end]
 
 			const config = data;
 

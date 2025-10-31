@@ -36,7 +36,18 @@ async def list_users(request: Request, token: str = Depends(require_prechecks)):
 @router.get("/api/auth/arrest/{username}")
 @set_permission(permission="auth_page")
 async def arrest_user(request: Request, username: str, token: str = Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is arresting user {username}.")
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {owner}) is arresting user {username}.")
+
+    if owner == username:
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": "You cannot arrest yourself."
+            },
+            status_code=400
+        )
+
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cursor = conn.cursor()
@@ -72,8 +83,18 @@ async def arrest_user(request: Request, username: str, token: str = Depends(requ
 
 @router.get("/api/auth/perm/set/{username}/{permission}/{value}")
 @set_permission(permission="auth_page")
-async def set_user_permission(request: Request, username: str, permission: str, value: int, token: str = Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is setting permission '{permission}' = {value} for user {username}.")
+async def set_user_permission(request: Request, username: str, permission: str, value: bool, token: str = Depends(require_prechecks)):
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {owner}) is setting permission '{permission}' = {value} for user {username}.")
+
+    if username == owner:
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": "You cannot modify your own permissions."
+            },
+            status_code=400
+        )
 
     value = bool(value)
     permission = str(permission).lower()
@@ -105,5 +126,4 @@ async def set_user_permission(request: Request, username: str, permission: str, 
         return JSONResponse({"success": True, "permission": permission, "value": value}, status_code=200)
     except sqlite3.OperationalError as err:
         logbook.error(f"Database error occurred while updating permission: {err}", exception=err)
-        return JSONResponse({"success": False, "error": "Database error occurred while updating permission."},
-                            status_code=500)
+        return JSONResponse({"success": False, "error": "Database error occurred while updating permission."}, status_code=500)

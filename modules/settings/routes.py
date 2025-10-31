@@ -42,4 +42,7 @@ async def load_settings(request: Request, token=Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is loading settings.")
     with open('settings.json', 'r') as f:
         data = json.load(f)
+
+    data['route_perms'] = ["You're not allowed to see this."]  # Hide it
+
     return JSONResponse(data)

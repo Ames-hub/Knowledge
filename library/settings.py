@@ -13,6 +13,8 @@ valid_settings = {
     "registration_allowed": True,
     "lookback_length": 7,
     "use_ssl": False,
+    "web_port": 8020,
+    "route_perms": {}
 }
 
 def make_settings_file():
@@ -56,6 +58,10 @@ class get:
     @staticmethod
     def lookback_length():
         return int(get.get("lookback_length", 30))
+    
+    @staticmethod
+    def web_port():
+        return int(get.get("web_port", 8020))
 
 def save(key, value):
     settings = {}

@@ -1,10 +1,15 @@
 from library import settings
 import os
 
+#==============CONFIG==============#
+WEB_PORT = settings.get.web_port()
+#============END CONFIG============#
+
 if __name__ == "__main__":
     if not os.path.exists(settings.SETTINGS_PATH):
         print("We've detected this is the first time the app has started.")
         print("So we'll need to ask a couple questions to get you started.\n")
+
         print("Question 1: Do you want us to use SSL? (It makes your connection secure and safer from hackers)\nAnswer 'Yes' or 'No'")
         if (use_ssl := input(">>> ").lower()) == "yes":
             print("Enabling SSL.")
@@ -12,6 +17,13 @@ if __name__ == "__main__":
         else:
             print("Keeping SSL Disabled.")
             settings.save("use_ssl", False)
+
+        while True:
+            print("Question 2: What is your preferred port for the webserver? (Default: 8020)")
+            WEB_PORT = input(">>> ")
+            if type(WEB_PORT) is not int:
+                print("Invalid port type. Must be a number.")
+            break
 
         print("Configuration Complete. Further configuration available in 'settings' module of web app.\n")
         print("Thank you for choosing us, And welcome to Knowledge!")
@@ -26,10 +38,6 @@ import importlib
 import uvicorn
 import asyncio
 import secrets
-
-#==============CONFIG==============#
-WEB_PORT = 8020
-#============END CONFIG============#
 
 fastapp = FastAPI()
 database.modernize()

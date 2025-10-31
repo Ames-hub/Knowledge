@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Project Configuration</title>
-		<link rel="stylesheet" href="/static/settings/css/settings.css">
-	</head>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Project Configuration</title>
+	<link rel="stylesheet" href="/static/settings/css/settings.css">
+</head>
 <body>
-	<header>Project Configuration</header>
+	<header>
+		<h1>Project Configuration</h1>
+		<button id="theme-toggle" aria-label="Toggle theme">🌓</button>
+	</header>
 
 	<main id="config-container">
-		<div class="config-card">
+		<section class="config-card">
 			<label for="weekday-end">When should the app consider it a new week?</label>
 			<select id="weekday-end" data-config-name="weekday_end">
 				<option value="monday" selected>Monday</option>
@@ -21,23 +24,35 @@
 				<option value="saturday">Saturday</option>
 				<option value="sunday">Sunday</option>
 			</select>
-		</div>
-		<div class="config-card">
-			<label for="registration-allowed">For Registering;<br>Do we allow new users?</label>
+		</section>
+
+		<section class="config-card">
+			<label for="registration-allowed">Allow new user registrations?</label>
 			<input type="checkbox" id="registration-allowed" data-config-name="registration_allowed">
-		</div>
-		<div class="config-card">
-			<label for="new_week_stats_plan">For BattlePlans;<br>Should every week have a new planned production statistic?</label>
+		</section>
+
+		<section class="config-card">
+			<label for="new_week_stats_plan">Create a new production plan every week?</label>
 			<input type="checkbox" id="new_week_stats_plan" data-config-name="new_week_stats_plan">
+		</section>
+
+		<section class="config-card">
+			<label for="web_port">Knowledge app port number:</label>
+			<input type="number" id="web_port" data-config-name="web_port" min="0" max="65535">
+		</section>
+
+		<section class="config-card">
+			<label for="lookback-length">Ledger lookback period (days):</label>
+			<input type="number" id="lookback-length" data-config-name="lookback_length" min="0">
+		</section>
+
+		<div class="actions">
+			<button class="save-btn" onclick="saveConfig()">💾 Save Settings</button>
+			<a href="/" class="back-btn">← Back</a>
 		</div>
-		<div class="config-card">
-			<label for="lookback-length">On the ledger;<br>How far back do we load finances in days?</label>
-			<input type="number" id="lookback-length" data-config-name="lookback_length">
-		</div>
-		<button class="save-btn" onclick="saveConfig()">Save Settings</button>
-		<a href="/" class="back-btn">Back</a>
 	</main>
 
-<script src="/static/settings/js/settings.js"></script>
+	<script src="/static/settings/js/settings.js"></script>
+	<script src="/static/settings/js/themecontrol.js"></script>
 </body>
 </html>
