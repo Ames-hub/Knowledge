@@ -21,8 +21,11 @@ if __name__ == "__main__":
         while True:
             print("Question 2: What is your preferred port for the webserver? (Default: 8020)")
             WEB_PORT = input(">>> ")
-            if type(WEB_PORT) is not int:
+            if WEB_PORT == "":
+                WEB_PORT = 8020
+            elif type(WEB_PORT) is not int:
                 print("Invalid port type. Must be a number.")
+            WEB_PORT = int(WEB_PORT)
             break
 
         print("Configuration Complete. Further configuration available in 'settings' module of web app.\n")
