@@ -123,8 +123,7 @@ excepted_routes = [
 class AuthPerms:
     @staticmethod
     def verify_user(username, requested_route: str):
-        user_perms = AuthPerms.perms_for_user(username)
-
+        """Check if a user has permission to access a given route."""
         if requested_route.startswith('/static/'):
             return True
         if requested_route in excepted_routes:
@@ -141,10 +140,23 @@ class AuthPerms:
             return True
 
         # Normalize user perms
-        for perm in needed_perms:
-            if perm in user_perms and user_perms[perm] is True:
+        user_perms = AuthPerms.perms_for_user(username)
+        if isinstance(needed_perms, str):
+            return user_perms[needed_perms]
+        else:
+            allowed = True
+            if not all(user_perms.get(perm, False) for perm in needed_perms):
+                allowed = False
+            if allowed:
                 return True
+
+        logbook.info(f"{username} did not have required permission(s) \"{needed_perms}\". Has {", ".join([p for p, a in user_perms.items() if a])}")
         return False
+    
+    @staticmethod
+    def check_allowed(username, permission):
+        user_perms = AuthPerms.perms_for_user(username)
+        return user_perms.get(permission, False)
 
     @staticmethod
     def give_all_perms(username):

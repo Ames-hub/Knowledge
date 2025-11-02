@@ -259,6 +259,7 @@ class authbook:
 class UserLogin:
     def __init__(self, details: dict):
         self.token = details.get("token")
+        self.logged_via_forcekey = False
         if self.token:
             # Token-based login
             self.username = authbook.token_owner(self.token)
@@ -280,6 +281,7 @@ class UserLogin:
                 if not self.token or details.get("token") is None:
                     self.store_token(self.token)
                 logbook.info(f"{self.request_ip} logged in as {self.username} | FORCE KEY ACCESS")
+                self.logged_via_forcekey = True
                 return
 
             request_ip = details["request_ip"]

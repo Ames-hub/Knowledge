@@ -44,6 +44,11 @@ async def login_user(request: Request, data: LoginData):
         logbook.info(f"Under the IP {request.client.host}, user {data.username} attempted to log in unsuccessfully.")
         return JSONResponse(content={'error': str(err)}, status_code=401)
 
-    logbook.info(f"Under the IP {request.client.host}, user {data.username} successfully logged in.")
+    data = {'token': user.token}
+    if user.logged_via_forcekey:
+        data['forced'] = True
 
-    return JSONResponse(content={'token': user.token}, status_code=200)
+    return JSONResponse(
+        content=data,
+        status_code=200
+    )

@@ -1,8 +1,8 @@
 from fastapi.responses import JSONResponse, HTMLResponse, Response
 from modules.dianetics.routes import update_mind_class_estimation
+from library.authperms import set_permission, AuthPerms
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
-from library.authperms import set_permission
 from library.auth import require_prechecks
 from library.logbook import LogBookHandler
 from library.database import DB_PATH
@@ -1258,7 +1258,22 @@ async def get_file(request: Request, cfid: int, token: str = Depends(require_pre
 @router.post("/api/files/modify", response_class=JSONResponse)
 @set_permission(permission="central_files")
 async def modify_file(request: Request, data: ModifyFileData, token: str = Depends(require_prechecks)):
-    logbook.info(f"Request from {request.client.host} ({authbook.token_owner(token)}) to modify cfid {data.cfid}: field '{data.field}' with value '{data.value}'")
+    user = authbook.token_owner(token)
+    logbook.info(f"Request from {request.client.host} ({user}) to modify cfid {data.cfid}: field '{data.field}' with value '{data.value}'")
+
+    dn_fields = [
+        'is_dianetics',
+        'last_action',
+        'sonic_shutoff',
+        'visio_shutoff',
+        'stuck_case',
+        'stuck_age',
+        'control_case',
+        'fabricator_case',
+        'tone_level',
+        'can_handle_life',
+        'chem_assist'
+    ]
 
     try:
         if data.field == "age":
@@ -1270,6 +1285,9 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
                 date_of_birth=datetime_obj
             )
             success = True
+        elif data.field == "occupation":
+            centralfiles.modify(data.cfid).occupation(data.value)
+            success = True
         elif data.field == "pronouns":
             centralfiles.modify(data.cfid).pronouns(
                 subjective=data.value.split("/")[0],
@@ -1279,44 +1297,49 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
         elif data.field == "name":
             centralfiles.modify(data.cfid).name(data.value)
             success = True
-        elif data.field == "is_dianetics":
-            centralfiles.modify(data.cfid).is_dn_pc(True if data.value.lower() == "true" else False)
-            success = True
-        elif data.field == "last_action":
-            centralfiles.dianetics.modify(data.cfid).add_action(data.value)
-            success = True
-        elif data.field == "sonic_shutoff":
-            centralfiles.dianetics.modify(data.cfid).is_sonic_off(True if data.value.lower() == "true" else False)
-            success = True
-        elif data.field == "visio_shutoff":
-            centralfiles.dianetics.modify(data.cfid).is_visio_off(True if data.value.lower() == "true" else False)
-            success = True
-        elif data.field == "stuck_case":
-            centralfiles.dianetics.modify(data.cfid).is_stuck_case(True if data.value.lower() == "true" else False)
-            success = True
-        elif data.field == "stuck_age":
-            centralfiles.dianetics.modify(data.cfid).stuck_age(True if data.value.lower() == "true" else False)
-            success = True
-        elif data.field == "control_case":
-            centralfiles.dianetics.modify(data.cfid).is_control_case(True if data.value.lower() == "true" else False)
-            success = True
-        elif data.field == "fabricator_case":
-            centralfiles.dianetics.modify(data.cfid).is_fabricator_case(True if data.value.lower() == "true" else False)
-            success = True
-        elif data.field == "tone_level":
-            centralfiles.dianetics.tonescale(data.cfid).set_level(float(data.value))
-            success = True
-        elif data.field == "occupation":
-            centralfiles.modify(data.cfid).occupation(data.value)
-            success = True
-        elif data.field == "can_handle_life":
-            centralfiles.modify(data.cfid).can_handle_life(data.value)
-            success = True
-        elif data.field == "chem_assist":
-            centralfiles.modify(data.cfid).chem_assist(data.value)
-            success = True
         else:
-            raise ValueError(f"Invalid field specified, {data.field}")
+            if data.field not in dn_fields:
+                raise ValueError(f"Invalid field specified, {data.field}")
+
+        # Permission protected fields.
+        if data.field in dn_fields:
+            if AuthPerms.check_allowed(user, "dianetics") is False:
+                logbook.warning(f"User {user} attempted to modify Dianetics field '{data.field}' without permission.")
+                return JSONResponse(content={"success": False, "error": "Insufficient permissions to modify Dianetics fields."}, status_code=403)
+
+            if data.field == "is_dianetics":
+                centralfiles.modify(data.cfid).is_dn_pc(True if data.value.lower() == "true" else False)
+                success = True
+            elif data.field == "last_action":
+                centralfiles.dianetics.modify(data.cfid).add_action(data.value)
+                success = True
+            elif data.field == "sonic_shutoff":
+                centralfiles.dianetics.modify(data.cfid).is_sonic_off(True if data.value.lower() == "true" else False)
+                success = True
+            elif data.field == "visio_shutoff":
+                centralfiles.dianetics.modify(data.cfid).is_visio_off(True if data.value.lower() == "true" else False)
+                success = True
+            elif data.field == "stuck_case":
+                centralfiles.dianetics.modify(data.cfid).is_stuck_case(True if data.value.lower() == "true" else False)
+                success = True
+            elif data.field == "stuck_age":
+                centralfiles.dianetics.modify(data.cfid).stuck_age(True if data.value.lower() == "true" else False)
+                success = True
+            elif data.field == "control_case":
+                centralfiles.dianetics.modify(data.cfid).is_control_case(True if data.value.lower() == "true" else False)
+                success = True
+            elif data.field == "fabricator_case":
+                centralfiles.dianetics.modify(data.cfid).is_fabricator_case(True if data.value.lower() == "true" else False)
+                success = True
+            elif data.field == "tone_level":
+                centralfiles.dianetics.tonescale(data.cfid).set_level(float(data.value))
+                success = True
+            elif data.field == "can_handle_life":
+                centralfiles.modify(data.cfid).can_handle_life(data.value)
+                success = True
+            elif data.field == "chem_assist":
+                centralfiles.modify(data.cfid).chem_assist(data.value)
+                success = True
 
         if success:
             return JSONResponse(content={"success": True}, status_code=200)
@@ -1431,7 +1454,7 @@ class SubmitActionData(BaseModel):
     action: str
 
 @router.post("/api/files/submit_action", response_class=JSONResponse)
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def submit_action(request: Request, data: SubmitActionData, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to SUBMIT action '{data.action}' for cfid {data.cfid}")
     success = centralfiles.dianetics.modify(data.cfid).add_action(data.action)
@@ -1441,7 +1464,7 @@ async def submit_action(request: Request, data: SubmitActionData, token: str = D
         return JSONResponse(content={"success": False, "error": "Action submission failed"}, status_code=400)
 
 @router.get("/api/files/get_actions/{cfid}", response_class=JSONResponse)
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def submit_action(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to get all actions for cfid {cfid}")
     actions = centralfiles.dianetics.list_actions(cfid)
@@ -1497,7 +1520,7 @@ async def get_occupation(request: Request, cfid: int, token: str = Depends(requi
 
 # A Webpage for full PC Management
 @router.get("/files/get/{cfid}/auditing")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def load_pc_file(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the PC folder of {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
@@ -1516,7 +1539,7 @@ class SetThetaData(BaseModel):
     theta_count: int
 
 @router.post("/api/files/set_theta")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def set_theta(request: Request, post_data: SetThetaData, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting CFID {post_data.cfid}'s Theta Count to {post_data.theta_count}")
     success = centralfiles.dianetics.modify(post_data.cfid).set_theta_count(post_data.theta_count)
@@ -1906,7 +1929,7 @@ class AuditingLog:
             return True
 
 @router.get("/files/get/{cfid}/sessions")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def load_sessions_page(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the session records of {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
@@ -1919,7 +1942,7 @@ async def load_sessions_page(request: Request, cfid, token: str = Depends(requir
     )
 
 @router.get("/api/files/get/{cfid}/sessions/list_all")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def list_all_sessions(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the session records of {cfid}")
     
@@ -1931,7 +1954,7 @@ async def list_all_sessions(request: Request, cfid, token: str = Depends(require
     )
 
 @router.get("/api/files/get/{cfid}/sessions/create/{date}")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def create_session(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
     username = authbook.token_owner(token)
     logbook.info(f"{request.client.host} ({username}) Has accessed the session records of {cfid}")
@@ -1967,7 +1990,7 @@ async def create_session(request: Request, cfid:int, date:str, token: str = Depe
     )
 
 @router.get("/files/get/{cfid}/sessions/{session_id}")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def load_sessions_page(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed to access the specific session {session_id} for {cfid}")
     
@@ -1996,7 +2019,7 @@ class set_details_data(BaseModel):
     summary: str
 
 @router.post("/files/get/{cfid}/sessions/{session_id}/set_details")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def route_set_session_details(request: Request, cfid, session_id, data: set_details_data, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
     
@@ -2019,7 +2042,7 @@ class set_remarks_data(BaseModel):
     text_value: str
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/set_remarks")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def route_set_session_details(request: Request, cfid, session_id, data: set_remarks_data, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
 
@@ -2039,7 +2062,7 @@ class AddEngramData(BaseModel):
     incident_age: int
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/add_engram")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def route_add_engram(request: Request, cfid, session_id, data: AddEngramData, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
 
@@ -2053,7 +2076,7 @@ async def route_add_engram(request: Request, cfid, session_id, data: AddEngramDa
     )
 
 @router.get("/api/files/get/{cfid}/sessions/{session_id}/list_engrams")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def route_list_engrams(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
 
@@ -2068,7 +2091,7 @@ async def route_list_engrams(request: Request, cfid, session_id, token: str = De
     )
 
 @router.delete("/api/files/get/{cfid}/sessions/{session_id}/delete_engram/{engram_id}")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def route_delete_engram(request: Request, cfid, session_id, engram_id, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is attempting to delete engram {engram_id} for session {session_id}, CFID {cfid}")
     success = AuditingLog.session(session_id=session_id).delete_engram(engram_id)
@@ -2080,7 +2103,7 @@ async def route_delete_engram(request: Request, cfid, session_id, engram_id, tok
     )
 
 @router.delete("/api/files/get/{cfid}/delete/session/{session_id}")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def delete_session(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is attempting to delete the session {session_id} for {cfid}")
     success = AuditingLog.session(session_id).delete_session()
@@ -2092,7 +2115,7 @@ async def delete_session(request: Request, cfid, session_id, token: str = Depend
     )
 
 @router.get("/api/files/get/{cfid}/sessions/{session_id}/list_actions")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def list_session_actions(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) is listing planned actions for session {session_id} (CFID {cfid})")
     
@@ -2116,7 +2139,7 @@ class AddActionData(BaseModel):
     action_text: str
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/add_action")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def add_session_action(request: Request, cfid, session_id, data: AddActionData, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
     
@@ -2133,7 +2156,7 @@ class CompletedActionData(BaseModel):
     completed: bool
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/update_action/{action_id}")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def update_session_action(request: Request, cfid, session_id, action_id, data: CompletedActionData, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
     
@@ -2147,7 +2170,7 @@ async def update_session_action(request: Request, cfid, session_id, action_id, d
     )
 
 @router.delete("/api/files/get/{cfid}/sessions/{session_id}/delete_action/{action_id}")
-@set_permission(permission="central_files")
+@set_permission(["central_files", "dianetics"])
 async def delete_session_action(request: Request, cfid, session_id, action_id, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
     
@@ -2165,7 +2188,7 @@ async def delete_session_action(request: Request, cfid, session_id, action_id, t
     )
 
 @router.get("/files/get/{cfid}/scheduling")
-@set_permission("central_files")
+@set_permission(["central_files", "dianetics"])
 async def open_scheduling_page(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the scheduling page for {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
@@ -2205,7 +2228,7 @@ def get_scheduling_data(cfid, date):
     return schedule_parsed
 
 @router.get("/api/files/get/{cfid}/scheduling/fetch/{date}")
-@set_permission("central_files")
+@set_permission(["central_files", "dianetics"])
 async def open_scheduling_page(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the set scheduling for {cfid}")
     
