@@ -34,7 +34,49 @@ async function loadFullBP({ day, month }, do_alert = true) {
 
     taskList.innerHTML = "";
     bpData.tasks.forEach(task => {
-      // ... existing task creation code ...
+      const li = document.createElement("li");
+      li.className = "task-item";
+      li.dataset.id = task.id;
+      li.innerHTML = `
+        <input type="checkbox" class="task-checkbox" ${task.done ? "checked" : ""}>
+        <span class="task-text">${task.text}</span>
+        <span class="task-category">[${task.category}]</span>
+        <button class="delete-task-btn">Delete</button>
+      `;
+      const checkbox = li.querySelector(".task-checkbox");
+      const deleteBtn = li.querySelector(".delete-task-btn");
+      checkbox.addEventListener("change", async () => {
+        if (!(await ensureEditAllowed(checkbox))) return;
+        const taskId = li.dataset.id;
+        const state = checkbox.checked;
+        try {
+          const res = await fetch("/api/bps/task/set_status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task_id: taskId, state })
+          });
+          if (!res.ok) throw new Error("Failed to update task status");
+        } catch (err) {
+          console.error(err);
+          if (do_alert) toast("Could not update task status. Reverting.", "error");
+          checkbox.checked = !state;
+        }
+      });
+
+      deleteBtn.addEventListener("click", async () => {
+        if (!(await ensureEditAllowed(deleteBtn))) return;
+        const taskId = li.dataset.id;
+        try {
+          const res = await fetch(`/api/bps/task/delete/${taskId}`, { method: "GET" });
+          if (!res.ok) throw new Error("Failed to delete task");
+          li.remove();
+          if (doNotifySuccess) toast("Task deleted", "success");
+        } catch (err) {
+          console.error(err);
+          if (do_alert) toast("Failed to delete task. Try again.");
+        }
+      });
+      taskList.appendChild(li);
     });
 
     // Update BP list highlighting
