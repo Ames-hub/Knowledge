@@ -185,17 +185,551 @@
                 <span id="field-can_handle_life" class="editable" onclick="makeEditable('field-can_handle_life', '{{ profile.cfid }}', 'bool')">{{ dianetics.can_handle_life }}</span>
               </div>
               <div class="field">
-                <label>Enter an estimation of Theta endowment.<hr>High Average: 600<br>Median Average: 450<br>Low Average: 200</label>
+                <label>Enter an estimation of Theta endowment.<hr>High Average: 700<br>Median Average: 450<br>Low Average: 200</label>
                 <input
                   type="range"
                   id="field-theta_endowment"
                   min="1" max="1000"
                   value="{{ dianetics.theta_endowment }}"
                   oninput="updateThetaDisplay(this.value)"
-                  title="A Mostly arbitrary number used to help show how much of life this person can take. If this number is >700, the individual is likely very valuable to society already, And could be even more so with their case removed."
+                  title="A Mostly arbitrary number used to help show how much of life this person can take. If this number is >700, the individual is likely very valuable to society already, And could be even more so with their case removed. The averages show the average for the bracket. Eg, Low average is the average for people with low theta endowments."
                 >
                 <span id="theta_display">{{ dianetics.theta_endowment }}</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h3 class="card-title">Hubbard Chart of Human Eval and DN Auditing</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" id="chart-container">
+                <div class="chart-title">THE HUBBARD CHART OF HUMAN EVALUATION</div>
+
+                <table class="hubbard-chart">
+                    <thead>
+                        <tr>
+                            <th data-label="column_name" class="tone-header">Column Name</th>
+                            <th data-label="4.0" class="tone-header">4.0</th>
+                            <th data-label="3.5" class="tone-header">3.5</th>
+                            <th data-label="3.0" class="tone-header">3.0</th>
+                            <th data-label="2.5" class="tone-header">2.5</th>
+                            <th data-label="2.0" class="tone-header">2.0</th>
+                            <th data-label="1.5" class="tone-header">1.5</th>
+                            <th data-label="1.1" class="tone-header">1.1</th>
+                            <th data-label="0.5" class="tone-header">0.5</th>
+                            <th data-label="0.1" class="tone-header">0.1</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th class="category-cell">B. Dianetic Evaluation</th>
+                            <td data-label="4.0">MEST Clear</td>
+                            <td data-label="3.5">Dianetic Release</td>
+                            <td data-label="3.0">Very High Normal</td>
+                            <td data-label="2.5">Boredom</td>
+                            <td data-label="2.0">Overt Hostility</td>
+                            <td data-label="1.5">Anger</td>
+                            <td data-label="1.1">Covert Hostility</td>
+                            <td data-label="0.5">Apathy</td>
+                            <td data-label="0.1">Pretended Death</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">C. BEHAVIOR AND PHYSIOLOGY</th>
+                            <td data-label="4.0">Excellent at projects, execution. Fast reaction time (relative to age).</td>
+                            <td data-label="3.5">Good at projects, execution, sports.</td>
+                            <td data-label="3.0">Capable of fair amount of action, sports.</td>
+                            <td data-label="2.5">Relatively inactive but capable of action.</td>
+                            <td data-label="2.0">Capable of destructive and minor constructive action.</td>
+                            <td data-label="1.5">Capable of destructive action.</td>
+                            <td data-label="1.1">Capable of minor execution.</td>
+                            <td data-label="0.5">Capable of relatively uncontrolled action.</td>
+                            <td data-label="0.1">Alive as an organism.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">D. PSYCHATRIC RANGE</th>
+                            <td data-label="4.0">None</td>
+                            <td data-label="3.5">None</td>
+                            <td data-label="3.0">None or High Normal</td>
+                            <td data-label="2.5">Normal<hr>Neurotic</td>
+                            <td data-label="2.0">Neurotic</td>
+                            <td data-label="1.5">Psychotic</td>
+                            <td data-label="1.1">Psychotic</td>
+                            <td data-label="0.5">Psychotic (Apathy)</td>
+                            <td data-label="0.1">Psychotic (Catatonic)</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">E. MEDICAL RANGE</th>
+                            <td data-label="4.0">Near accident-proof. No psychosomatic ills. Nearly immune to bacteria.</td>
+                            <td data-label="3.5">Highly resistant to common infections—no colds.</td>
+                            <td data-label="3.0">Resistant to infection and disease. Few psychosomatic ills.</td>
+                            <td data-label="2.5">Occasionally ill. Susceptible to usual diseases.</td>
+                            <td data-label="2.0">Severe sporadic illnesses.</td>
+                            <td data-label="1.5">Depository illnesses (arthritis). (Range 1.0 to 2.0 interchangeable.)</td>
+                            <td data-label="1.1">Endocrine and neurological illnesses.</td>
+                            <td data-label="0.5">Chronic malfunction of organs. (Accident-prone.)</td>
+                            <td data-label="0.1">Chronically ill. (Refusing sustenance.)</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">F. EMOTION</th>
+                            <td data-label="4.0">Exhilaration, Eagerness.</td>
+                            <td data-label="3.5">Strong Interest.</td>
+                            <td data-label="3.0">Mild Interest, Content</td>
+                            <td data-label="2.5">Boredom</td>
+                            <td data-label="2.0">Expressed Resentment<hr>(Antagonism)</td>
+                            <td data-label="1.5">Anger</td>
+                            <td data-label="1.1">Unexpressed Resentment<hr>Fear</td>
+                            <td data-label="0.5">Grief.<br>Apathy.</td>
+                            <td data-label="0.1">Deepest apathy.<br>None.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">G. AFFINITY</th>
+                            <td data-label="4.0">Love-Strong, Outgoing</td>
+                            <td data-label="3.5">Tentative Advances, Friendliness</td>
+                            <td data-label="3.0">Tolerance without much outgoing action, acceptances of advances offered.</td>
+                            <td data-label="2.5">Neglect of person or people, Withdrawal from them</td>
+                            <td data-label="2.0">Antagonism</td>
+                            <td data-label="1.5">Hate, violent and expressed</td>
+                            <td data-label="1.1">Covert Hostility<hr>Acute Shyness, Propitiation, Withdrawal from people.</td>
+                            <td data-label="0.5">Supplication, pleas for pity.</td>
+                            <td data-label="0.1">Complete withdrawal from person or people</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">H. SONIC</th>
+                            <td data-label="4.0">Full Sonic Recall.<br>Vividly correct reception from environ.</td>
+                            <td data-label="3.5">Spotty Sonic. Remainder in strong impressions. Environ recordings correct.</td>
+                            <td data-label="3.0">Strong sonic impressions, correct detail.</td>
+                            <td data-label="2.5">Recalls correct—In vague impressions. Mostly occluded. Interprets environ fair.</td>
+                            <td data-label="2.0">Minor Dub-in. Bulk of recall correct. Occluded actual sonic in most cases.</td>
+                            <td data-label="1.5">Dub-in. Wild reversal of recalls. Reversal of incoming sounds to wrong meaning.</td>
+                            <td data-label="1.1">Dub-in sonic when it exists. Sound in environ perverted to threats.</td>
+                            <td data-label="0.5">"I" Out of contact with interior world. Partly in contact with environ.</td>
+                            <td data-label="0.1">No response to sound in environ. Recall cut off.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">I. VISIO</th>
+                            <td data-label="4.0">Full Visio Recall in actual size, three dimensions and colour. No occlusions.</td>
+                            <td data-label="3.5">Bright visio pictures as originally observed but spots occluded.</td>
+                            <td data-label="3.0">Visio impressions. Correct detail. Many occluded areas.</td>
+                            <td data-label="2.5">Recalls correct-In vague impressions. Mostly occluded.</td>
+                            <td data-label="2.0">Minor dub-in. Bulk of recall correct. Occluded actual visio in most cases</td>
+                            <td data-label="1.5">Dub-in. Wild reversal of recalls. Reversal of incoming sights to wrong meaning.</td>
+                            <td data-label="1.1">Dub-in visio when it exists. Sights in environ perverted to threats.</td>
+                            <td data-label="0.5">"I" Out of contact with interior world. Partly in contact with environ.</td>
+                            <td data-label="0.1">No response to light. Recall cut off.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">J. SOMATIC</th>
+                            <td data-label="4.0">Full Sonic Recall.<br>Vividly correct reception from environ.</td>
+                            <td data-label="3.5">Spotty Sonic. Remainder in strong impressions. Environ recordings correct.</td>
+                            <td data-label="3.0">Strong sonic impressions, correct detail.</td>
+                            <td data-label="2.5">Recalls correct—In vague impressions. Mostly occluded. Interprets environ fair.</td>
+                            <td data-label="2.0">Minor Dub-in. Bulk of recall correct. Occluded actual sonic in most cases.</td>
+                            <td data-label="1.5">Dub-in. Wild reversal of recalls. Reversal of incoming sounds to wrong meaning.</td>
+                            <td data-label="1.1">Dub-in sonic when it exists. Sound in environ perverted to threats.</td>
+                            <td data-label="0.5">"I" Out of contact with interior world. Partly in contact with environ.</td>
+                            <td data-label="0.1">No response to sound in environ. Recall cut off.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">K. SPEECH: TALKS<hr>SPEECH: LISTENS</th>
+                            <td data-label="4.0">Strong, able, swift and full exchange of beliefs, ideas.</td>
+                            <td data-label="3.5">Will talk of deep-seated beliefs and ideas.<hr>Will accept deep-seated ideas, beliefs and consider them.</td>
+                            <td data-label="3.0">Tentative expression of limited number of personal ideas.<hr>Receives ideas and beliefs if cautiously stated.</td>
+                            <td data-label="2.5">Casual, pointless conversation.<hr>Listens only to ordinary affairs.</td>
+                            <td data-label="2.0">Talks in threats. Invalidates other people.<hr>Listens to threats. Openly mocks theta talk.</td>
+                            <td data-label="1.5">Talks of death and destruction only. Hate.<hr>Listens only to death and destruction. Wrecks theta lines.</td>
+                            <td data-label="1.1">Talks in apparent theta but vicious intent. Lies.<hr>Listens little but mostly to cabal or Gossip. Lies.</td>
+                            <td data-label="0.5">Talks only in apathetic tones. Very little.<hr>Listens little, mostly to apathy or pity.</td>
+                            <td data-label="0.1">Does not talk.<hr>Does not listen.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">L. SUBJECT'S HANDLING OF WRITTEN OR SPOKEN COMM WHEN ACTING AS A RELAY POINT</th>
+                            <td data-label="4.0">Passes theta comm, contributes to it. Cuts entheta lines.</td>
+                            <td data-label="3.5">Passes theta comm. Resents and hits back at entheta lines.</td>
+                            <td data-label="3.0">Passes comm. Conservative. Inclines toward moderate construction and creation.</td>
+                            <td data-label="2.5">Cancels any comm of higher or lower tone—devaluates urgencies.</td>
+                            <td data-label="2.0">Deals in hostile or threatening comm. Lets only small amount of theta go through.</td>
+                            <td data-label="1.5">Perverts comm to entheta regardless of original content.<hr>Stops theta comm. Passes entheta and perverts it.</td>
+                            <td data-label="1.1">Relays only malicious comm.<hr>Cuts comm lines. Won't relay comm.</td>
+                            <td data-label="0.5">Takes little heed of communications. Does not pass them.</td>
+                            <td data-label="0.1">Does not relay communications. Unaware of them.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">M. REALITY (AGREEMENT)</th>
+                            <td data-label="4.0">Search for different viewpoints in order to broaden own reality. Changes reality.</td>
+                            <td data-label="3.5">Ability to understand and evaluate reality of others and to change viewpoint. Agreeable.</td>
+                            <td data-label="3.0">Awareness of possible validity of different reality. Conservative agreement.</td>
+                            <td data-label="2.5">Refusal to match two realities. Indifference to conflicts in reality. Too careless to agree or disagree.</td>
+                            <td data-label="2.0">Verbal doubt—defense of own reality. Attempts to undermine others'. Disagrees.</td>
+                            <td data-label="1.5">Destruction of opposing reality. "You're wrong." Disagrees with reality of others.</td>
+                            <td data-label="1.1">Doubt of own reality. Insecurity. Doubt of opposing reality.</td>
+                            <td data-label="0.5">Shame, anxiety—strong doubt of own reality, easily has reality of others forced on him.</td>
+                            <td data-label="0.1">Complete withdrawal from conflicting reality—no reality.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">N. CONDITION OF TRACK AND VALENCES</th>
+                            <td data-label="4.0">Moves at will.<br>Seldom leaves present time. Own valence everywhere.</td>
+                            <td data-label="3.5">Moves very easily. Comes quickly to present. Remains in present.</td>
+                            <td data-label="3.0">Moves easily on track. In own valence.</td>
+                            <td data-label="2.5">Moves on track. Sometimes difficult to interest in incidents. Mostly in own valence.</td>
+                            <td data-label="2.0">Moves on track but very poorly. In and out of own valence, sags out of present.</td>
+                            <td data-label="1.5">Moves on track in valence of dominant parent or model.</td>
+                            <td data-label="1.1">In synthetic valence—Moves on a false track or stuck. Views scenes from odd angles.</td>
+                            <td data-label="0.5">Ordinarily stuck in apathy and grief engrams. Out of valence where stuck.</td>
+                            <td data-label="0.1">Usually unaware of any present. Hard to get to present.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">O. MANIFESTATION OF ENGRAMS AND LOCKS</th>
+                            <td data-label="4.0">No current life engrams or locks. Will react on educational pattern modified by reason. Does not restimulate.</td>
+                            <td data-label="3.5">Only very occasionally dramatizes concept of a chain of engrams. Very difficult to restimulate</td>
+                            <td data-label="3.0">Dramatizes engrams not locks, but alters content. Hard to restimulate.</td>
+                            <td data-label="2.5">Dramatizes engrams below this tone. Does not dramatize locks.</td>
+                            <td data-label="2.0">Dramatizes some locks and most engrams. Many dramatizations.</td>
+                            <td data-label="1.5">Dramatizes locks and engrams on winning valence side, verbatim.</td>
+                            <td data-label="1.1">Dramatizes locks and engrams on losing valence side.</td>
+                            <td data-label="0.5">Locks and engrams highly effective when below grief or 1.0 In a state of anaten.</td>
+                            <td data-label="0.1">Any present time incident effective. Locks, engrams wholly effective.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">P. SEXUAL BEHAVIOR<hr>ATTITUDE TOWARD CHILDREN.</th>
+                            <td data-label="4.0">Sexual interest high but often sublimated to creative thought.<hr>Intense interest in children.</td>
+                            <td data-label="3.5">High interest in opposite sex. Constancy.<hr>Love of children.</td>
+                            <td data-label="3.0">Interest in procreation.<hr>Interest in children.</td>
+                            <td data-label="2.5">Disinterest in procreation<hr>Vague tolerance of children</td>
+                            <td data-label="2.0">Disgust for sex—Revulsion.<hr>Nagging of, nervousness about children.</td>
+                            <td data-label="1.5">Rape, sex as punishment.<hr>Brutal Treatment of Children.</td>
+                            <td data-label="1.1">Promiscuity, perversion, sadism, irregular practices.<hr>Use of children for sadistic purposes.</td>
+                            <td data-label="0.5">Impotency, anxiety, possible efforts to procreate<hr>Anxiety about Children.</td>
+                            <td data-label="0.1">No efforts to procreate.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">Q. COMMAND OVER ENVIRONMENT</th>
+                            <td data-label="4.0">High self-mastery. Aggressive toward environ. Dislikes to control people. High reasoning, volatile emotions.</td>
+                            <td data-label="3.5">Reasons well. Good control. Accepts ownership. Emotion free. Liberal.</td>
+                            <td data-label="3.0">Controls bodily functions. Reasons well. Free emotion still inhibited. Allows rights to others. Democratic.</td>
+                            <td data-label="2.5">In control of functions and some reasoning powers. Does not desire ownership of much.</td>
+                            <td data-label="2.0">Antagonistic and destructive to self, others and environ. Desires command in order to injure.</td>
+                            <td data-label="1.5">Smashes or destroys others or environment. Failing, may destroy self. Fascistic.</td>
+                            <td data-label="1.1">No control of reason or emotions, but apparent organic control. Uses sly means of controlling others, especially hypnotism. Communistic.</td>
+                            <td data-label="0.5">Barest functional control of self, only. No control of reason or emotions.</td>
+                            <td data-label="0.1">No command of self, environment, other persons. Suicide.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">R. ACTUAL WORTH TO SOCIETY COMPARED TO APPARENT WORTH</th>
+                            <td data-label="4.0">High worth. Apparent worth will be realized. Creative and constructive.</td>
+                            <td data-label="3.5">Good value to society. Adjusts environ to benefit of self and others.</td>
+                            <td data-label="3.0">Any apparent worth is actual worth. Fair value.</td>
+                            <td data-label="2.5">Capable of constructive action, seldom any quantity to be reckoned with. Small value. "Well adjusted."</td>
+                            <td data-label="2.0">Dangerous. Any apparent worth wiped out by potentials of injury to others.</td>
+                            <td data-label="1.5">Insincere. Heavy liability. Possible murderer. Even when intentions avowedly good will bring about destruction.</td>
+                            <td data-label="1.1">Active liability. Enturbulates others. Apparent worth outweighed by vicious, hidden intents.</td>
+                            <td data-label="0.5">Liability to society. Possible suicide. Utterly careless of others.</td>
+                            <td data-label="0.1">High liability, needing care and efforts of others without any contribution.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">S. ETHIC LEVEL</th>
+                            <td data-label="4.0">Bases ethics on reason. Very high ethic level.</td>
+                            <td data-label="3.5">Heeds ethics of group but refines them higher as reason demands.</td>
+                            <td data-label="3.0">Follows ethics in which trained, as honestly as possible. Moral.</td>
+                            <td data-label="2.5">Treats ethics insincerely but not particularly honest or dishonest.</td>
+                            <td data-label="2.0">Chronically and bluntly dishonest when occasion arises. At this level and below: authoritarianism, criminals.</td>
+                            <td data-label="1.5">Immoral. Actively dishonest. Destructive of any and all ethics.</td>
+                            <td data-label="1.1">Sex criminals. Negative ethics. Deviously dishonest. Perverts honesty without reason.</td>
+                            <td data-label="0.5">Non-existent. Not thinking. Obeying anyone.</td>
+                            <td data-label="0.1">None.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">T. HANDLING OF TRUTH</th>
+                            <td data-label="4.0">High concept of truth.</td>
+                            <td data-label="3.5">Truthful.</td>
+                            <td data-label="3.0">Cautious of asserting truths. Social lies.</td>
+                            <td data-label="2.5">Insincere. Careless of facts.</td>
+                            <td data-label="2.0">Truth twisted to suit antagonism.</td>
+                            <td data-label="1.5">Blatant and destructive lying.</td>
+                            <td data-label="1.1">Ingenious and vicious perversions of truth. Covers lying artfully.</td>
+                            <td data-label="0.5">Details facts with no concept of their reality.</td>
+                            <td data-label="0.1">No reaction.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">U. COURAGE LEVEL</th>
+                            <td data-label="4.0">High courage level.</td>
+                            <td data-label="3.5">Courage displayed on reasonable risks.</td>
+                            <td data-label="3.0">Conservative display of courage where risk is small.</td>
+                            <td data-label="2.5">Neither courage nor cowardice. Neglect of danger.</td>
+                            <td data-label="2.0">Reactive, unreasoning thrusts at danger.</td>
+                            <td data-label="1.5">Unreasonable bravery, usually damaging to self.</td>
+                            <td data-label="1.1">Occasional underhanded displays of action, otherwise cowardly.</td>
+                            <td data-label="0.5">Complete cowardice.</td>
+                            <td data-label="0.1">No reaction.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">V. ABILITY TO HANDLE RESPONSIBILITY</th>
+                            <td data-label="4.0">Inherent sense of responsibility on all dynamics.</td>
+                            <td data-label="3.5">Capable of assuming and carrying on responsibilities.</td>
+                            <td data-label="3.0">Handles responsibility in a slipshod fashion.</td>
+                            <td data-label="2.5">Very careless, not trustworthy.</td>
+                            <td data-label="2.0">Uses responsibility to further own ends.</td>
+                            <td data-label="1.5">Assumes responsibility in order to destroy.</td>
+                            <td data-label="1.1">Incapable, capricious, irresponsible.</td>
+                            <td data-label="0.5">None.</td>
+                            <td data-label="0.1">None.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">W. PERSISTENCE ON A GIVEN COURSE</th>
+                            <td data-label="4.0">High creative persistence.</td>
+                            <td data-label="3.5">Good persistence and direction toward constructive goals.</td>
+                            <td data-label="3.0">Fair persistence if obstacles not too great.</td>
+                            <td data-label="2.5">Idle, poor concentration.</td>
+                            <td data-label="2.0">Persistence toward destruction of enemies. No constructive persistence below this point.</td>
+                            <td data-label="1.5">Destructive persistence begins strongly, weakens quickly.</td>
+                            <td data-label="1.1">Vacillation on any course. Very poor concentration. Flighty.</td>
+                            <td data-label="0.5">Sporadic persistence toward self-destruction.</td>
+                            <td data-label="0.1">None.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">X. LITERALNESS OF RECEPTION OF STATEMENTS</th>
+                            <td data-label="4.0">High differentiation. Good understanding of all comm as modified by Clear's education.</td>
+                            <td data-label="3.5">Good grasp of statements. Good sense of humor.</td>
+                            <td data-label="3.0">Good differentiation of meaning of statements.</td>
+                            <td data-label="2.5">Accepts very little, literally or otherwise. Apt to be literal about humor.</td>
+                            <td data-label="2.0">Accepts remarks of Tone 2.0 literally.</td>
+                            <td data-label="1.5">Accepts alarming remarks literally. Brutal sense of humor.</td>
+                            <td data-label="1.1">Lack of acceptance of any remarks. Tendency to accept all literally avoided by forced humor.</td>
+                            <td data-label="0.5">Literal acceptance of any remark matching tone.</td>
+                            <td data-label="0.1">Complete literal acceptance.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">Y. METHOD USED BY SUBJECT TO HANDLE OTHERS</th>
+                            <td data-label="4.0">Gains support by creative enthusiasm and vitality backed by reason.</td>
+                            <td data-label="3.5">Gains support by creative reasoning and vitality.</td>
+                            <td data-label="3.0">Invites support by practical reasoning and social graces.</td>
+                            <td data-label="2.5">Careless of support from others.</td>
+                            <td data-label="2.0">Nags and bluntly criticizes to demand compliance with wishes.</td>
+                            <td data-label="1.5">Uses threats, punishment and alarming lies to dominate others.</td>
+                            <td data-label="1.1">Nullifies others to get them to level where they can be used. Devious and vicious means. Hypnotism, gossip. Seeks hidden control.</td>
+                            <td data-label="0.5">Enturbulates others to control them. Cries for pity. Wild lying to gain sympathy.</td>
+                            <td data-label="0.1">Pretends death so others will not think him dangerous and will go away.</td>
+                        </tr>
+                            <th class="category-cell">Z. COMMAND VALUE OF ACTION PHRASES</th>
+                            <td data-label="4.0">No engrams. Present time phrases no reactive value. No locks.</td>
+                            <td data-label="3.5">Chains of engrams effective. Individual phrases mildly effective.</td>
+                            <td data-label="3.0">Engram action phrases effective.</td>
+                            <td data-label="2.5">Secondary chains, engrams effective.</td>
+                            <td data-label="2.0">Lock chains, secondaries, engrams effective.</td>
+                            <td data-label="1.5">Locks, secondaries, engrams matching tone very effective. Control phrases most effective.</td>
+                            <td data-label="1.1">Locks, secondaries, engrams effective. Valence shifters very effective.</td>
+                            <td data-label="0.5">Present time percepts, locks, secondaries, engrams effective.</td>
+                            <td data-label="0.1">Present time percepts, locks, secondaries, engrams effective. Groupers particularly effective.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AB. Present time.</th>
+                            <td data-label="4.0">Highly stable in PT. Does not leave it. All percepts clear.</td>
+                            <td data-label="3.5">Very alert to PT. Stable in it.</td>
+                            <td data-label="3.0">PC has no difficulty reaching or maintaining self in present time.</td>
+                            <td data-label="2.5">Once brought to PT pc usually remains there until next processing.</td>
+                            <td data-label="2.0">PC Must be brought to PT and stabilized there. Usually will remain.</td>
+                            <td data-label="1.5">PC out of present time. Reduce locks and get to present time.</td>
+                            <td data-label="1.1">PC Stays out of PT most of time. Reaching it, slumps back. Get charge of locks and bring to present.</td>
+                            <td data-label="0.5">Attempt to bring PC to present time. Sags back easily.</td>
+                            <td data-label="0.1">PC Perceptics can be directed to present time concepts.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AC. Straight Memory.</th>
+                            <td data-label="4.0">Can recall anything.</td>
+                            <td data-label="3.5">Straight memory is automatic on material.</td>
+                            <td data-label="3.0">Use straight memory on auditing and locks.</td>
+                            <td data-label="2.5">Use straight memory to contact anger and apathy dramatizations of those about PCs life.</td>
+                            <td data-label="2.0">Use straight memory to knock out broken dramatizations, ARC and pleasure moments.</td>
+                            <td data-label="1.5">Use straight memory on ARC Locks and others efforts to control him.</td>
+                            <td data-label="1.1">Straight memory of things he knows are real experiences and on broken dramatizations.</td>
+                            <td data-label="0.5">Use straight memory and contacting present time only.</td>
+                            <td data-label="0.1">Use only as an aid to contacting environment.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AD. PLEASURE MOMENTS.</th>
+                            <td data-label="4.0">Responds to any pleasure stimuli in environ. Enjoys life. All past moments of pleasure available.</td>
+                            <td data-label="3.5">Runs pleasure moments easily. Most past pleasure available.</td>
+                            <td data-label="3.0">Runs pleasure moments easily, but much past and present pleasure unavailable.</td>
+                            <td data-label="2.5">Runs pleasure moments. Present and past pleasure occasionally occluded.</td>
+                            <td data-label="2.0">A few real pleasure moments can be reached. Takes "pleasure" in venting antagonism.</td>
+                            <td data-label="1.5">True pleasure moments difficult to find. Reactive satisfaction in destroying.</td>
+                            <td data-label="1.1">Occasional pleasant memory can be found but very rare. Reactive delight in inflicting sadistic injuries on helpless persons or objects.</td>
+                            <td data-label="0.5">No pleasure moments available. Experiences little or none in PT.</td>
+                            <td data-label="0.1">No reaction.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AE. IMAGINARY INCIDENTS.</th>
+                            <td data-label="4.0">Mechanism not necessary. (3.5)</td>
+                            <td data-label="3.5">Mechanism not necessary.</td>
+                            <td data-label="3.0">Mechanism not necessary. Differentiates well between reality and imagination.</td>
+                            <td data-label="2.5">Use imaginary pleasure momentsto raise tone.</td>
+                            <td data-label="2.0">Mechanism useful at start of case. Use imaginarty pleasure moments.</td>
+                            <td data-label="1.5">Imaginary revenges. Will clue what has been done to PC.</td>
+                            <td data-label="1.1">Mechanism can be used with profit. All incidents seem imaginary.</td>
+                            <td data-label="0.5">Too hypnotic. Sugest no such incidents.</td>
+                            <td data-label="0.1">Too hypnotic. Use no such mechanism.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AF. LOCKS.</th>
+                            <td data-label="4.0">All locks discharged.</td>
+                            <td data-label="3.5">Locks blow as fast as engram is erased.</td>
+                            <td data-label="3.0">Treatment of locks as individual incidents unnecessary.</td>
+                            <td data-label="2.5">Treatment of locks as individual incidents relatively productive.</td>
+                            <td data-label="2.0">Locks can be contacted and restimulated without reducing them.</td>
+                            <td data-label="1.5">Run broken dramatizations, ARC locks as you would engrams, until charge is off.</td>
+                            <td data-label="1.1">Run ARC Break locks as engrams.</td>
+                            <td data-label="0.5">Treat onlt very lightest locks near present time. Running heavier locks pulls PC into engrams.</td>
+                            <td data-label="0.1">Tough only lightest past moments if at all.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AG. SCANNING LOCKS.</th>
+                            <td data-label="4.0">All locks have been scanned.</td>
+                            <td data-label="3.5">Scan auditing and locks of engrams just run.</td>
+                            <td data-label="3.0">Sharpen perceptics by scanning locks.</td>
+                            <td data-label="2.5">Scan locks until engrams show up clearly. Run those. Scan locks again for new engrams.</td>
+                            <td data-label="2.0">Scan locks, working with chains given up by file clerk. Reduce all chains.</td>
+                            <td data-label="1.5">Scan locks until PC sticks in one. Run it as an engram. Scan through no physical pain.</td>
+                            <td data-label="1.1">Scan locks until PC hangs up in one. Run it as an engram. Avoid scanning through any physical pain.</td>
+                            <td data-label="0.5">Do not scan locks.</td>
+                            <td data-label="0.1">Never scan any chain of locks.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AH. SECONDARY ENGRAMS.</th>
+                            <td data-label="4.0">All secondaries out.</td>
+                            <td data-label="3.5">Run out all secondaries. They will release if scanned as locks.</td>
+                            <td data-label="3.0">Secondaries can be touched and left without bad effect on this level and above only.</td>
+                            <td data-label="2.5">Any secondary can be run. Usually will discharge.</td>
+                            <td data-label="2.0">Run any secondary. Run them thoroughly until discharged.</td>
+                            <td data-label="1.5">Run secondaries of fear or grief or anger. Usually they are hard to discharge.</td>
+                            <td data-label="1.1">Cautionary: Run any fear secondary presented by the file clerk. They usually will not wholly discharge.</td>
+                            <td data-label="0.5">Cautionary: Run secondaries only when it is obviously presented by file clerk. Do not order PC Into them.</td>
+                            <td data-label="0.1">Do not let PC get into any secondaries.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AI. ENGRAMS.</th>
+                            <td data-label="4.0">All current life MEST engrams out.</td>
+                            <td data-label="3.5">Any engram on case will run with all perceptics.</td>
+                            <td data-label="3.0">Auditor can choose early specific engrams to run but should work with file clerk.</td>
+                            <td data-label="2.5">Run engrams as presented by file clerk only.</td>
+                            <td data-label="2.0">Cautionary: Run those engrams file clerk will present. Do not force PC into engrams.</td>
+                            <td data-label="1.5">Cautionary: Run only engrams which easily present themselves (Be careful.)</td>
+                            <td data-label="1.1">Never touch an engram on this level, unless it is a mild, near PT incident.</td>
+                            <td data-label="0.5">Never touch an engram on this level.</td>
+                            <td data-label="0.1">Never touch an engram on this level.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AJ. CHAINS OF ENGRAMS.</th>
+                            <td data-label="4.0">No Engrams to Scan.</td>
+                            <td data-label="3.5">Engrams can be scanned if carefully checked.</td>
+                            <td data-label="3.0">Never scan engrams.</td>
+                            <td data-label="2.5">Never scan engrams.</td>
+                            <td data-label="2.0">Never scan engrams.</td>
+                            <td data-label="1.5">Never scan engrams.</td>
+                            <td data-label="1.1">Never scan engrams.</td>
+                            <td data-label="0.5">Never scan engrams.</td>
+                            <td data-label="0.1">Never scan engrams.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AK. CIRCUITS.</th>
+                            <td data-label="4.0">All control vested in "I". No Circuits.</td>
+                            <td data-label="3.5">Circuits out of case or did not exist.</td>
+                            <td data-label="3.0">Few Active Circuits.</td>
+                            <td data-label="2.5">Some circuits. Not effective in secondaries or prenatals.</td>
+                            <td data-label="2.0">Numerous in prenatal engrams. Not effective in locks.</td>
+                            <td data-label="1.5">Relatively heavy. At least one parent very dominant. Effective in secondaries.</td>
+                            <td data-label="1.1">Heavy. Particularly in prenatal engrams.</td>
+                            <td data-label="0.5">Very heavy, particularly in prenatal and childhood. Active in early locks.</td>
+                            <td data-label="0.1">Heavy over entire span of track. Even late locks contain circuits.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AL. CONDITION OF FILE CLERK.</th>
+                            <td data-label="4.0">Computes accurately with flash answers.</td>
+                            <td data-label="3.5">File clerk very active and dependable.</td>
+                            <td data-label="3.0">File clerk highly active and dependable.</td>
+                            <td data-label="2.5">File clerk responsive. Occluded on secondaries occasionally.</td>
+                            <td data-label="2.0">File clerk works most of time.</td>
+                            <td data-label="1.5">File clerk works occasionally. Occluded most of time.</td>
+                            <td data-label="1.1">Circuit "file clerk," gives data by strange mechanisms. Undependable.</td>
+                            <td data-label="0.5">No response from real file clerk. Circuits sometimes respond.</td>
+                            <td data-label="0.1">No trace of file clerk.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AM. HYPNOTIC LEVEL</th>
+                            <td data-label="4.0">Impossible to hypnotize without drugs and consent.</td>
+                            <td data-label="3.5">Difficult to trance unless still possessed of a trance engram.</td>
+                            <td data-label="3.0">Could be hypnotized, but alert when awake.</td>
+                            <td data-label="2.5">Can be a hypnotic subject, but mostly alert.</td>
+                            <td data-label="2.0">Negates somewhat, but can be hypnotized.</td>
+                            <td data-label="1.5">Negates heavily against remarks, but absorbs them.</td>
+                            <td data-label="1.1">In a permanent light trance, but negates.</td>
+                            <td data-label="0.5">Very hypnotic. Any remark made may be a "positive suggestion."</td>
+                            <td data-label="0.1">Is equivalent to a hypnotized subject when "awake."</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AN. LEVEL OF MIND ALERT.</th>
+                            <td data-label="4.0">Full Analytical.</td>
+                            <td data-label="3.5">Analytical about 70% on.</td>
+                            <td data-label="3.0">Analytical about 47% on.</td>
+                            <td data-label="2.5">Analytical about 32% on.</td>
+                            <td data-label="2.0">Analyical responsive and Reactive fully alert.</td>
+                            <td data-label="1.5">Analytical partially shut down. Reactive on full.</td>
+                            <td data-label="1.1">Analytical partially shut down. Reactive somewhat alert.</td>
+                            <td data-label="0.5">Analytical shutdown. Reactive slightly alert.</td>
+                            <td data-label="0.1">Reactive and analytical shutdown.</td>
+                        </tr>
+                            <th class="category-cell">AO. RELATIVE ENTHETA ON CASE (APPROXIMATIONS).</th>
+                            <td data-label="4.0">All locks, secondaries, engrams converted.</td>
+                            <td data-label="3.5">Major lock chains and nearly all secondaries converted. Light charge on some engrams.</td>
+                            <td data-label="3.0">A few highly charged lock chains. A few secondaries, minor charge. Engrams only lightly charged.</td>
+                            <td data-label="2.5">A few highly charged lock chains. Major secondaries existing. About one-third of engrams enough charged to be wholly uncontactable</td>
+                            <td data-label="2.0">Many highly charged lock chains. Many major secondaries. Half of engrams in bank wholly uncontactable.</td>
+                            <td data-label="1.5">Highly charged lock chains. Heavy secondaries. Three-quarters of engrams in bank wholly uncontactable.</td>
+                            <td data-label="1.1">Most lock chains charged nearly as heavy as secondaries. Secondary charges mainly sunk into engrams. Engrams nearly all uncontactabe.</td>
+                            <td data-label="0.5">Almost a solid sheet of charge.</td>
+                            <td data-label="0.1">Track too charged for anything but straight memory.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AP. ABILITY TO EXPERIENCE PRESENT TIME PLEASURE</th>
+                            <td data-label="4.0">Finds existence very full of pleasure.</td>
+                            <td data-label="3.5">Finds life pleasurable most of the time.</td>
+                            <td data-label="3.0">Experiences pleasure some of the time.</td>
+                            <td data-label="2.5">Sometimes experiences a moment of pleasure. Low intensity.</td>
+                            <td data-label="2.0">Occasionally experiences some pleasure in extraordinary moments.</td>
+                            <td data-label="1.5">Seldom experiences any pleasure.</td>
+                            <td data-label="1.1">Most gaiety forced. Real pleasure out of reach.</td>
+                            <td data-label="0.5">None.</td>
+                            <td data-label="0.1">None.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AQ. TONE LEVEL OF AUDITOR NECESSARY TO HANDLE CASE.</th>
+                            <td data-label="4.0">Can audit out anything but a heavy drug engram himself.</td>
+                            <td data-label="3.5">3.0—Altitude not necessary.</td>
+                            <td data-label="3.0">3.0</td>
+                            <td data-label="2.5">3.0</td>
+                            <td data-label="2.0">3.0</td>
+                            <td data-label="1.5">3.0</td>
+                            <td data-label="1.1">3.5 or above. (such cases very restimulative)</td>
+                            <td data-label="0.5">3.5 or above.</td>
+                            <td data-label="0.1">3.5 or above.</td>
+                        </tr>
+                        <tr>
+                            <th class="category-cell">AR. HOW TO AUDIT THE CASE.</th>
+                            <td data-label="4.0">N/A</td>
+                            <td data-label="3.5">Scan engrams and secondaries and all lock chains until case clear.</td>
+                            <td data-label="3.0">Run engrams, secondaries. Keep auditing scanned off.</td>
+                            <td data-label="2.5">Scan locks, run secondaries and engrams as routine. Scan all circuits located in locks.</td>
+                            <td data-label="2.0">Scan locks. Run secondaries. Run only engrams file clerk easily presents. Locate circuits in locks.</td>
+                            <td data-label="1.5">Scan locks. Run locks and secondaries as engrams. Be very careful with any engram. Use straight memory on circuits.</td>
+                            <td data-label="1.1">Establish ARC with Mimicry if necessary. Use straight memory on locks, scan locks. Touch no engrams.</td>
+                            <td data-label="0.5">Establish ARC, heavy affinity. Get up some minor apathy locks. Tough no engrams.</td>
+                            <td data-label="0.1">Establish ARC and get PC into contact with PT. Touch no engrams.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="copyright">Copyright Church of Scientology, If the creators of this chart wish for me to no longer use it, let me know.</div>
             </div>
           </div>
         </div>
@@ -262,7 +796,7 @@
       </div>
     </div>
   </div>
-
+  
   <script>
     const FileCFID = parseInt("{{ profile.cfid }}")
     let theta_endowment = parseInt("{{ dianetics.theta_endowment }}")
@@ -275,5 +809,9 @@
   <script src="/static/centralfiles/js/dn_profile/dn_export_profile.js"></script>
   <script src="/static/centralfiles/js/dn_profile/dynamics-strength.js"></script>
   <script src="/static/centralfiles/js/dn_profile/mindclass_loader.js"></script>
+  <script src="/static/centralfiles/js/dn_profile/hubbard-chart.js"></script>
+  <script>
+    load_chart("{{ profile.cfid }}")
+  </script>
 </body>
 </html>

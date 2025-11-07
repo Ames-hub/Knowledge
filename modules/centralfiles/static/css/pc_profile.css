@@ -633,3 +633,59 @@ body {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
+
+.category-cell {
+  font-size: medium;
+}
+
+/* Chart container */
+.chart-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hubbard-chart {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.hubbard-chart th,
+.hubbard-chart td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.hubbard-chart th {
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+.hubbard-chart thead th {
+  background: rgba(255, 255, 255, 0.12);
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: white;
+}
+
+.hubbard-chart td.selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: bold;
+}
+
+#chart-container {
+  max-height: 400px;
+  overflow-y: auto;
+}

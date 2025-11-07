@@ -154,9 +154,23 @@ class AuthPerms:
         return False
     
     @staticmethod
-    def check_allowed(username, permission):
+    def check_allowed(username:str, permissions:str|list):
+        """
+        Check if a user has specific permission(s).
+        Supports single permission (str) or multiple permissions (list).
+
+        Returns True if all permissions are allowed, False otherwise.
+        """
         user_perms = AuthPerms.perms_for_user(username)
-        return user_perms.get(permission, False)
+        # Permissions can be set as either a list or a string. Legacy is string.
+        if isinstance(permissions, str):
+            return user_perms[permissions]
+        else:
+            allowed = True
+            if not all(user_perms.get(perm, False) for perm in permissions):
+                allowed = False
+            if allowed:
+                return True
 
     @staticmethod
     def give_all_perms(username):

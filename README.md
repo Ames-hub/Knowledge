@@ -49,13 +49,6 @@ To show you how built-out each system is, we'll show you a number from 1 to 5!<b
   - Track debts and payments between people.
   - Create custom, modular invoices!
 
-- Dianetics (2/5) (W.I.P.)
-  - Track each individual preclear you have
-  - Keep a record of their Dianometry
-  - Keep a virtual record of where they're placed on any one of the many columns of the Hubbard Chart of Human Evaluation and Dianetic Processing
-  - Few features at the moment, its still a work in progress.
-  - Keep a record of each session they have had!
-
 - Daily Plans (Battle Plans) (5/5)
   - Make a daily to‑do list with quotas (how much you aim to get done).
   - View your last week’s productivity at a glance.

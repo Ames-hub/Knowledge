@@ -104,8 +104,12 @@ async def favicon():
         raise FileNotFoundError("No favicon.png found")
 
 modules_dir = "modules"
+disabled_modules = []
 
 for module_name in os.listdir(modules_dir):
+    if module_name in disabled_modules:
+        logbook.info(f"[!] Skipping disabled module: {module_name}")
+        continue
     module_path = os.path.join(modules_dir, module_name)
 
     if os.path.isfile(module_path) or module_name == "__pycache__":
