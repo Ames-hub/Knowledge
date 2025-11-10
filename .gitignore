@@ -7,3 +7,4 @@ ftp_user_files/*
 settings.json
 *.pem
 forcekey
+modules/signals/route_funcs/private

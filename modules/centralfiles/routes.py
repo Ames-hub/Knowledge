@@ -1343,6 +1343,10 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
             else:
                 success = False
 
+            if data.field in ['can_handle_life', 'visio_shutoff', 'sonic_shutoff']:
+                # Update mind class estimation if these fields are changed
+                update_mind_class_estimation(str(data.cfid))
+
         if success:
             return JSONResponse(content={"success": True}, status_code=200)
         else:
@@ -1544,6 +1548,7 @@ class SetThetaData(BaseModel):
 async def set_theta(request: Request, post_data: SetThetaData, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting CFID {post_data.cfid}'s Theta Count to {post_data.theta_count}")
     success = centralfiles.dianetics.modify(post_data.cfid).set_theta_count(post_data.theta_count)
+    update_mind_class_estimation(str(post_data.cfid))
 
     return JSONResponse(
         content={"success": success},
@@ -2314,12 +2319,6 @@ class Dianetics_CF:
             "name": pc_name,
         }
 
-@router.get("/dianetics", response_class=HTMLResponse)
-@set_permission(permission="dianetics")
-async def show_index(request: Request, token: str = Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the dianetics page.")
-    return templates.TemplateResponse(request, "dianetics.html")
-
 @router.get("/api/dianetics/preclear/list")
 @set_permission(permission="dianetics")
 async def list_preclears(request: Request, token: str = Depends(require_prechecks)):
@@ -2339,22 +2338,6 @@ async def list_preclears(request: Request, token: str = Depends(require_precheck
         )
 
 # Dianometry section
-
-@router.get("/dianetics/dianometry/{cfid}", response_class=HTMLResponse)
-@set_permission(permission="dianetics")
-async def show_dianometry(request: Request, cfid:int, token: str = Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the dianometry page.")
-
-    preclear = Dianetics_CF.get_preclear_data(cfid)
-
-    return templates.TemplateResponse(
-        request,
-        "dianometry_profile.html",
-        {
-            "preclear": preclear,
-        }
-    )
-
 chart_to_db_map = {
     "B. Dianetic Evaluation": "dianetic_evaluation",
     "C. BEHAVIOR AND PHYSIOLOGY": "behavior_and_physiology",
@@ -2604,10 +2587,6 @@ def calculate_mind_class_estimation(cfid):
         if apparent_class == 3:
             actual_class = 2
 
-    if can_handle_life:
-        if actual_class != 1:
-            actual_class = 2  # Class C Cannot handle life.
-
     # theta has a range from 0 to 1000. A higher endowment improves mind class.
     # Low average is 200, Median average of your everyday human is 450, a HIGH average is 700+
     if theta_endowment >= 700:
@@ -2626,6 +2605,15 @@ def calculate_mind_class_estimation(cfid):
             actual_class = 3  # Class C
     elif theta_endowment <= 200:
         actual_class = 3  # Class C
+
+    if can_handle_life:
+        if actual_class != 1:
+            actual_class = 2  # Class C Cannot handle life.
+    else:
+        if sonic_shutoff and visio_shutoff:
+            apparent_class = 3  # Class C
+        else:
+            actual_class = 3  # Class C
 
     results = {
         "apparent": apparent_class,
@@ -2843,6 +2831,7 @@ mind_level_map = {
 @set_permission(permission=["dianetics", "central_files"])
 async def get_mind_class(request: Request, cfid, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting mind class for {cfid}.")
+    # Very often when getting mind class, other values have changed. So we update it here.
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cur = conn.cursor()

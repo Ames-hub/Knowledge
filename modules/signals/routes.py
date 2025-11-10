@@ -7,6 +7,7 @@ from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
+import importlib
 import datetime
 import sqlite3
 import os
@@ -24,16 +25,16 @@ async def show_page(request: Request, token: str = Depends(require_prechecks)):
         "signals.html",
     )
 
-def make_new_signal(route, http_code, html_response):
+def make_new_signal(route, http_code, html_response, route_func):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         try:
             cursor.execute(
                 """
-                INSERT INTO signalserver_items (signal_route, http_code, html_response)
-                VALUES (?, ?, ?) 
+                INSERT INTO signalserver_items (signal_route, http_code, html_response, route_func)
+                VALUES (?, ?, ?, ?) 
                 """,
-                (route, http_code, html_response),
+                (route, http_code, html_response, route_func),
             )
             conn.commit()
             return True
@@ -46,6 +47,7 @@ class mk_signal_data(BaseModel):
     signal_route: str
     http_code: int
     html_response: str
+    route_func: str
 
 @router.post("/api/signals/mknew", response_class=HTMLResponse)
 @set_permission(permission="signal_server")
@@ -67,6 +69,7 @@ async def mksignal(request: Request, signal: mk_signal_data, token: str = Depend
         route=signal.signal_route,
         http_code=signal.http_code,
         html_response=signal.html_response,
+        route_func=signal.route_func,
     )
 
     return HTMLResponse(
@@ -146,7 +149,7 @@ def get_route_response(route):
         try:
             cur.execute(
                 """
-                SELECT http_code, html_response FROM signalserver_items WHERE signal_route = ?
+                SELECT http_code, html_response, route_func FROM signalserver_items WHERE signal_route = ?
                 """,
                 (route,)
             )
@@ -156,7 +159,7 @@ def get_route_response(route):
             conn.rollback()
             return None
 
-    return {"http_code": data[0], "html_response": data[1]} if data else None
+    return {"http_code": data[0], "html_response": data[1], "route_func": data[2]} if data else None
 
 def get_signals_list():
     with sqlite3.connect(DB_PATH) as conn:
@@ -164,7 +167,7 @@ def get_signals_list():
         try:
             cur.execute(
                 """
-                SELECT signal_route, http_code, html_response, is_closed FROM signalserver_items
+                SELECT signal_route, http_code, html_response, is_closed, route_func FROM signalserver_items
                 """
             )
             data = cur.fetchall()
@@ -173,12 +176,13 @@ def get_signals_list():
             return False
 
     sig_list = {}
-    for route, http_code, html_response, is_closed in data:
+    for route, http_code, html_response, is_closed, route_func in data:
         sig_list[route] = {
             "http_code": http_code,
             "html_response": html_response,
             "route": route,
             "closed": is_closed,
+            "route_func": route_func,
         }
     return sig_list
 
@@ -232,13 +236,14 @@ async def load_signal(request: Request, signal: loadSignalData, token=Depends(re
     )
 
 
-def parse_placeholders(html_response:str):
+def parse_placeholders(html_response:str, func_response:str="") -> str:
     """
     To add logical data to your HTML response, you need to modify this function.
     """
     logical_data_map = {
         "<date>": datetime.datetime.now().strftime("%m/%d/%Y"),
         "<time>": datetime.datetime.now().strftime("%H:%M:%S"),
+        "<func_response>": func_response,
     }
     for key in logical_data_map:
         html_response = html_response.replace(key, logical_data_map[key])
@@ -246,7 +251,7 @@ def parse_placeholders(html_response:str):
 
 @router.get("/api/signals/r/{signal_route}")
 async def read_route(request: Request, signal_route):
-    logbook.info(f"IP {request.client.host} Is reading route \"{signal_route}\"")
+    logbook.info(f"IP {request.client.host} Is accessing signal route \"{signal_route}\"")
 
     route_data = get_route_response(signal_route)
 
@@ -254,6 +259,28 @@ async def read_route(request: Request, signal_route):
         return HTMLResponse(
             content="Route not found!",
         )
+    
+    route_func = route_data["route_func"]
+    func_file_path = os.path.join("modules", "signals", "route_funcs", f"{route_func.replace(".", "/")}.py")
+
+    func_response = "NO_FUNCTION_RESPONSE"
+    func_code = None
+    if os.path.exists(func_file_path):
+        try:
+            route_module = importlib.import_module(f"modules.signals.route_funcs.{route_func}")
+            if hasattr(route_module, "main"):
+                func_data = route_module.main()
+                func_response = func_data[0]
+                if len(func_data) > 1:
+                    func_code = func_data[1]
+                else:
+                    func_code = None
+        except Exception as err:
+            logbook.error(f"Error executing route function {route_func} for route {signal_route} | {err}", exception=err)
+            return HTMLResponse(
+                content="Internal Server Error while executing user-generated route function.",
+                status_code=500
+            )
 
     if get_route_closed(signal_route):
         return HTMLResponse(
@@ -261,9 +288,9 @@ async def read_route(request: Request, signal_route):
             status_code=401
         )
 
-    html_response = parse_placeholders(route_data["html_response"])
+    html_response = parse_placeholders(route_data["html_response"], func_response=func_response)
 
-    return HTMLResponse(content=html_response, status_code=route_data["http_code"])
+    return HTMLResponse(content=html_response, status_code=route_data["http_code"] if func_code is None else func_code)
 
 def del_route(route):
     with sqlite3.connect(DB_PATH) as conn:

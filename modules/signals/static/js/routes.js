@@ -51,8 +51,11 @@ async function loadSignal(route) {
   signalItem.innerHTML = `
     <label>Route: <input id="route-input" value="${data.route}" disabled></label>
     <label>HTTP Code: <input id="http-input" type="number" value="${data.http_code}"></label>
+    <label>Route Function: <input id="func-input" value="${data.route_func}.py"></label>
     <label>HTML Response:</label>
     <textarea id="html-input" rows="10">${data.html_response}</textarea>
+    <label>Status: ${data.closed ? "Closed" : "Open"}</label>
+    <a href="/api/signals/r/${data.route}" target="_blank">Test Route</a>
   `;
 }
 
@@ -125,17 +128,19 @@ createRouteBtn.addEventListener("click", async () => {
   const route = document.getElementById("new-route-path").value.trim();
   const httpCode = parseInt(document.getElementById("new-route-http").value) || 200;
   const htmlResponse = document.getElementById("new-route-html").value;
+  const routeFunc = document.getElementById("new-route-func").value.trim() || "None";
 
   if (!route) return toast("Route path cannot be empty!");
 
-  const res = await apiRequest("/api/signals/mknew", "POST", { signal_route: route, http_code: httpCode, html_response: htmlResponse });
+  const res = await apiRequest("/api/signals/mknew", "POST", { signal_route: route, http_code: httpCode, html_response: htmlResponse, route_func: routeFunc });
   toast(res);
   newRouteModal.style.display = "none";
 
   // Reset modal fields
   document.getElementById("new-route-path").value = "";
   document.getElementById("new-route-http").value = 200;
-  document.getElementById("new-route-html").value = "<h1>New Route</h1>";
+  document.getElementById("new-route-html").value = "<h1>New Route! <func_response></h1>";
+  document.getElementById("new-route-func").value = "None";
 
   loadSignals();
 });

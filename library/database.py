@@ -260,6 +260,7 @@ class database:
                 "http_code":  "INT NOT NULL DEFAULT 200",
                 "html_response": "TEXT NOT NULL DEFAULT 'No Response Set'",
                 "is_closed": "BOOLEAN NOT NULL DEFAULT FALSE",
+                "route_func": "TEXT NOT NULL DEFAULT 'none'",
             },
             "cf_profile_images": {
                 "cfid": "INTEGER PRIMARY KEY NOT NULL",
