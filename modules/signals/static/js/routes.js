@@ -54,7 +54,7 @@ async function loadSignal(route) {
     <label>Route Function: <input id="func-input" value="${data.route_func}.py"></label>
     <label>HTML Response:</label>
     <textarea id="html-input" rows="10">${data.html_response}</textarea>
-    <label>Status: ${data.closed ? "Closed" : "Open"}</label>
+    <label id='status_label'>Status: ${data.closed ? "Closed" : "Open"}</label>
     <a href="/api/signals/r/${data.route}" target="_blank">Test Route</a>
   `;
 }
@@ -80,16 +80,28 @@ saveBtn.addEventListener("click", async () => {
 // Close route
 closeBtn.addEventListener("click", async () => {
   if (!currentSignal) return toast("No signal loaded!");
+  
   await apiRequest(`/api/signals/close/${currentSignal.route}`, "POST");
+  
   toast("Route closed!");
+  
+  let status_label = document.getElementById('status_label');
+  status_label.innerText = "Status: Closed";
+
   loadSignals();
 });
 
 // Open route
 openBtn.addEventListener("click", async () => {
   if (!currentSignal) return toast("No signal loaded!");
+  
   await apiRequest(`/api/signals/open/${currentSignal.route}`, "POST");
+  
   toast("Route opened!");
+  
+  let status_label = document.getElementById('status_label');
+  status_label.innerText = "Status: Open";
+
   loadSignals();
 });
 
