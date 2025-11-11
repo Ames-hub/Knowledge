@@ -47,6 +47,10 @@ async function loadSignal(route) {
     return;
   }
 
+  const fetched_data = await apiRequest(`/api/signals/datafetch/${data.route}`, "GET").then(
+    res => typeof res === "string" ? res : JSON.stringify(res)
+  );
+
   currentSignal = data;
   signalItem.innerHTML = `
     <label>Route: <input id="route-input" value="${data.route}" disabled></label>
@@ -54,7 +58,8 @@ async function loadSignal(route) {
     <label>Route Function: <input id="func-input" value="${data.route_func}.py"></label>
     <label>HTML Response:</label>
     <textarea id="html-input" rows="10">${data.html_response}</textarea>
-    <label id='status_label'>Status: ${data.closed ? "Closed" : "Open"}</label>
+    <p id='status_label'>Status: ${data.closed ? "Closed" : "Open"}</p>
+    <p>Data Fetched: ${fetched_data}</p>
     <a href="/api/signals/r/${data.route}" target="_blank">Test Route</a>
   `;
 }

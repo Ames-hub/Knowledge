@@ -379,3 +379,43 @@ async def route_open_route(request: Request, signal_route, token=Depends(require
         content="Opened!" if success else "Failed to open!",
         status_code=200 if success else 500,
     )
+
+@router.get("/api/signals/datafetch/{signal_route}")
+@set_permission(permission="signal_server")
+async def route_get_results(request: Request, signal_route, token=Depends(require_prechecks)):
+    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting the data gathered or set by route function for \"{signal_route}\"")
+    route_data = get_route_response(signal_route)
+
+    if not route_data:
+        return HTMLResponse(
+            content="Route not found!",
+        )
+    
+    route_func = route_data["route_func"]
+    func_file_path = os.path.join("modules", "signals", "route_funcs", f"{route_func.replace(".", "/")}.py")
+
+    func_response = "NO_FUNCTION_RESPONSE"
+    func_code = None
+    if os.path.exists(func_file_path):
+        try:
+            route_module = importlib.import_module(f"modules.signals.route_funcs.{route_func}")
+            if hasattr(route_module, "view"):
+                func_data = route_module.view()
+                func_response = func_data[0]
+                if len(func_data) > 1:
+                    func_code = func_data[1]
+                else:
+                    func_code = None
+        except Exception as err:
+            logbook.error(f"Error executing route function {route_func} for route {signal_route} | {err}", exception=err)
+            return HTMLResponse(
+                content="Internal Server Error while executing user-generated route function.",
+                status_code=500
+            )
+    else:
+        return HTMLResponse(
+            content="Route function file not found for this route! Cannot get data.",
+            status_code=400
+        )
+    
+    return HTMLResponse(content=func_response, status_code=200 if func_code is None else func_code)
