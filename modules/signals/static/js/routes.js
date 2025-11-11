@@ -59,7 +59,7 @@ async function loadSignal(route) {
     <label>HTML Response:</label>
     <textarea id="html-input" rows="10">${data.html_response}</textarea>
     <p id='status_label'>Status: ${data.closed ? "Closed" : "Open"}</p>
-    <p>Data Fetched: ${fetched_data}</p>
+    <p>${fetched_data}</p>
     <a href="/api/signals/r/${data.route}" target="_blank">Test Route</a>
   `;
 }
