@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.cookie = `username=${username}; expires=${expireTime}; path=/; SameSite=Strict`;
 
                 // redirect or update UI
-                window.location.href = '/';
+                window.location.href = '/apps';
             } else {
                 toast(result.error || 'Login failed. Check your credentials.');
             }

@@ -573,14 +573,11 @@ body {
   color: white;
 }
 
-.status-in-progress {
-  background-color: var(--accent);
-  color: white;
-}
-
 .status-cancelled {
   background-color: var(--danger);
   color: white;
+  padding: 0.5rem;
+  border-radius: 5px;
 }
 
 .session-card-body {
@@ -594,10 +591,14 @@ body {
   margin-bottom: 1rem;
 }
 
-.session-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+.session-actions-left {
+  float: left;
+  margin: 10px;
+}
+
+.session-actions-right {
+  float: right;
+  margin: 10px;
 }
 
 /* Responsive adjustments for session cards */

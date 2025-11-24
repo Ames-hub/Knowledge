@@ -60,11 +60,11 @@ class database:
                 "add_date": "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
                 "author": "TEXT NOT NULL",
             },
-            "cf_contact_details": {
-                "cfid": "INTEGER PRIMARY KEY NOT NULL",
-                "address": "TEXT NOT NULL",
-                "phone": "TEXT NOT NULL",
-                "email": "TEXT NOT NULL",
+            "cf_pc_contact_details": {
+                "cfid": "INTEGER NOT NULL PRIMARY KEY",
+                "phone_no": "TEXT DEFAULT NULL",
+                "email_addr": "TEXT DEFAULT NULL",
+                "home_addr": "TEXT DEFAULT NULL"
             },
             "cf_is_dianetics_pc": {
                 "cfid": "INTEGER PRIMARY KEY NOT NULL",
@@ -299,7 +299,8 @@ class database:
                 "summary": "TEXT NOT NULL",
                 "duration": "INTEGER NOT NULL",  # In minutes
                 "auditor": "TEXT NOT NULL",
-                "remarks": "TEXT NOT NULL DEFAULT 'No recorded remarks'"
+                "remarks": "TEXT NOT NULL DEFAULT 'No recorded remarks'",
+                "status_code": "INTEGER NOT NULL DEFAULT 2"  # Status 1 = Completed, 2 = Pending/Scheduled, 3 = Cancelled.
             },
             "session_actions": {
                 "action_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -328,7 +329,7 @@ class database:
                 "activity": "TEXT NOT NULL",
                 "auditor": "TEXT NOT NULL",
                 "room": "TEXT NOT NULL"
-            }
+            },
         }
         
         for table_name, columns in table_dict.items():

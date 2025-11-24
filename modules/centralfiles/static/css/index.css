@@ -395,3 +395,130 @@ body {
   color: inherit;
   display: block;
 }
+
+@media (max-width: 768px) {
+
+  /* Layout */
+  .app-container {
+    max-width: 100%;
+    width: 100%;
+    padding: 12px;
+  }
+
+  body {
+    font-size: 16px;
+  }
+
+  /* Header */
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 0;
+    gap: 8px;
+  }
+
+  .app-title {
+    font-size: 1.6rem;
+  }
+
+  .back-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  /* Search Box */
+  .search-section {
+    padding: 16px;
+  }
+
+  .search-container {
+    width: 100%;
+  }
+
+  #search-input {
+    padding: 14px 16px 14px 44px;
+    font-size: 1rem;
+  }
+
+  .search-icon {
+    left: 14px;
+    font-size: 1.1rem;
+  }
+
+  /* People Section */
+  .people-section {
+    padding: 16px;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+  }
+
+  .people-grid {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .person-card {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .person-card-content {
+    gap: 12px;
+  }
+
+  .profile-image {
+    width: 48px;
+    height: 48px;
+  }
+
+  .person-name {
+    font-size: 1rem;
+  }
+
+  .person-occupation {
+    font-size: 0.85rem;
+  }
+
+  /* Controls Section */
+  .controls-section {
+    padding: 16px;
+  }
+
+  .controls-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #name-input {
+    width: 100%;
+    font-size: 1rem;
+    padding: 14px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+  }
+
+  /* Modal */
+  .modal-content {
+    width: 92%;
+    padding: 1.5rem;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+    justify-content: stretch;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+}

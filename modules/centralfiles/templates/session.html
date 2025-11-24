@@ -78,6 +78,9 @@
         <button id="export-btn" class="btn btn-secondary">
           📥 Export
         </button>
+        <button class="btn btn-sm btn-primary" id="set-comp-btn">Mark Done</button>
+        <button class="btn btn-sm btn-secondary" id="set-pending-btn">Set Pending</button>
+        <button class="btn btn-sm btn-danger" id="set-cancelled-btn">Mark Cancelled</button>
       </div>
     </div>
 
@@ -119,6 +122,9 @@
         <div class="card">
           <div class="card-header">
             <h3 class="card-title">Session #{{ session.session_id }}</h3>
+            <div id="session_status" class="session-status status-{{ text_status_code }}">
+              {{ text_status_code }}
+            </div>
           </div>
           <div class="card-body">
             <div class="session-info">

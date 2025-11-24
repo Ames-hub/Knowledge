@@ -143,3 +143,66 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load all actions on page load
   loadActions();
 });
+
+const compBtn = document.getElementById("set-comp-btn")
+compBtn.addEventListener("click", async () => {
+  if (!confirm("Are you sure you want to mark this session as completed?")) return;
+
+  try {
+    const compResponse = await fetch(`/api/files/get/${FileCFID}/session/set_status/${sessionId}/1`, {
+      method: "PUT",
+    });
+
+    if (!compResponse.ok) throw new Error("Failed to mark session as completed.");
+
+    let status_type = document.getElementById("session_status")
+    status_type.innerHTML = "completed"
+    status_type.className = "session-status status-completed"
+
+  } catch (err) {
+    console.error(err);
+    alert("Error completing session.");
+  }
+});
+
+const setPendingBtn = document.getElementById("set-pending-btn")
+setPendingBtn.addEventListener("click", async () => {
+  if (!confirm("Are you sure you want to mark this session as pending/scheduled?")) return;
+
+  try {
+    const compResponse = await fetch(`/api/files/get/${FileCFID}/session/set_status/${sessionId}/2`, {
+      method: "PUT",
+    });
+
+    if (!compResponse.ok) throw new Error("Failed to mark session as pending/scheduled.");
+
+    let status_type = document.getElementById("session_status")
+    status_type.innerHTML = "scheduled"
+    status_type.className = "session-status status-scheduled"
+
+  } catch (err) {
+    console.error(err);
+    alert("Error setting session as scheduled.");
+  }
+});
+
+const cancelBtn = document.getElementById("set-cancelled-btn")
+cancelBtn.addEventListener("click", async () => {
+  if (!confirm("Are you sure you want to mark this session as cancelled?")) return;
+
+  try {
+    const compResponse = await fetch(`/api/files/get/${FileCFID}/session/set_status/${sessionId}/3`, {
+      method: "PUT",
+    });
+
+    if (!compResponse.ok) throw new Error("Failed to mark session as cancelled.");
+
+    let status_type = document.getElementById("session_status")
+    status_type.innerHTML = "cancelled"
+    status_type.className = "session-status status-cancelled"
+
+  } catch (err) {
+    console.error(err);
+    alert("Error cancelling session.");
+  }
+});

@@ -3,7 +3,7 @@
 const input = document.getElementById('name-input');
 const list = document.getElementById('people-list');
 
-// Create modal elements
+// Create and append modal once
 const modal = document.createElement('div');
 modal.className = 'delete-modal';
 modal.innerHTML = `
@@ -18,80 +18,54 @@ modal.innerHTML = `
 `;
 document.body.appendChild(modal);
 
-let personToDelete = null;
+const deletePersonData = { card: null, name: null, cfid: null };
 
 // Modal event listeners
-document.getElementById('cancel-delete').addEventListener('click', () => {
-  modal.style.display = 'none';
-  personToDelete = null;
-});
-
-document.getElementById('confirm-delete').addEventListener('click', async () => {
-  if (personToDelete) {
-    await deletePerson(personToDelete.name, personToDelete.cfid, personToDelete.card);
-  }
-  modal.style.display = 'none';
-  personToDelete = null;
-});
-
-// Close modal when clicking outside
 modal.addEventListener('click', (e) => {
-  if (e.target === modal) {
-    modal.style.display = 'none';
-    personToDelete = null;
-  }
+    if (e.target === modal) closeModal();
+});
+document.getElementById('cancel-delete').addEventListener('click', closeModal);
+document.getElementById('confirm-delete').addEventListener('click', async () => {
+    if (deletePersonData.card && deletePersonData.cfid && deletePersonData.name) {
+        await deletePerson(deletePersonData.name, deletePersonData.cfid, deletePersonData.card);
+        closeModal();
+    }
 });
 
-async function Get_Names() {
-    try {
-        const response = await fetch('/api/files/get_names');
-        if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
-        const data = await response.json();
-
-        if (Array.isArray(data.names) && Array.isArray(data.cfids)) {
-            if (data.names.length !== data.cfids.length) {
-                console.warn('Mismatched names and cfids lengths');
-                return;
-            }
-            list.innerHTML = ''; // Clear the list before adding
-            
-            // Add each person card
-            for (let i = 0; i < data.names.length; i++) {
-                await addNameToDOM(data.names[i], data.cfids[i]);
-            }
-            
-            // Show empty state if no people
-            if (data.names.length === 0) {
-                showEmptyState();
-            }
-        } else {
-            console.warn('Unexpected data format:', data);
-            showEmptyState();
-        }
-    } catch (error) {
-        console.error('Error fetching names:', error);
-        showEmptyState();
-    }
+function closeModal() {
+    modal.style.display = 'none';
+    deletePersonData.card = deletePersonData.name = deletePersonData.cfid = null;
 }
 
+// Helper for fetch with JSON
+async function fetchJSON(url, options) {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(res.statusText);
+    return res.json();
+}
+
+// Show empty state
 function showEmptyState() {
     list.innerHTML = `
         <div class="empty-state">
-            <div class="empty-icon">🔍</div>
+            <div class="empty-icon">\U0001f50d</div>
             <p>No people found. Add someone to get started.</p>
         </div>
     `;
 }
 
-async function addNameToDOM(name, cfid) {
-    const card = document.createElement('div');
-    card.className = 'person-card-container';
-    
-    // Create card content structure
-    card.innerHTML = `
-        <a class="person-card" href="/files/get/${cfid !== null ? cfid : name}">
+// Build a single person card
+function createPersonCard(name, cfid) {
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'person-card-container';
+    cardContainer.dataset.cfid = cfid;
+    cardContainer.dataset.name = name;
+
+    cardContainer.innerHTML = `
+        <a class="person-card" href="/files/get/${cfid ?? encodeURIComponent(name)}">
             <div class="person-card-content">
-                <img class="profile-image" src="/api/files/${cfid}/profile_icon" alt="${name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9IiNlOWVjZWYiLz4KPHBhdGggZD0iTTMwIDMzQzMzLjMxMzcgMzMgMzYgMzAuMzEzNyAzNiAyN0MzNiAyMy42ODYzIDMzLjMxMzcgMjEgMzAgMjFDMjYuNjg2MyAyMSAyNCAyMy42ODYzIDI0IDI3QzI0IDMwLjMxMzcgMjYuNjg2MyAzMyAzMCAzM1oiIGZpbGw9IiM2Yzc1N2QiLz4KPHBhdGggZD0iTTQyIDM5QzQyIDQxLjIwOTEgNDAuMjA5MSA0MyAzOCA0M0gyMkMxOS43OTA5IDQzIDE4IDQxLjIwOTEgMTggMzlDMTggMzQuNTgyNSAyNS4zNzIgMzIgMzAgMzJDMzQuNjI4IDMyIDQyIDM0LjU4MjUgNDIgMzlaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='">
+                <img class="profile-image" src="/api/files/${cfid}/profile_icon" alt="${name}"
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9IiNlOWVjZWYiLz4KPHBhdGggZD0iTTMwIDMzQzMzLjMxMzcgMzMgMzYgMzAuMzEzNyAzNiAyN0MzNiAyMy42ODYzIDMzLjMxMzcgMjEgMzAgMjFDMjYuNjg2MyAyMSAyNCAyMy42ODYzIDI0IDI3QzI0IDMwLjMxMzcgMjYuNjg2MyAzMyAzMCAzM1oiIGZpbGw9IiM2Yzc1N2QiLz4KPHBhdGggZD0iTTQyIDM5QzQyIDQxLjIwOTEgNDAuMjA5MSA0MyAzOCA0M0gyMkMxOS43OTA5IDQzIDE4IDQxLjIwOTEgMTggMzlDMTggMzQuNTgyNSAyNS4zNzIgMzIgMzAgMzJDMzQuNjI4IDMyIDQyIDM0LjU4MjUgNDIgMzlaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='">
                 <div class="person-info">
                     <div class="person-name">${name}</div>
                     <div class="person-occupation occupation-loading">Loading occupation...</div>
@@ -104,131 +78,122 @@ async function addNameToDOM(name, cfid) {
             </svg>
         </button>
     `;
-    
-    list.appendChild(card);
-    
-    // Add event listener to delete button
-    const deleteBtn = card.querySelector('.delete-btn');
-    deleteBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        showDeleteConfirmation(name, cfid, card);
-    });
-    
-    // Load occupation data
-    await loadOccupation(card, cfid);
+    return cardContainer;
 }
 
-function showDeleteConfirmation(name, cfid, card) {
-    personToDelete = { name, cfid, card };
-    document.getElementById('delete-person-name').textContent = name;
+// Load occupations asynchronously without blocking DOM
+async function loadOccupation(card, cfid) {
+    try {
+        const text = await fetch(`/api/files/${cfid}/occupation`).then(r => r.ok ? r.text() : 'Occupation unavailable');
+        const el = card.querySelector('.person-occupation');
+        el.textContent = text || 'No occupation set';
+        el.classList.remove('occupation-loading');
+    } catch {
+        const el = card.querySelector('.person-occupation');
+        el.textContent = 'Occupation unavailable';
+        el.classList.remove('occupation-loading');
+    }
+}
+
+// Show delete modal
+function showDeleteConfirmation(card) {
+    deletePersonData.card = card;
+    deletePersonData.cfid = card.dataset.cfid;
+    deletePersonData.name = card.dataset.name;
+    document.getElementById('delete-person-name').textContent = deletePersonData.name;
     modal.style.display = 'flex';
 }
 
+// Delete person API
 async function deletePerson(name, cfid, card) {
     try {
-        const response = await fetch('/api/files/delete', {
+        const data = await fetchJSON('/api/files/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         });
 
-        if (!response.ok) {
-            alert('Failed to delete name on server');
-            return;
-        }
-
-        const data = await response.json();
         if (data.success) {
-            // Remove from DOM
             card.remove();
-            
-            // Show empty state if no people left
-            if (list.children.length === 0) {
-                showEmptyState();
-            }
+            if (!list.querySelector('.person-card-container')) showEmptyState();
         } else {
             alert('Server failed to delete name');
         }
-    } catch (error) {
-        console.error('Error deleting name:', error);
+    } catch (err) {
+        console.error('Error deleting name:', err);
         alert('Error deleting name');
     }
 }
 
-async function loadOccupation(card, cfid) {
-    try {
-        const response = await fetch(`/api/files/${cfid}/occupation`);
-        if (response.ok) {
-            // Occupation endpoint now returns HTMLResponse with plain text
-            const occupationText = await response.text();
-            const occupationElement = card.querySelector('.person-occupation');
-            occupationElement.textContent = occupationText || 'No occupation set';
-            occupationElement.classList.remove('occupation-loading');
-        } else {
-            throw new Error(`Failed to load occupation: ${response.status}`);
-        }
-    } catch (error) {
-        console.error(`Error loading occupation for ${cfid}:`, error);
-        const occupationElement = card.querySelector('.person-occupation');
-        occupationElement.textContent = 'Occupation unavailable';
-        occupationElement.classList.remove('occupation-loading');
-    }
-}
-
+// Add person both DOM + API
 async function addName() {
     const name = input.value.trim();
     if (!name) return;
 
     try {
-        // Check for duplicate before creating
-        const dupeCheckResp = await fetch(`/files/dupecheck/${encodeURIComponent(name)}`);
-        if (dupeCheckResp.ok) {
-            const dupeData = await dupeCheckResp.json();
-            if (dupeData.exists) {
-                let proceed = confirm('A profile with this name already exists (cfids: ' + dupeData.cfids + ').\nProceed anyway?');
-                if (!proceed) {
-                    input.value = '';
-                    return;
-                }
-            }
-        } else if (dupeCheckResp.status !== 404) {
-            if (dupeCheckResp.status === 500) {
-                alert('Something went wrong while checking for duplicates.');
-                console.warn('Error checking for duplicates:', dupeCheckResp.statusText);
-                return;
-            }
+        // Check duplicates
+        const dupeData = await fetch(`/files/dupecheck/${encodeURIComponent(name)}`)
+            .then(r => r.ok ? r.json() : { exists: false });
+        if (dupeData.exists) {
+            const proceed = confirm(`A profile with this name already exists (cfids: ${dupeData.cfids}). Proceed anyway?`);
+            if (!proceed) { input.value = ''; return; }
         }
 
-        const response = await fetch('/api/files/create', {
+        // Create person
+        const data = await fetchJSON('/api/files/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         });
 
-        if (!response.ok) {
-            alert('Failed to create name on server');
-            return;
-        }
-
-        const data = await response.json();
         if (data.success && data.cfid) {
-            // Remove empty state if it exists
-            const emptyState = list.querySelector('.empty-state');
-            if (emptyState) {
-                emptyState.remove();
-            }
-            
-            await addNameToDOM(name, data.cfid);
+            if (list.querySelector('.empty-state')) list.querySelector('.empty-state').remove();
+            const card = createPersonCard(name, data.cfid);
+            list.appendChild(card);
+            loadOccupation(card, data.cfid);
             input.value = '';
         } else {
             alert('Server failed to create name');
         }
-    } catch (error) {
-        console.error('Error adding name:', error);
+    } catch (err) {
+        console.error('Error adding name:', err);
         alert('Error adding name');
     }
 }
 
-// Remove the old removeName function since we're using individual delete buttons
+// Fetch & render all names
+async function Get_Names() {
+    try {
+        const data = await fetchJSON('/api/files/get_names');
+        if (!Array.isArray(data.names) || !Array.isArray(data.cfids) || data.names.length !== data.cfids.length) {
+            showEmptyState();
+            return;
+        }
+
+        list.innerHTML = '';
+        if (data.names.length === 0) return showEmptyState();
+
+        const fragment = document.createDocumentFragment();
+        data.names.forEach((name, i) => {
+            const card = createPersonCard(name, data.cfids[i]);
+            fragment.appendChild(card);
+            loadOccupation(card, data.cfids[i]);
+        });
+        list.appendChild(fragment);
+    } catch (err) {
+        console.error('Error fetching names:', err);
+        showEmptyState();
+    }
+}
+
+// Event delegation for delete buttons
+list.addEventListener('click', (e) => {
+    if (e.target.closest('.delete-btn')) {
+        const card = e.target.closest('.person-card-container');
+        showDeleteConfirmation(card);
+    }
+});
+
+// Initialize
 document.addEventListener('DOMContentLoaded', Get_Names);
+document.querySelector('.btn-primary').addEventListener('click', addName);

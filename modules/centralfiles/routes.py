@@ -500,6 +500,60 @@ class centralfiles:
         def __init__(self, cfid):
             self.cfid = int(cfid)
 
+        def phone_no(self, value):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_pc_contact_details (cfid, phone_no) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET phone_no=excluded.phone_no
+                        """,
+                        (self.cfid, value)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid}'s phone number: {err}", exception=err)
+                    conn.rollback()
+                    return False
+
+        def email_address(self, value):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_pc_contact_details (cfid, email_addr) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET email_addr=excluded.email_addr
+                        """,
+                        (self.cfid, value)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid}'s email address: {err}", exception=err)
+                    conn.rollback()
+                    return False
+
+        def home_address(self, value):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_pc_contact_details (cfid, home_addr) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET home_addr=excluded.home_addr
+                        """,
+                        (self.cfid, value)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid}'s home address: {err}", exception=err)
+                    conn.rollback()
+                    return False
+
         def chem_assist(self, value):
             with sqlite3.connect(DB_PATH) as conn:
                 try:
@@ -1045,7 +1099,8 @@ class centralfiles:
                     (cfid,)
                 )
                 try:
-                    date_of_birth = cursor.fetchone()[0]
+                    data = cursor.fetchone()
+                    date_of_birth = data[0]
                 except (TypeError, IndexError):
                     date_of_birth = None
 
@@ -1075,6 +1130,17 @@ class centralfiles:
                         stored_age = calced_age
                     conn.commit()
 
+                cursor.execute(
+                    """
+                    SELECT phone_no, email_addr, home_addr FROM cf_pc_contact_details WHERE cfid = ?
+                    """,
+                    (cfid,),
+                )
+                try:
+                    data = cursor.fetchone()
+                    phone_no, email_addr, home_addr = data
+                except (TypeError, IndexError):
+                    phone_no, email_addr, home_addr = None, None, None
             except TypeError as err:
                 logbook.error("Something went wrong fetching the data for a profile!", exception=err)
                 raise err
@@ -1090,7 +1156,10 @@ class centralfiles:
             },
             "profile_notes": profile_notes,
             "is_dianetics_pc": is_dn_pc,
-            "person_date_of_birth": date_of_birth
+            "date_of_birth": date_of_birth,
+            "phone_no": phone_no,
+            "email_addr": email_addr,
+            "home_addr": home_addr
         }
 
         return profile
@@ -1280,7 +1349,10 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
             centralfiles.modify(data.cfid).age(int(data.value))
             success = True
         elif data.field == "dob":
-            datetime_obj = datetime.datetime.now().strptime(data.value.lower(), "%d/%m/%Y")  # Day month year
+            if data.value.count("-") == 0:
+                return JSONResponse(content={"success": False, "error": "Invalid time format"}, status_code=400)
+
+            datetime_obj = datetime.datetime.now().strptime(data.value.lower(), "%Y-%m-%d")
             centralfiles.modify(data.cfid).date_of_birth(
                 date_of_birth=datetime_obj
             )
@@ -1296,6 +1368,15 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
             success = True
         elif data.field == "name":
             centralfiles.modify(data.cfid).name(data.value)
+            success = True
+        elif data.field == "phone_no":
+            centralfiles.modify(data.cfid).phone_no(data.value)
+            success = True
+        elif data.field == "email_addr":
+            centralfiles.modify(data.cfid).email_address(data.value)
+            success = True
+        elif data.field == "home_addr":
+            centralfiles.modify(data.cfid).home_address(data.value)
             success = True
         else:
             if data.field not in dn_fields:
@@ -1471,7 +1552,7 @@ async def submit_action(request: Request, data: SubmitActionData, token: str = D
 @router.get("/api/files/get_actions/{cfid}", response_class=JSONResponse)
 @set_permission(["central_files", "dianetics"])
 async def submit_action(request: Request, cfid, token: str = Depends(require_prechecks)):
-    logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to get all actions for cfid {cfid}")
+    logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to get all auditing actions for cfid {cfid}")
     actions = centralfiles.dianetics.list_actions(cfid)
     return JSONResponse(content=actions, status_code=200)
 
@@ -1656,7 +1737,7 @@ class AuditingLog:
             try:
                 cur.execute(
                     """
-                    SELECT session_id, date, summary, duration FROM sessions_list WHERE preclear_cfid = ?
+                    SELECT session_id, date, summary, duration, status_code FROM sessions_list WHERE preclear_cfid = ?
                     """,
                     (cfid,)
                 )
@@ -1672,6 +1753,7 @@ class AuditingLog:
                 "date": row[1],
                 "summary": str(row[2]),
                 "duration": int(row[3]),
+                "status_code": int(row[4]),
             })
         return parsed_data
 
@@ -1681,10 +1763,10 @@ class AuditingLog:
             try:
                 cur.execute(
                     """
-                    INSERT INTO sessions_list (date, summary, duration, auditor, preclear_cfid)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO sessions_list (date, summary, duration, auditor, preclear_cfid, status_code)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """,
-                    (date, "Enter a summary!", 0, auditor, cfid)
+                    (date, "Enter a summary!", 0, auditor, cfid, 2)
                 )
                 conn.commit()
                 session_id = cur.lastrowid
@@ -1697,9 +1779,27 @@ class AuditingLog:
     class session:
         def __init__(self, session_id):
             self.session_id = int(session_id)
-            self.data = self.get_data()
+            self.data = self.get_session_details()
             if self.data is False:
                 raise LookupError("Could not find session")  # Session non-existent.
+
+        def set_status(self, value:int=1):
+            # Stat 1 = Comp'd, Stat 2 = Pending, Stat 3 = Cancelled
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                try:
+                    cur.execute(
+                        """
+                        UPDATE sessions_list
+                        SET status_code = ? WHERE session_id = ?
+                        """,
+                        (value, self.session_id)
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Couldn't mark session as code {value}!", exception=err)
+                    return False
+            return True
 
         def delete_action(self, action_id:int):
             with sqlite3.connect(DB_PATH) as conn:
@@ -1792,28 +1892,13 @@ class AuditingLog:
                 })
             return parsed_data
 
-        def get_data(self):
-            session_details = self.get_session_details()
-            if not session_details:
-                return False
-            return {
-                "session_id": self.session_id,
-                "actions": self.list_planned_actions(),
-                "preclear_cfid": session_details['preclear_cfid'],
-                "date": session_details['date'],
-                "duration": session_details['duration'],
-                "summary": session_details['summary'],
-                "auditor": session_details['auditor'],
-                "remarks": session_details['remarks']
-            }
-
         def get_session_details(self):
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()
                 try:
                     cur.execute(
                         """
-                        SELECT session_id, preclear_cfid, date, summary, duration, auditor, remarks FROM sessions_list WHERE session_id = ?
+                        SELECT session_id, preclear_cfid, date, summary, duration, auditor, remarks, status_code FROM sessions_list WHERE session_id = ?
                         """,
                         (self.session_id,)
                     )
@@ -1832,7 +1917,8 @@ class AuditingLog:
                 "summary": data[3],
                 "duration": data[4],
                 "auditor": data[5],
-                "remarks": data[6]
+                "remarks": data[6],
+                "status_code": data[7]
             }
 
         def list_planned_actions(self):
@@ -2008,13 +2094,22 @@ async def load_sessions_page(request: Request, cfid, session_id, token: str = De
         return HTMLResponse(content, status_code=404)
 
     profile = centralfiles.get_profile(cfid=int(cfid))
+    session_data = session.get_session_details()
+
+    status_map = {
+        1: "completed",
+        2: "scheduled",
+        3: "cancelled"
+    }
+    text_status_code = status_map[session_data['status_code']]
 
     return templates.TemplateResponse(
         request,
         "session.html",
         context={
-            "session": session.get_data(),
-            "profile": profile
+            "session": session_data,
+            "profile": profile,
+            "text_status_code": text_status_code
         }
     )
 
@@ -2120,9 +2215,36 @@ async def delete_session(request: Request, cfid, session_id, token: str = Depend
         status_code=200 if success else 500
     )
 
+@router.put("/api/files/get/{cfid}/session/set_status/{session_id}/{status_code}")
+@set_permission(["central_files", "dianetics"])
+async def session_set_status(request: Request, cfid, session_id:int, status_code:int, token: str = Depends(require_prechecks)):
+    valid_statuses = [
+        1,  # Completed
+        2,  # Pending
+        3  # Cancelled
+    ]
+    if status_code not in valid_statuses:
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": "Invalid status code, must be 1 (done), 2 (pending) or 3 (cancelled).",
+            },
+            status_code=400
+        )
+
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is attempting to mark session ID {session_id} as code {status_code} for {cfid}")
+    success = AuditingLog.session(session_id).set_status(status_code)
+    return JSONResponse(
+        content={
+            "success": success
+        },
+        status_code=200 if success else 500
+    )
+
 @router.get("/api/files/get/{cfid}/sessions/{session_id}/list_actions")
 @set_permission(["central_files", "dianetics"])
 async def list_session_actions(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) is listing planned actions for session {session_id} (CFID {cfid})")
     
     actions_list = AuditingLog.session(session_id).list_planned_actions()

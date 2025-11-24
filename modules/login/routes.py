@@ -17,7 +17,7 @@ class LoginData(BaseModel):
     username: str
     password: str
 
-@router.get("/login", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def show_login(request: Request):
     logbook.info(f"IP {request.client.host} accessed the login page.")
     return templates.TemplateResponse("index.html", {"request": request})

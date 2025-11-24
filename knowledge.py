@@ -61,9 +61,9 @@ async def unauthorized_handler(request: Request, exc):
 </head>
 <body>
 <h1>You are being redirected after an unauthorized connection.</h1>
-<p>All this means, most likely, is that your session has expired.</p>
+<p>All this means, most likely, is that your login has expired or its your first time viewing this app on this device</p>
 <script>
-    window.location.href = "/login";
+    window.location.href = "/";
 </script>
 </body>
     """

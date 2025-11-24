@@ -118,6 +118,28 @@
         <!-- Personal Details Card -->
         <div class="card">
           <div class="card-header">
+            <h3 class="card-title">Contact Details</h3>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="field">
+                <label>Phone Number</label>
+                <span id="field-phone_no" class="editable" onclick="makeEditable('field-phone_no', '{{ profile.cfid }}', 'number')">{{ profile.phone_no }}</span>
+              </div>
+              <div class="field">
+                <label>Email Address</label>
+                <span id="field-email_addr" class="editable" onclick="makeEditable('field-email_addr', '{{ profile.cfid }}')">{{ profile.email_addr }}</span>
+              </div>
+              <div class="field">
+                <label>Home Address</label>
+                <span id="field-home_addr" class="editable" onclick="makeEditable('field-home_addr', '{{ profile.cfid }}')">{{ profile.home_addr }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
             <h3 class="card-title">Personal Details</h3>
           </div>
           <div class="card-body">
@@ -133,7 +155,7 @@
               <div class="field">
                 <label>Date of Birth</label>
                 <span id="field-dob" class="editable" onclick="makeEditable('field-dob', '{{ profile.cfid }}', 'date')">
-                  {{ profile.person_date_of_birth }}
+                  {{ profile.date_of_birth }}
                 </span>
               </div>
               <div class="field">
