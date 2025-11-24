@@ -77,3 +77,5 @@ dynamics.forEach(dynamic => {
         loadMindClass()
     });
 });
+
+loadStrengths();
