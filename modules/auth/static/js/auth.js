@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Back button
   document.getElementById('backBtn').addEventListener('click', () => {
-    window.location.href = '/';
+    window.location.href = '/apps';
   });
 
   // Theme toggle

@@ -101,6 +101,35 @@ def require_prechecks(request: Request):
 
     return token
 
+def check_valid_login(token, url_target, client_ip, do_IP_ban:bool=False):
+    if not token or not authbook.verify_token(token):
+        return [False, "Invalid token."]
+
+    username = authbook.token_owner(token)
+
+    good_authority = AuthPerms.verify_user(username, url_target)
+    if not good_authority:
+        return [False, "Insufficient permissions for the requested URL path."]  
+
+    if authbook.check_arrested(username):
+        if client_ip not in arrested_ips:
+            if do_IP_ban:
+                arrested_ips.append(client_ip)
+            return [False, "User is arrested. IP saved to blacklist."]
+        else:
+            return [False, "User is arrested."]
+        
+    return [True, "User login and permissions valid."]
+
+def get_user(request: Request):
+    token = request.cookies.get("sessionKey") or request.headers.get("Authorization")
+
+    if not token or not authbook.verify_token(token):
+        return {"token": None, "username": None}
+
+    username = authbook.token_owner(token)
+    return {"token": token, "username": username}
+
 class autherrors:
     class InvalidPassword(Exception):
         def __init__(self, password):

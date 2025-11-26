@@ -1,6 +1,6 @@
 // ==================== Navigation ====================
 const backBtn = document.getElementById("back-btn");
-backBtn.addEventListener("click", () => window.location.href = "/");
+backBtn.addEventListener("click", () => window.location.href = "/apps");
 
 const bplist = document.getElementById("bplist");
 const toggleBtn = document.getElementById("toggle-bplist-btn");

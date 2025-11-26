@@ -24,7 +24,7 @@ Qualities:
 - it takes a fair amount to get them to stop their effort for their goals IF they've set their mind to it.
 
 # Class C
-You often find this class of mind in assisted living facilities.
+You often find this class of mind in assisted living facilities, though other times you find them as homeless on the streets.
 They cannot handle life by themselves.
 
 An example of this is a child who maybe even looks happy and aware.

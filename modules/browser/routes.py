@@ -10,6 +10,6 @@ templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "t
 logbook = LogBookHandler("browser routes")
 
 @router.get("/apps", response_class=HTMLResponse)
-async def show_reg(request: Request, token: str = Depends(require_prechecks)):
+async def show_apps(request: Request, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the app browser.")
     return templates.TemplateResponse(request, "index.html")
