@@ -277,6 +277,53 @@ body {
   background-color: #dc2626;
 }
 
+/* Detail Grid */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.05em;
+}
+
+.field span {
+  font-size: 0.95rem;
+}
+
+/* Editable fields */
+.editable {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.editable:hover {
+  background: var(--accent-light);
+}
+
+.inline-input {
+  font-size: 0.95rem;
+  padding: 4px 6px;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: var(--panel);
+  color: var(--text);
+}
+
 /* ================= RESPONSIVE DESIGN ================= */
 
 /* Large Tablets */

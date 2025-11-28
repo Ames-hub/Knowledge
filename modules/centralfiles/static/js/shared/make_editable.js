@@ -172,5 +172,10 @@ async function makeEditable(fieldId, cfid, fieldType = 'text') {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
+
+        console.log(fieldId)
+        if (fieldId === "field-is_dianetics") {
+            location.reload()  // Reload the page to show changes
+        }
     }
 }

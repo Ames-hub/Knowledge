@@ -94,6 +94,7 @@ fastapp.mount(
     name="register_static"
 )
 
+# Fake to the browser's that /favicon.ico exists
 @fastapp.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     image_path = "favicon.png"

@@ -324,7 +324,17 @@ class database:
             "schedule_data": {
                 "schedule_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "cfid": "INTEGER NOT NULL",
-                "date": "DATE NOT NULL",
+                "time_str": "TEXT NOT NULL",
+                "activity": "TEXT NOT NULL",
+                "auditor": "TEXT NOT NULL",
+                "room": "TEXT NOT NULL"
+            },
+            "scheduling_data_repeating": {  # The scheduling data for repeating schedules.
+                "schedule_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "cfid": "INTEGER NOT NULL",
+                "start_date": "DATE NOT NULL",  # The initial day to calculate from there on.
+                "repeat_integer": "INTEGER NOT NULL",  # How many days pass until it repeats.
+                "end_date": "DATE NOT NULL",
                 "time_str": "TEXT NOT NULL",
                 "activity": "TEXT NOT NULL",
                 "auditor": "TEXT NOT NULL",

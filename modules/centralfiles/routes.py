@@ -2328,34 +2328,118 @@ async def open_scheduling_page(request: Request, cfid, token: str = Depends(requ
         }
     )
 
-def get_scheduling_data(cfid, date):
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        try:
-            cur.execute(
-                """
-                SELECT cfid, date, time_str, activity, auditor, room FROM schedule_data
-                WHERE cfid = ?
-                AND date = ?
-                """,
-                (cfid, date)
-            )
-            schedule_data = cur.fetchall()
-        except sqlite3.OperationalError as err:
-            logbook.error(f"Error getting Schedule data from the DB for {cfid} on {date}", exception=err)
+DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-    schedule_parsed = {}
-    for schedule in schedule_data:
-        schedule_parsed[schedule['time']] = {
-            "time": schedule['time'],
-            "activity": schedule['activity'],
-            "auditor": schedule['auditor'],
-            "room": schedule['room']
+def get_week_dates(reference_date=None):
+    """
+    Given reference_date, return list of 7 date objects (Mon-Sun).
+    """
+    if reference_date is None:
+        ref = datetime.datetime.now().date()
+    elif isinstance(reference_date, datetime.datetime):
+        ref = reference_date.date()
+    elif isinstance(reference_date, str):
+        ref = datetime.datetime.strptime(reference_date, "%Y-%m-%d").date()
+    else:
+        ref = reference_date
+
+    # Monday = 0
+    offset = ref.weekday()  # 0-6
+    monday = ref - datetime.timedelta(days=offset)
+
+    return [monday + datetime.timedelta(days=i) for i in range(7)]
+
+
+def get_scheduling_data(cfid, reference_date=None):
+    """
+    Returns FULL WEEK (Monday\u2013Sunday) structured schedule data.
+    """
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        # --- Get full week range ---
+        week_dates = get_week_dates(reference_date)
+        date_strings = [d.isoformat() for d in week_dates]
+
+        # ------------------------------------------------------------------------------
+        # 1. Fetch normal (non-repeating) schedules
+        # ------------------------------------------------------------------------------
+        cur.execute(
+            f"""
+            SELECT cfid, date, time_str, activity, auditor, room
+            FROM schedule_data
+            WHERE cfid = ?
+            AND date IN ({','.join('?' * len(date_strings))})
+            """,
+            (cfid, *date_strings)
+        )
+        normal_schedules = cur.fetchall()
+
+        # ------------------------------------------------------------------------------
+        # 2. Fetch repeating schedules
+        # ------------------------------------------------------------------------------
+        cur.execute(
+            """
+            SELECT cfid, start_date, repeat_integer, end_date,
+                   time_str, activity, auditor, room
+            FROM scheduling_data_repeating
+            WHERE cfid = ?
+            """,
+            (cfid,)
+        )
+        repeating_schedules = cur.fetchall()
+
+    # ------------------------------------------------------------------------------
+    # Build frontend-ready result: every day present
+    # ------------------------------------------------------------------------------
+    output = { day: {} for day in DAY_NAMES }
+
+    # Map ISO-date to weekday name
+    date_to_day_name = { date_strings[i]: DAY_NAMES[i] for i in range(7) }
+
+    # Helper to insert
+    def insert(day_name, time_str, activity, auditor, room):
+        output[day_name][time_str] = {
+            "time": time_str,
+            "activity": activity,
+            "auditor": auditor,
+            "room": room
         }
 
-    return schedule_parsed
+    # ------------------------------------------------------------------------------
+    # Insert NORMAL schedules
+    # ------------------------------------------------------------------------------
+    for row in normal_schedules:
+        day_name = date_to_day_name[row["date"]]
+        insert(day_name, row["time_str"], row["activity"], row["auditor"], row["room"])
 
-@router.get("/api/files/get/{cfid}/scheduling/fetch/{date}")
+    # ------------------------------------------------------------------------------
+    # Insert REPEATING schedules (expand)
+    # ------------------------------------------------------------------------------
+    for row in repeating_schedules:
+        start = datetime.strptime(row["start_date"], "%Y-%m-%d").date()
+        end = datetime.strptime(row["end_date"], "%Y-%m-%d").date()
+        repeat_n = int(row["repeat_integer"])
+
+        time_str = row["time_str"]
+        activity = row["activity"]
+        auditor = row["auditor"]
+        room = row["room"]
+
+        for d, iso in zip(week_dates, date_strings):
+            if d < start or d > end:
+                continue
+
+            delta_days = (d - start).days
+            if delta_days % repeat_n == 0:
+                day_name = date_to_day_name[iso]
+                insert(day_name, time_str, activity, auditor, room)
+
+    return output
+
+@router.get("/api/files/get/{cfid}/scheduling/fetch/week/{date}")
 @set_permission(["central_files", "dianetics"])
 async def open_scheduling_page(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the set scheduling for {cfid}")
