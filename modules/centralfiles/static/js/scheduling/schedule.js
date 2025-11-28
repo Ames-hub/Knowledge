@@ -14,9 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadWeeklySchedule();
 
-    roomFilter.addEventListener('change', filterSchedule);
     dayFilter.addEventListener('change', () => {
         currentDayIndex = parseInt(dayFilter.value);
+        renderScheduleTable();
+    });
+
+    roomFilter.addEventListener('change', () => {
         renderScheduleTable();
     });
 
@@ -30,24 +33,20 @@ function getTodayIndex() {
     return jsIndex === 0 ? 6 : jsIndex - 1;
 }
 
-function getWeekStartDate() {
-    const now = new Date();
-    const jsIndex = now.getDay(); // 0 = Sun
-    const mondayOffset = jsIndex === 0 ? -6 : 1 - jsIndex;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() + mondayOffset);
-    return monday.toISOString().split("T")[0];
-}
-
 // ---- Load full week ----
 async function loadWeeklySchedule() {
     try {
         document.getElementById('schedule-body').innerHTML =
             `<tr><td colspan="4" style="text-align:center;padding:20px;">Loading weekly schedule...</td></tr>`;
 
-        const weekStart = getWeekStartDate();
+        let now = new Date();
+        // Formats it to yyyy/mm/dd
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        now = `${year}-${month}-${day}`;
 
-        const response = await fetch(`/api/files/get/${FileCFID}/scheduling/fetch/week/${weekStart}`);
+        const response = await fetch(`/api/files/get/${FileCFID}/scheduling/fetch/week/${now}`);
         if (!response.ok) throw new Error(`Failed to load week: ${response.statusText}`);
 
         weeklyScheduleData = await response.json();
@@ -63,39 +62,45 @@ async function loadWeeklySchedule() {
     }
 }
 
-// ---- Render table for current day ----
+// ---- Render table for current week ----
 function renderScheduleTable() {
     const scheduleBody = document.getElementById("schedule-body");
     const times = generateTimeSlots();
 
     const dayKey = Object.keys(weeklyScheduleData)[currentDayIndex];
-    const scheduleData = weeklyScheduleData[dayKey] || {};
+    const dayData = weeklyScheduleData[dayKey] || {};
+
+    const selectedRoom = document.getElementById("room-filter").value;
 
     let html = "";
 
     times.forEach(time => {
-        const item = scheduleData[time] || {
-            time,
-            activity: "",
-            auditor: "",
-            room: ""
-        };
+        // Find the entry matching the selected room
+        let storedItem = null;
 
-        const roomValue = item.room.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (selectedRoom === "all") {
+            // If all rooms, take the first available entry for the slot
+            storedItem = dayData[time] || { time, activity: "", auditor: "", room: "" };
+        } else {
+            // Filter by room
+            storedItem = Object.values(dayData).find(item => item.time === time && item.room === selectedRoom);
+            if (!storedItem) storedItem = { time, activity: "", auditor: "", room: selectedRoom };
+        }
+
+        const displayActivity = storedItem.activity || "\u2014";
+        const displayAuditor = storedItem.auditor || "\u2014";
 
         html += `
-        <tr data-time="${time}" data-room="${roomValue}">
+        <tr data-time="${time}" data-room="${storedItem.room}">
             <td class="time-col">${time}</td>
-            <td class="activity-col editable-field" data-field="activity">${item.activity || "\u2014"}</td>
-            <td class="auditor-col editable-field" data-field="auditor">${item.auditor || "\u2014"}</td>
-            <td class="room-col editable-field" data-field="room">${item.room || "\u2014"}</td>
+            <td class="activity-col editable-field" data-field="activity">${displayActivity}</td>
+            <td class="auditor-col editable-field" data-field="auditor">${displayAuditor}</td>
         </tr>`;
     });
 
     scheduleBody.innerHTML = html;
 
     initializeEditableFields();
-    filterSchedule();
 }
 
 // ---- Editable fields ----
@@ -125,7 +130,6 @@ function finishEditing(input, time, fieldType) {
     const newValue = input.value.trim();
     const originalValue = input.getAttribute("data-original");
     const cell = input.closest("td");
-
     const dayKey = Object.keys(weeklyScheduleData)[currentDayIndex];
 
     if (!weeklyScheduleData[dayKey][time])
@@ -137,27 +141,49 @@ function finishEditing(input, time, fieldType) {
         updateSaveButton();
 
         cell.textContent = newValue || "\u2014";
+
         if (fieldType === "room") {
             const row = cell.closest("tr");
-            row.setAttribute("data-room", newValue.toLowerCase().replace(/[^a-z0-9]/g, ""));
+            row.setAttribute("data-room", newValue);
         }
+
+        sendEditToAPI(dayKey, time, fieldType, newValue);
     } else {
         cell.textContent = originalValue || "\u2014";
     }
 }
 
-// ---- Filtering ----
-function filterSchedule() {
-    const selectedRoom = document.getElementById("room-filter").value;
-    const rows = document.querySelectorAll("#schedule-body tr");
+// ---- Send a single edit to the API ----
+async function sendEditToAPI(dayKey, time, field, value) {
+    try {
+        const payload = { time };
 
-    rows.forEach(row => {
-        if (selectedRoom === "all" || row.getAttribute("data-room") === selectedRoom) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
+        let room = document.getElementById("room-filter").value;
+        if (room === "all") {
+            showStatus("Invalid room. Select a room other than 'all'", "error");
+            return;
         }
-    });
+
+        payload[field] = value;
+        payload['cfid'] = FileCFID;
+        payload['room'] = room;
+
+        const response = await fetch(`/api/files/get/${FileCFID}/scheduling/save/cell/${dayKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error(`Failed to save edit: ${response.statusText}`);
+
+        showStatus("Edit saved!", "success");
+        setTimeout(hideStatus, 1000);
+        hasUnsavedChanges = false;
+        updateSaveButton();
+    } catch (err) {
+        console.error(err);
+        showStatus(`Error saving edit: ${err.message}`, "error");
+    }
 }
 
 // ---- Save only CURRENT day ----
@@ -226,3 +252,4 @@ function generateTimeSlots() {
     }
     return times;
 }
+

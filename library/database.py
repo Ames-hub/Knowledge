@@ -1,6 +1,6 @@
-from library.logbook import LogBookHandler
-import logging
 import sqlite3
+import logging
+from library.logbook import LogBookHandler
 
 DB_PATH = "data.sqlite"
 logbook = LogBookHandler('DB Manager')
@@ -9,14 +9,9 @@ class database:
     @staticmethod
     def modernize() -> None:
         """
-        This function is used to modernise the database to the current version. It will check if the tables exist, and
-        if they don't, it will create them. If the tables do exist, it will check if the columns are up to date, and if
-        they aren't, it will update them.
-
-        :return:
+        Modernises the database to the current version.
+        Ensures all tables exist and adds missing columns.
         """
-        # Function I pulled from another project.
-        # Using this dict, it formats the SQL query to create the tables if they don't exist
 
         table_dict = {
             'authbook': {
@@ -191,7 +186,7 @@ class database:
             },
             "items_on_invoices": {
                 # Items that ARE on an invoice, and which invoice.
-                "itemkey": "INTEGER PRIMARY KEY AUTOINCREMENT",  # Purely for being able to modify this table in beekeeper studio.
+                "itemkey": "INTEGER PRIMARY KEY AUTOINCREMENT",  # Purely for being able to modify this table in db viewers
                 "invoice_id": "INTEGER NOT NULL",
                 "item": "TEXT NOT NULL",
                 "value": "REAL NOT NULL",
@@ -321,63 +316,72 @@ class database:
                 # A 'chemical assist' is just vitamins and minerals and stuff needed to survive. It helps with Auditing.
                 "on_chem_assist": "BOOLEAN NOT NULL DEFAULT FALSE"
             },
-            "schedule_data": {
+            "dn_schedule_data": {
                 "schedule_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "cfid": "INTEGER NOT NULL",
+                "date": "DATE NOT NULL",
                 "time_str": "TEXT NOT NULL",
                 "activity": "TEXT NOT NULL",
                 "auditor": "TEXT NOT NULL",
-                "room": "TEXT NOT NULL"
+                "room": "TEXT NOT NULL",
             },
-            "scheduling_data_repeating": {  # The scheduling data for repeating schedules.
+            "dn_scheduling_data_repeating": {
                 "schedule_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "cfid": "INTEGER NOT NULL",
-                "start_date": "DATE NOT NULL",  # The initial day to calculate from there on.
-                "repeat_integer": "INTEGER NOT NULL",  # How many days pass until it repeats.
+                "start_date": "DATE NOT NULL",
+                "repeat_integer": "INTEGER NOT NULL",
                 "end_date": "DATE NOT NULL",
                 "time_str": "TEXT NOT NULL",
                 "activity": "TEXT NOT NULL",
                 "auditor": "TEXT NOT NULL",
-                "room": "TEXT NOT NULL"
-            },
+                "room": "TEXT NOT NULL",
+            }
         }
-        
+
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+
         for table_name, columns in table_dict.items():
-            with sqlite3.connect(DB_PATH) as conn:
-                cur = conn.cursor()
-                cur.execute(f'''
-                        SELECT name
-                        FROM sqlite_master
-                        WHERE type='table' AND name='{table_name}';
-                    ''')
-                table_exist = cur.fetchone() is not None
 
-            # If the table exists, check and update columns
-            if table_exist:
-                for column_name, column_properties in columns.items():
-                    # Check if the column exists
-                    cur.execute(f'''
-                            PRAGMA table_info({table_name});
-                        ''')
-                    columns_info = cur.fetchall()
-                    column_exist = any(column_info[1] == column_name for column_info in columns_info)
+            # Separate normal columns and constraints
+            constraints = columns.get("__table_constraints__", [])
+            real_columns = {k: v for k, v in columns.items() if k != "__table_constraints__"}
 
-                    # If the column doesn't exist, add it
-                    if not column_exist:
-                        try:
-                            cur.execute(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_properties};')
-                        except sqlite3.OperationalError as err:
-                            print(f"ERROR EDITING TABLE {table_name}, ADDING COLUMN {column_name} {column_properties}")
-                            raise err
+            # Check if table exists
+            cur.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name=?;
+            """, (table_name,))
+            exists = cur.fetchone() is not None
 
-            # If the table doesn't exist, create it with columns
-            else:
-                columns_str = ', '.join(
-                    [f'{column_name} {column_properties}' for column_name, column_properties in columns.items()]
-                )
+            if not exists:
+                # Build table creation SQL
+                col_defs = ", ".join([f"{col} {props}" for col, props in real_columns.items()])
+                constraint_defs = ", ".join(constraints)
+                full_def = col_defs + (", " + constraint_defs if constraint_defs else "")
+
                 try:
-                    cur.execute(f'CREATE TABLE {table_name} ({columns_str});')
-                except sqlite3.OperationalError as err:
-                    print(f"There was a problem creating the table {table_name} with columns {columns_str}")
-                    logging.error(f"An error occurred while creating the table {table_name} with columns {columns_str}", err)
-                    exit(1)
+                    cur.execute(f"CREATE TABLE {table_name} ({full_def});")
+                except Exception as e:
+                    logbook.error(f"Failed creating table {table_name}: {e}")
+                    raise
+
+                continue  # table done; no column adding needed
+
+            # Table exists — check for missing columns
+            cur.execute(f"PRAGMA table_info({table_name});")
+            existing_colnames = {row[1] for row in cur.fetchall()}
+
+            for colname, props in real_columns.items():
+                if colname not in existing_colnames:
+                    # Add missing column
+                    try:
+                        cur.execute(f"ALTER TABLE {table_name} ADD COLUMN {colname} {props};")
+                    except Exception as e:
+                        logbook.error(f"Failed altering table {table_name}: {e}")
+                        raise
+
+        conn.commit()
+        conn.close()
+
+        print("Database modernized successfully.")

@@ -2332,7 +2332,7 @@ DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
 
 def get_week_dates(reference_date=None):
     """
-    Given reference_date, return list of 7 date objects (Mon-Sun).
+    Given reference_date, return list of 7 date objects (Mon-Sun) for the week containing the reference_date.
     """
     if reference_date is None:
         ref = datetime.datetime.now().date()
@@ -2343,12 +2343,12 @@ def get_week_dates(reference_date=None):
     else:
         ref = reference_date
 
-    # Monday = 0
+    # Calculate Monday of the week containing the reference date
+    # weekday(): Monday=0, Sunday=6
     offset = ref.weekday()  # 0-6
     monday = ref - datetime.timedelta(days=offset)
 
     return [monday + datetime.timedelta(days=i) for i in range(7)]
-
 
 def get_scheduling_data(cfid, reference_date=None):
     """
@@ -2369,9 +2369,9 @@ def get_scheduling_data(cfid, reference_date=None):
         cur.execute(
             f"""
             SELECT cfid, date, time_str, activity, auditor, room
-            FROM schedule_data
+            FROM dn_schedule_data
             WHERE cfid = ?
-            AND date IN ({','.join('?' * len(date_strings))})
+            AND DATE(date) IN ({','.join('?' * len(date_strings))})
             """,
             (cfid, *date_strings)
         )
@@ -2384,7 +2384,7 @@ def get_scheduling_data(cfid, reference_date=None):
             """
             SELECT cfid, start_date, repeat_integer, end_date,
                    time_str, activity, auditor, room
-            FROM scheduling_data_repeating
+            FROM dn_scheduling_data_repeating
             WHERE cfid = ?
             """,
             (cfid,)
@@ -2412,15 +2412,16 @@ def get_scheduling_data(cfid, reference_date=None):
     # Insert NORMAL schedules
     # ------------------------------------------------------------------------------
     for row in normal_schedules:
-        day_name = date_to_day_name[row["date"]]
+        date = row["date"].split(" ")[0]  # Cuts out all after the date
+        day_name = date_to_day_name[date]
         insert(day_name, row["time_str"], row["activity"], row["auditor"], row["room"])
 
     # ------------------------------------------------------------------------------
     # Insert REPEATING schedules (expand)
     # ------------------------------------------------------------------------------
     for row in repeating_schedules:
-        start = datetime.strptime(row["start_date"], "%Y-%m-%d").date()
-        end = datetime.strptime(row["end_date"], "%Y-%m-%d").date()
+        start = datetime.datetime.strptime(row["start_date"], "%Y-%m-%d").date()
+        end = datetime.datetime.strptime(row["end_date"], "%Y-%m-%d").date()
         repeat_n = int(row["repeat_integer"])
 
         time_str = row["time_str"]
@@ -2445,7 +2446,7 @@ async def open_scheduling_page(request: Request, cfid:int, date:str, token: str 
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the set scheduling for {cfid}")
     
     try:
-        date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        dateobj = datetime.datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
         return JSONResponse(
             content={
@@ -2454,17 +2455,115 @@ async def open_scheduling_page(request: Request, cfid:int, date:str, token: str 
             status_code=400
         )
     
-    schedule_data = get_scheduling_data(cfid, date)
+    schedule_data = get_scheduling_data(cfid, dateobj)
     
     return JSONResponse(
         content=schedule_data,
         status_code=200
     )
 
+class ScheduleCellData(BaseModel):
+    cfid: int
+    time: str
+    activity: str = ""
+    auditor: str = ""
+    room: str
+
+@router.post("/api/files/get/{cfid}/scheduling/save/cell/{day}")
+@set_permission(["central_files", "dianetics"])
+async def set_scheduling_cell(
+    request: Request, 
+    cfid: int, 
+    day: str, 
+    postdata: ScheduleCellData, 
+    token: str = Depends(require_prechecks)
+):
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) editing schedule for CFID {cfid} on {day}")
+
+    if not postdata.activity and not postdata.auditor and not postdata.room:
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": "You need to fill out at least activity, room or auditor key. They're not both required, but one must be present."
+            }
+        )
+
+    weekdays = {
+        "monday": 0,
+        "tuesday": 1,
+        "wednesday": 2,
+        "thursday": 3,
+        "friday": 4,
+        "saturday": 5,
+        "sunday": 6
+    }
+    # Gets the start of the week we are currently in
+    datenow = datetime.datetime.now()
+    week_start = datenow - datetime.timedelta(days=datenow.weekday())
+    set_for_day_date = week_start + datetime.timedelta(weekdays[day.lower()])
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        # Ensure only one entry per time + room per day
+        cur.execute(
+            """
+            SELECT activity, auditor, room, schedule_id FROM dn_schedule_data
+            WHERE cfid = ? AND time_str = ? AND room = ?
+            """,
+            (cfid, postdata.time, postdata.room)
+        )
+        data = cur.fetchone()
+        existing = data is not None
+
+        activity = postdata.activity
+        auditor = postdata.auditor
+        room = postdata.room
+
+        if not activity:
+            try:
+                activity = data[0]
+            except TypeError:
+                activity = None
+        if not auditor:
+            try:
+                auditor = data[1]
+            except TypeError:
+                auditor = None
+        if not room:
+            return JSONResponse(
+                content={"success": False, "error": "You did not specify 'room' (str) key."}
+            )
+
+        if existing:
+            schedule_id = data[3]
+            # Update existing entry
+            cur.execute(
+                """
+                UPDATE dn_schedule_data
+                SET activity = ?, auditor = ?, date = ?
+                WHERE schedule_id = ?
+                """,
+                (activity, auditor, set_for_day_date, schedule_id)
+            )
+            logbook.info(f"Updated schedule cell {schedule_id}")
+        else:
+            # Insert new entry
+            cur.execute("""
+                INSERT INTO dn_schedule_data (cfid, time_str, activity, date, auditor, room)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (cfid, postdata.time, postdata.activity, set_for_day_date, postdata.auditor, postdata.room))
+            logbook.info("Inserted new schedule cell")
+
+        conn.commit()
+
+    return JSONResponse({"success": True, "message": "Schedule cell saved successfully."}, 200)
+
 @router.get("/files/get/{cfid}/flags")
 @set_permission("central_files")
 async def open_flags_page(request: Request, cfid, token: str = Depends(require_prechecks)):
-    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the scheduling page for {cfid}")
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the file flags for {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     return templates.TemplateResponse(
         request,
