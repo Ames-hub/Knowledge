@@ -8,10 +8,38 @@
 </head>
 <body>
 	<header>
-		<h1>Project Configuration</h1>
+		<h1>Knowledge App</h1>
 		<button id="theme-toggle" aria-label="Toggle theme">🌓</button>
 	</header>
 
+	<div class="actions">
+		<a href="/apps" class="back-btn">← Back</a>
+		<button class="save-btn" onclick="saveConfig()">💾 Save Settings</button>
+	</div>
+
+	<div>
+		<h2 class='settings-section-title' style="margin-bottom: 0;">Notice</h2>
+		<p style="text-align: center;margin: 0;">
+		Settings are divided into individual sections per module.<br>
+		Settings not for a specific module will not apply elsewhere unless stated so.<br>
+		Settings do not save unless "save settings" is clicked.
+		</p>
+	</div>
+
+	<h1 class='settings-section-title'>App Config</h1>
+	<main>
+		<section class="config-card">
+			<label for="registration-allowed">Allow new user registrations?</label>
+			<input type="checkbox" id="registration-allowed" data-config-name="registration_allowed">
+		</section>
+
+		<section class="config-card">
+			<label for="web_port">Knowledge app port number:</label>
+			<input type="number" id="web_port" data-config-name="web_port" min="0" max="65535">
+		</section>
+	</main>
+		
+	<h1 class='settings-section-title'>Battleplans Module</h1>
 	<main id="config-container">
 		<section class="config-card">
 			<label for="weekday-end">When should the app consider it a new week?</label>
@@ -27,29 +55,17 @@
 		</section>
 
 		<section class="config-card">
-			<label for="registration-allowed">Allow new user registrations?</label>
-			<input type="checkbox" id="registration-allowed" data-config-name="registration_allowed">
-		</section>
-
-		<section class="config-card">
 			<label for="new_week_stats_plan">Create a new production plan every week?</label>
 			<input type="checkbox" id="new_week_stats_plan" data-config-name="new_week_stats_plan">
 		</section>
+	</main>
 
-		<section class="config-card">
-			<label for="web_port">Knowledge app port number:</label>
-			<input type="number" id="web_port" data-config-name="web_port" min="0" max="65535">
-		</section>
-
+	<h1 class='settings-section-title'>Ledger/Finances Module</h1>
+	<main>
 		<section class="config-card">
 			<label for="lookback-length">Ledger lookback period (days):</label>
 			<input type="number" id="lookback-length" data-config-name="lookback_length" min="0">
 		</section>
-
-		<div class="actions">
-			<button class="save-btn" onclick="saveConfig()">💾 Save Settings</button>
-			<a href="/apps" class="back-btn">← Back</a>
-		</div>
 	</main>
 
 	<script src="/static/settings/js/settings.js"></script>

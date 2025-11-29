@@ -2444,7 +2444,7 @@ def get_scheduling_data(cfid, reference_date=None):
 @set_permission(["central_files", "dianetics"])
 async def open_scheduling_page(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the set scheduling for {cfid}")
-    
+
     try:
         dateobj = datetime.datetime.strptime(date, "%Y-%m-%d")
     except ValueError:
@@ -2497,6 +2497,7 @@ async def set_scheduling_cell(
         "saturday": 5,
         "sunday": 6
     }
+    
     # Gets the start of the week we are currently in
     datenow = datetime.datetime.now()
     week_start = datenow - datetime.timedelta(days=datenow.weekday())

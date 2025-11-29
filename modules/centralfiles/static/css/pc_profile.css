@@ -510,6 +510,10 @@ body {
   .profile-name {
     font-size: 1.25rem;
   }
+
+  .page-header {
+    width: 100%;
+  }
 }
 
 /* Extra Small Mobile */

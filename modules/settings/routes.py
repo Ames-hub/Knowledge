@@ -13,10 +13,10 @@ router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 logbook = LogBookHandler("register")
 
-@router.get("/settings", response_class=HTMLResponse)
+@router.get("/knowledge", response_class=HTMLResponse)
 @set_permission(permission="app_settings")
 async def show_index(request: Request, token=Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is accessing the settings page.")
+    logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is accessing the app settings page.")
     return templates.TemplateResponse(request, "settings.html")
 
 class SettingsData(BaseModel):

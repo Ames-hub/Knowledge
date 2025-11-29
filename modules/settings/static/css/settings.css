@@ -246,3 +246,8 @@ input[type="checkbox"]:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
+
+.settings-section-title {
+	text-align: center;
+	text-decoration: underline;
+}
