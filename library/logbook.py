@@ -19,6 +19,14 @@ class LogBookHandler:
         self.logfile = LogBookHandler._parse_log_file(logfile)
         self.lockfile = self.logfile + ".lock"
 
+    # On class deletion, destroy the lock file
+    def __del__(self):
+        if os.path.exists(self.lockfile):
+            try:
+                os.remove(self.lockfile)
+            except OSError:
+                pass
+
     @staticmethod
     def _parse_log_file(log_file):
         logfile = log_file.replace(
