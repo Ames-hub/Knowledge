@@ -11,10 +11,11 @@ valid_settings = {
     "new_week_stats_plan": True,
     "weekday_end": 1,
     "registration_allowed": True,
-    "lookback_length": 7,
+    "lookback_length": 365,
     "use_ssl": False,
     "web_port": 8020,
-    "route_perms": {}
+    "route_perms": {},
+    "debts_overpay_payback_tracking": True  # If someone overpays a debt, log a new debt for the original debtee to pay back the overpaid amount.
 }
 
 def make_settings_file():
@@ -62,6 +63,9 @@ class get:
     @staticmethod
     def web_port():
         return int(get.get("web_port", 8020))
+    
+    def debts_overpay_payback_tracking():
+        return bool(get.get("debts_overpay_payback_tracking", True))
 
 def save(key, value):
     settings = {}

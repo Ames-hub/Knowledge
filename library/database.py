@@ -136,7 +136,7 @@ class database:
                 "debt_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "debtor": "TEXT NOT NULL",
                 "debtee": "TEXT NOT NULL",
-                "amount": "REAL NOT NULL",
+                "amount": "INTEGER NOT NULL",
                 "start_date": "DATE NOT NULL DEFAULT CURRENT_DATE",
                 "end_date": "DATE",
                 "cfid": "INT",  # The Central Files ID for whom this debt is for.
@@ -145,7 +145,7 @@ class database:
                 "record_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "debt_id": "INTEGER NOT NULL",
                 "start_date": "DATE NOT NULL DEFAULT CURRENT_DATE",
-                "amount": "REAL NOT NULL",
+                "amount": "INTEGER NOT NULL",
                 "description": "TEXT NOT NULL",
                 "paid_off": "BOOLEAN NOT NULL DEFAULT FALSE",
             },

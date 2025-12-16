@@ -23,10 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok && result.token) {
-                // set cookies instead of localStorage
-                const expireTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toUTCString(); // 2 hours
-                document.cookie = `sessionKey=${result.token}; expires=${expireTime}; path=/; SameSite=Strict`;
-                document.cookie = `username=${username}; expires=${expireTime}; path=/; SameSite=Strict`;
+                // set cookies that never expire. Server will invalidate cookies as needed.
+                document.cookie = `sessionKey=${result.token}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/; SameSite=Strict`;
+                document.cookie = `username=${username}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/; SameSite=Strict`;
 
                 // redirect or update UI
                 window.location.href = '/apps';

@@ -78,28 +78,40 @@
 </div>
 
 <main class="main">
-    <section class="debts-section">
-        <h2>Unpaid Debts</h2>
-        <table class="debts-table">
-            <thead>
-              <tr>
-                <th>Debtor</th>
-                <th>Debtee</th>
-                <th>Amount ($)</th>
-                <th>Start Date</th>
-                <th>Due Date</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-              <tbody id="debtsTableBody">
-                <!-- Rows will be injected here -->
-              </tbody>
-        </table>
-        <div class="debts-actions">
-            <button class="btn track-debt" id="openTrackModal">Track New Debt</button>
-            <button class="btn pay-debt" id="openPayModal">Subtract from Debt</button>
+    <div class="debts-layout">
+        <!-- Left Panel - Debts Table -->
+        <div class="left-panel">
+            <section class="debts-section">
+                <h2>Unpaid Debts</h2>
+                <table class="debts-table">
+                    <thead>
+                      <tr>
+                        <th>Debtor</th>
+                        <th>Debtee</th>
+                        <th>Amount ($)</th>
+                        <th>Start Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="debtsTableBody">
+                      <!-- Rows will be injected here -->
+                    </tbody>
+                </table>
+                <div class="debts-actions">
+                    <button class="btn track-debt" id="openTrackModal">Track New Debt</button>
+                    <button class="btn pay-debt" id="openPayModal">Subtract from Debt</button>
+                </div>
+            </section>
         </div>
-    </section>
+
+        <!-- Right Panel - Placeholder for future content -->
+        <div class="right-panel">
+            <h3>Panel WIP</h3>
+            <div class="panel-content">
+            </div>
+        </div>
+    </div>
 </main>
 <script src="/static/ledger/js/debts/modal.js"></script>
 </body>

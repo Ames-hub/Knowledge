@@ -57,6 +57,7 @@
 		<section class="config-card">
 			<label for="new_week_stats_plan">Create a new production plan every week?</label>
 			<input type="checkbox" id="new_week_stats_plan" data-config-name="new_week_stats_plan">
+			<span class="config-hint">This setting makes the 'weekly target' number reset at the end of each week when enabled.</span>
 		</section>
 	</main>
 
@@ -65,6 +66,13 @@
 		<section class="config-card">
 			<label for="lookback-length">Ledger lookback period (days):</label>
 			<input type="number" id="lookback-length" data-config-name="lookback_length" min="0">
+			<span class="config-hint">This will limit how many days backwards the ledger will go, so transactions, say, 365 days old, will not show up.</span>
+		</section>
+		<section class="config-card">
+			<label for="debts_overpay_payback_tracking">Track overpayment for debts as new debts?</label>
+			<input type="checkbox" id="debts_overpay_payback_tracking" data-config-name="debts_overpay_payback_tracking">
+			<span class="config-hint">If enabled, when a debt is overpaid, the excess amount will be recorded as a new debt entry for accurate tracking.
+			So if Joe owes Sam $20 and Joe pays $25 to Sam, It will be recorded that Sam owes Joe $5 Now.</span>
 		</section>
 	</main>
 

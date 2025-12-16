@@ -83,6 +83,27 @@ async function loadDebts() {
                 <td>${debt.end_date ?? "N/A"}</td>
                 <td><span class="status ${getStatus(debt)}">${getStatus(debt)}</span></td>
             `;
+
+            // add double-click event
+            tr.addEventListener("dblclick", async () => {
+                // prefill the inputs in pay modal
+                debtorInput.value = debt.debtor;
+                debteeInput.value = debt.debtee;
+
+                // open modal
+                payModal.style.display = "block";
+
+                // update the dropdown to load records for this debtor/debtee
+                await updateDebtRecords();
+
+                // optionally, you can try to pre-select this specific record if it exists
+                setTimeout(() => {
+                    const options = Array.from(recordSelect.options);
+                    const match = options.find(o => o.textContent.includes(debt.amount));
+                    if (match) match.selected = true;
+                }, 50);
+            });
+
             tbody.appendChild(tr);
         });
     } catch (err) {

@@ -1,4 +1,5 @@
 from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
+from decimal import Decimal, ROUND_HALF_UP, getcontext
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
@@ -8,6 +9,7 @@ from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
+from library import settings
 import sqlite3
 import datetime
 import magic
@@ -17,6 +19,8 @@ import io
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
 logbook = LogBookHandler("Finance Records")
+
+getcontext().prec = 28  # precision for financial calculations
 
 @router.get("/ledger", response_class=HTMLResponse)
 @set_permission(permission="ledger")
@@ -401,6 +405,16 @@ async def debts_page(request: Request, token: str = Depends(require_prechecks)):
 
 class debts:
     @staticmethod
+    def _to_cents(amount: float) -> int:
+        """Convert dollars to cents, rounding to nearest cent."""
+        return int(Decimal(str(amount)).quantize(Decimal('0.01')) * 100)
+
+    @staticmethod
+    def _to_dollars(cents: int) -> float:
+        """Convert cents back to dollars for display."""
+        return float(Decimal(cents) / 100)
+
+    @staticmethod
     def check_exists(debt_id):
         with sqlite3.connect(DB_PATH) as conn:
             try:
@@ -446,7 +460,7 @@ class debts:
                         "debt_id": item[0],
                         "debtor": item[1],
                         "debtee": item[2],
-                        "amount": item[3],
+                        "amount": debts._to_dollars(item[3]),  # Convert cents to dollars for display
                         "start_date": start_datetime_obj.strftime("%Y-%m-%d"),
                         "end_date": end_value,
                     }
@@ -490,7 +504,7 @@ class debts:
             "debt_id": data[0],
             "debtor": data[1],
             "debtee": data[2],
-            "amount": data[3],
+            "amount": debts._to_dollars(data[3]),  # Convert cents to dollars for display
             "start_date": start_datetime_obj.strftime("%Y-%m-%d"),
             "end_date": end_value,
         }
@@ -512,38 +526,45 @@ class debts:
                 return False
 
     @staticmethod
-    def create_new_debt(debtor:str, debtee:str, amount:float, description:str, start_date=None, end_date=None, cfid=None):
+    def create_new_debt(debtor: str, debtee: str, amount: float, description: str, start_date=None, end_date=None, cfid=None):
         if not start_date:
             start_date = datetime.datetime.now()
-        with sqlite3.connect(DB_PATH) as conn:
-            try:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    INSERT INTO debts (debtor, debtee, amount, start_date, end_date, cfid)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                    (debtor, debtee, amount, start_date, end_date, cfid)
-                )
-                debt_id = cursor.lastrowid
-                cursor.execute(
-                    """
-                    INSERT INTO debt_records (debt_id, amount, description, start_date, paid_off)
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (debt_id, amount, description, start_date, False)
-                )
-                conn.commit()
-                return debt_id
-            except sqlite3.OperationalError as err:
-                logbook.error(f"Database error occurred while creating a new debt: {err}", exception=err)
-                conn.rollback()
-                return False
+        
+        amount_cents = debts._to_cents(amount)  # Convert to cents
+
+        conn = sqlite3.connect(DB_PATH)
+
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO debts (debtor, debtee, amount, start_date, end_date, cfid)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (debtor, debtee, amount_cents, start_date, end_date, cfid)
+            )
+            debt_id = cursor.lastrowid
+            cursor.execute(
+                """
+                INSERT INTO debt_records (debt_id, amount, description, start_date, paid_off)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (debt_id, amount_cents, description, start_date, False)
+            )
+            conn.commit()
+            return debt_id
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error occurred while creating a new debt: {err}", exception=err)
+            conn.rollback()
+            return False
 
     @staticmethod
-    def record_new_debt_instance(debt_id, amount, description, start_date=None):
+    def record_new_debt_instance(debt_id, amount: float, description, start_date=None):
         if not start_date:
             start_date = datetime.datetime.now()
+        
+        amount_cents = debts._to_cents(amount)  # Convert to cents
+        
         with sqlite3.connect(DB_PATH) as conn:
             try:
                 cursor = conn.cursor()
@@ -551,14 +572,14 @@ class debts:
                     """
                     UPDATE debts SET amount = amount + ? WHERE debt_id = ?
                     """,
-                    (int(amount), int(debt_id))
+                    (amount_cents, int(debt_id))
                 )
                 cursor.execute(
                     """
                     INSERT INTO debt_records (debt_id, amount, description, start_date, paid_off)
                     VALUES (?, ?, ?, ?, ?)
                     """,
-                    (debt_id, amount, description, start_date, False)
+                    (debt_id, amount_cents, description, start_date, False)
                 )
                 conn.commit()
                 return cursor.lastrowid  # The record_id
@@ -580,46 +601,118 @@ class debts:
                 if data is None:
                     return None
                 else:
-                    return data[0]
+                    return data[0]  # Returns cents
             except sqlite3.OperationalError as err:
                 logbook.error(f"Database error occurred while fetching a debt record amount: {err}", exception=err)
                 conn.rollback()
                 return False
 
     @staticmethod
-    def subtract_debt(debt_id, amount, record_id):
-        with sqlite3.connect(DB_PATH) as conn:
-            try:
-                cur = conn.cursor()
+    def subtract_debt(debt_id, paid_amount: float, record_id) -> str:
+        """
+        Handles debt payment.
+        Returns:
+        "SUB" - partially paid
+        "PO" - fully paid
+        "MULTI-PO" - overpaid, remainder applied to other debts
+        """
+        debt_amount_cents = debts.get_record_amount(record_id)  # Already in cents
+        if debt_amount_cents is None:
+            return False
+            
+        paid_cents = debts._to_cents(paid_amount)  # Convert to cents
+        
+        debt_amount = Decimal(debt_amount_cents)
+        paid_amount_decimal = Decimal(paid_cents)
+
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            cur = conn.cursor()
+
+            # Update the main debt table (using float for SQLite compatibility)
+            cur.execute(
+                "UPDATE debts SET amount = amount - ? WHERE debt_id = ?",
+                (int(paid_cents), int(debt_id))
+            )
+
+            remaining = debt_amount - paid_amount_decimal
+
+            if remaining > 0:  # partial payment
                 cur.execute(
-                    """
-                    UPDATE debts SET amount = amount - ? WHERE debt_id = ?
-                    """,
-                    (int(amount), int(debt_id))
+                    "UPDATE debt_records SET amount = amount - ? WHERE record_id = ?",
+                    (int(paid_cents), int(record_id))
                 )
-                if debts.get_record_amount(record_id) - amount > 0:  # Not enough to pay it off 100%
-                    cur.execute(
-                        """
-                        UPDATE debt_records SET amount = amount - ? WHERE record_id = ?
-                        """,
-                        (int(amount), int(debt_id))
-                    )
-                else:  # Paid off
-                    cur.execute(
-                        """
-                        UPDATE debt_records SET amount = 0 AND paid_off = True WHERE record_id = ?
-                        """,
-                        (int(record_id),)
-                    )
                 conn.commit()
-                return True
-            except sqlite3.OperationalError as err:
-                logbook.error(
-                    message=f"Database error occurred while subtracting {amount} in debt for record {record_id} and debt {debt_id}: {err}",
-                    exception=err
+                return "SUB"
+
+            elif remaining < 0:  # overpayment
+                # pay off current record
+                cur.execute(
+                    "UPDATE debt_records SET amount = 0, paid_off = 1 WHERE record_id = ?",
+                    (int(record_id),)
                 )
-                conn.rollback()
-                return False
+                conn.commit()
+
+                overpaid_amount_cents = -remaining  # positive Decimal
+
+                all_debts = debts.get_debt_records(debt_id)
+
+                for item in all_debts:
+                    if overpaid_amount_cents <= 0:
+                        debts.delete_debt(debt_id)
+                        break
+                    record_amount_cents = Decimal(all_debts[item]["amount"] * 100)  # Convert dollars back to cents
+                    if record_amount_cents <= overpaid_amount_cents:
+                        cur.execute(
+                            "UPDATE debt_records SET amount = 0, paid_off = 1 WHERE record_id = ?",
+                            (int(item),)
+                        )
+                        overpaid_amount_cents -= record_amount_cents
+                    else:
+                        cur.execute(
+                            "UPDATE debt_records SET amount = amount - ? WHERE record_id = ?",
+                            (int(overpaid_amount_cents), int(item))
+                        )
+                        overpaid_amount_cents = Decimal(0)
+
+                if overpaid_amount_cents > 0:
+                    logbook.info(f"Overpaid amount of {overpaid_amount_cents} cents could not be allocated.")
+                    if settings.get.debts_overpay_payback_tracking():
+                        debt_data = debts.get_debt_data(debt_id)
+                        debtee = debt_data["debtee"]
+                        debtor = debt_data["debtor"]  # reverse roles
+                        conn.commit()
+                        conn.close()
+                        # Convert cents back to dollars for new debt creation
+                        overpaid_dollars = float(overpaid_amount_cents / 100)
+                        debts.create_new_debt(
+                            debtor=debtee,
+                            debtee=debtor,
+                            amount=overpaid_dollars,
+                            description=f"A debt with record ID {record_id} overpaid by {overpaid_dollars}."
+                        )
+                        debts.delete_debt(debt_id)
+                        return "MULTI-PO"
+
+                conn.commit()
+                return "MULTI-PO"
+
+            else:  # exact payment
+                cur.execute(
+                    "UPDATE debt_records SET amount = 0, paid_off = 1 WHERE record_id = ?",
+                    (int(record_id),)
+                )
+                conn.commit()
+                debts.delete_debt(debt_id)
+                return "PO"
+
+        except sqlite3.OperationalError as err:
+            logbook.error(
+                f"Database error subtracting {paid_amount} from debt {debt_id}, record {record_id}: {err}",
+                exception=err
+            )
+            conn.rollback()
+            return False
 
     @staticmethod
     def find_debt_id(debtor, debtee):
@@ -652,11 +745,18 @@ class debts:
                 data = cursor.fetchall()
                 parsed_data = {}
                 for item in data:
-                    datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S.%f")
+                    try:
+                        datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S")
+                    except ValueError:  # Doesn't always have the time component (for some reason. Doesn't matter too much.)
+                        try:
+                            datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d")
+                        except ValueError:
+                            # Enjoying the slight spaghetti? It sometimes does include microseconds, sometimes it doesn't. I'll fix this one day :3
+                            datetime_obj = datetime.datetime.strptime(item[4], "%Y-%m-%d %H:%M:%S.%f")
                     parsed_data[item[0]] = {
                         "record_id": item[0],
                         "debt_id": item[1],
-                        "amount": item[2],
+                        "amount": debts._to_dollars(item[2]),  # Convert cents to dollars for display
                         "description": item[3],
                         "start_date": datetime_obj.strftime("%Y-%m-%d"),
                         "paid_off": bool(item[5]),
@@ -732,20 +832,28 @@ async def subtract_debt(request: Request, data: subtract_debt_data, token = Depe
         if debt is None:
             return JSONResponse(content={"success": False, "error": "Debt with the given ID does not exist."}, status_code=404)
 
-        amount = debt['amount']
-        if float(amount) - float(data.amount) <= 0:
-            success = debts.delete_debt(debt_id)
-            if success:
-                return JSONResponse(content={"success": success, "action": "Deleted debt as it was 0."}, status_code=200)
-            else:
-                return JSONResponse(content={"success": False, "error": "Could not delete debt. Server-side error."}, status_code=500)
+        success = debts.subtract_debt(
+            debt_id=debt_id,
+            paid_amount=data.amount,
+            record_id=data.record_id
+        )
+        action = None
+        if success == "SUB":
+            success = True
+            action = "The debt has been partially paid off"
+        elif success == "PO":
+            success = True
+            action = "The debt has been fully paid off"
+        elif success == "MULTI-PO":
+            success = True
+            action = "The debt has been fully paid off, and the overpaid amount has been used to pay off multiple other debts for the same."
         else:
-            success = debts.subtract_debt(
-                debt_id=debt_id,
-                amount=data.amount,
-                record_id=data.record_id
-            )
-            return JSONResponse(content={"success": success}, status_code=200 if success else 500)
+            success = False
+        
+        content = {"success": success}
+        if action:
+            content["action"] = action
+        return JSONResponse(content, status_code=200 if success else 500)
     except sqlite3.OperationalError:
         return JSONResponse(content={"success": False, "error": "Database error occurred while subtracting the debt."}, status_code=500)
 

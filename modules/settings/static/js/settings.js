@@ -1,7 +1,7 @@
 function saveConfig() {
 	const config = {};
-	// Grab all input/select elements inside config cards
-	const inputs = document.querySelectorAll('#config-container .config-card input, #config-container .config-card select');
+	// Grab all input/select elements inside ALL config cards (not just #config-container)
+	const inputs = document.querySelectorAll('.config-card input, .config-card select');
 
 	inputs.forEach(input => {
 		const name = input.dataset.configName;
@@ -41,7 +41,8 @@ function loadConfig() {
 			return res.json();
 		})
 		.then(data => {
-			const inputs = document.querySelectorAll('#config-container .config-card input, #config-container .config-card select');
+			// Select ALL config-card inputs (not just those in #config-container)
+			const inputs = document.querySelectorAll('.config-card input, .config-card select');
 			
 			let weekdays_map = {
 				1: "monday",
@@ -53,8 +54,10 @@ function loadConfig() {
 				7: "sunday"
 			};
 			
-			// Convert from number to text
-			data.weekday_end = weekdays_map[data.weekday_end]
+			// Convert from number to text if needed
+			if (data.weekday_end !== undefined && typeof data.weekday_end === 'number') {
+				data.weekday_end = weekdays_map[data.weekday_end];
+			}
 
 			const config = data;
 

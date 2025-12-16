@@ -386,6 +386,16 @@ button:disabled {
 }
 
 /* ====== Mobile-First Responsiveness ====== */
+@media (max-width: 1250px) {
+  /* Main container */
+  .main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
 
   /* Main container */
