@@ -220,10 +220,14 @@ class AuthPerms:
                 else:
                     logbook.warning(f"User {username} has an invalid permission: {row[0]}")
 
+            from library.auth import authbook
             if fill_not_set:
                 for valid_perm in valid_perms:
                     if valid_perm not in user_perms:
-                        user_perms[valid_perm] = False
+                        if authbook.is_user_admin(username):
+                            user_perms[valid_perm] = True
+                        else:
+                            user_perms[valid_perm] = False
 
             return user_perms
 
