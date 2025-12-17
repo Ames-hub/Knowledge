@@ -48,6 +48,15 @@ async def arrest_user(request: Request, username: str, token: str = Depends(requ
             status_code=400
         )
 
+    if authbook.is_user_admin(username):
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": "You cannot arrest an admin user."
+            },
+            status_code=400
+        )
+
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cursor = conn.cursor()
@@ -64,7 +73,7 @@ async def arrest_user(request: Request, username: str, token: str = Depends(requ
 
 @router.get("/api/auth/release/{username}")
 @set_permission(permission="auth_page")
-async def arrest_user(request: Request, username: str, token: str = Depends(require_prechecks)):
+async def release_user(request: Request, username: str, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is releasing user {username}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -92,6 +101,14 @@ async def set_user_permission(request: Request, username: str, permission: str, 
             content={
                 "success": False,
                 "error": "You cannot modify your own permissions."
+            },
+            status_code=400
+        )
+    if authbook.is_user_admin(username):
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": "You cannot modify permissions for an admin user."
             },
             status_code=400
         )

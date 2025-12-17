@@ -16,7 +16,9 @@ valid_perms = [
     'central_files',
     'bulletin_archives',
     'app_logs',
-    'ledger',
+    # Ledger app
+    'ledger', 'invoicing', 'debt_tracking', 'financial_planning',
+    # Other things
     'dianetics',
     'battleplans',
     'ftp_server',
@@ -116,7 +118,8 @@ excepted_routes = [
     '/',
     '/register',
     '/login',
-    '/favicon.ico'
+    '/favicon.ico',
+    '/apps'
 ]
 
 
@@ -142,16 +145,19 @@ class AuthPerms:
         # Normalize user perms
         user_perms = AuthPerms.perms_for_user(username)
         if isinstance(needed_perms, str):
-            return user_perms[needed_perms]
+            allowed = user_perms[needed_perms]
         else:
             allowed = True
-            if not all(user_perms.get(perm, False) for perm in needed_perms):
-                allowed = False
-            if allowed:
-                return True
+            for perm in needed_perms:
+                needed_perm = user_perms.get(perm, False)
+                if not needed_perm:
+                    perms_str = ", ".join([p for p, a in user_perms.items() if a])
+                    if not perms_str:
+                        perms_str = "no permissions"
+                    logbook.info(f"{username} did not have required permission(s) \"{needed_perms}\". Has {perms_str}")
+                    allowed = False
 
-        logbook.info(f"{username} did not have required permission(s) \"{needed_perms}\". Has {", ".join([p for p, a in user_perms.items() if a])}")
-        return False
+        return allowed
     
     @staticmethod
     def check_allowed(username:str, permissions:str|list):
@@ -217,7 +223,7 @@ class AuthPerms:
             if fill_not_set:
                 for valid_perm in valid_perms:
                     if valid_perm not in user_perms:
-                        user_perms[valid_perm] = True
+                        user_perms[valid_perm] = False
 
             return user_perms
 
@@ -226,7 +232,7 @@ class AuthPerms:
         with sqlite3.connect(DB_PATH) as conn:
             try:
                 cur = conn.cursor()
-                cur.execute("SELECT username, arrested FROM authbook")
+                cur.execute("SELECT username, arrested, admin FROM authbook")
                 users_data = cur.fetchall()
             except sqlite3.OperationalError as err:
                 logbook.error(f"Database error occurred while listing users: {err}", exception=err)
@@ -234,7 +240,7 @@ class AuthPerms:
                 return False
 
             users = {}
-            for username, arrested in users_data:
+            for username, arrested, is_admin in users_data:
                 try:
                     cur.execute("SELECT permission, allowed FROM auth_permissions WHERE username = ?", (username,))
                     perms_data = cur.fetchall()
@@ -252,7 +258,8 @@ class AuthPerms:
 
                 users[username] = {
                     "permissions": perms,
-                    "arrested": bool(arrested)
+                    "arrested": bool(arrested),
+                    "is_admin": bool(is_admin)
                 }
 
         return users

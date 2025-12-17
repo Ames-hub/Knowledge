@@ -166,6 +166,21 @@ class authbook:
         return users
 
     @staticmethod
+    def is_user_admin(username: str):
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT admin FROM authbook WHERE username = ?", (username,))
+                row = cur.fetchone()
+                if not row:
+                    raise autherrors.UserNotFound(username)
+                is_admin = bool(row[0])
+                return is_admin
+        except sqlite3.Error as err:
+            logbook.error("Database error in is_user_admin", exception=err)
+            return False
+
+    @staticmethod
     def token_owner(token: str):
         try:
             with sqlite3.connect(DB_PATH) as conn:
@@ -188,20 +203,24 @@ class authbook:
 
     @staticmethod
     def create_account(username: str, password: str):
+        # Checks if there are 0 other accounts. First account is admin always
+        user_count = len(authbook.list_users())
+        is_admin = user_count == 0
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()
                 hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
                 cur.execute(
-                    "INSERT INTO authbook (username, password) VALUES (?, ?)",
-                    (username, hashed),
+                    "INSERT INTO authbook (username, password, admin) VALUES (?, ?, ?)",
+                    (username, hashed, is_admin),
                 )
                 conn.commit()
                 logbook.info(f"Account under the name {username} created")
 
-                okay = AuthPerms.give_all_perms(username)
-                if not okay:
-                    logbook.warning("Error giving user all perms! User may be unfairly restricted.")
+                if is_admin:
+                    okay = AuthPerms.give_all_perms(username)
+                    if not okay:
+                        logbook.warning("Error giving user all perms! User may be unfairly restricted.")
 
                 return True
         except sqlite3.IntegrityError:

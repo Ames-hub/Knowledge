@@ -22,7 +22,7 @@ function createUserCard(username, info, validPerms) {
   header.classList.add('user-header');
   header.innerHTML = `
     <div>
-      <h2>${username}</h2>
+      <h2>${username}${info.is_admin ? ' (Admin)' : ''}</h2>
       <span class="status ${info.arrested ? 'arrested' : 'free'}">
         ${info.arrested ? 'Arrested' : 'Free'}
       </span>

@@ -18,6 +18,7 @@ class database:
                 'username': 'TEXT PRIMARY KEY',
                 'password': 'TEXT NOT NULL',
                 'arrested': 'BOOLEAN NOT NULL DEFAULT FALSE',
+                'admin': 'BOOLEAN NOT NULL DEFAULT FALSE',
             },
             'auth_permissions': {
                 'entry_id': 'INTEGER PRIMARY KEY AUTOINCREMENT',  # Just for easy editing in DB viewers

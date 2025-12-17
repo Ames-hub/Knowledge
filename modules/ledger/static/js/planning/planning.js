@@ -179,7 +179,11 @@ async function loadExpenses() {
         });
 
         updateTotals();
-        renderPieChart(expenses);
+        let pie_expenses
+        if (expenses.length === 0) {
+            pie_expenses = [{"name":"No expenses to load!","amount":1,"frequency":1,"annual_cost":0.01}]
+        }
+        renderPieChart(pie_expenses);
     } catch (err) {
         console.error('Error loading expenses:', err);
     }

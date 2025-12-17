@@ -11,7 +11,7 @@ import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
-logbook = LogBookHandler("register")
+logbook = LogBookHandler("settings")
 
 @router.get("/knowledge", response_class=HTMLResponse)
 @set_permission(permission="app_settings")

@@ -23,8 +23,11 @@ body {
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  max-width: 1000px;
   margin: 0 auto;
+}
+
+#submitbtn {
+  max-width: 100%;
 }
 
 #splashtext {
@@ -147,7 +150,19 @@ h2 {
 }
 
 .financial-target {
-  text-align: center;
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  margin-top: 2rem;
+}
+
+.target-box,
+.total-expenses-box,
+#canvas-container {
+  flex: 1 1 300px;
+  max-width: 400px;
 }
 
 .target-box,
@@ -158,6 +173,7 @@ h2 {
   display: inline-block;
   width: 90%;
   max-width: 400px;
+  max-height: fit-content;
 }
 
 .target-box {
@@ -191,6 +207,21 @@ h2 {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
+}
+
+@media (max-width: 1300px) {
+  .financial-target {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .target-box,
+  .total-expenses-box,
+  #canvas-container {
+    width: 100%;
+    max-width: 400px;
+    flex: 1 1 100px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -238,3 +269,4 @@ h2 {
     font-size: 0.85rem;
   }
 }
+
