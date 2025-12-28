@@ -35,11 +35,11 @@ To show you how built-out each system is, we'll show you a number from 1 to 5!<b
   - If you are a Dianetics Auditor, keep track of their case!
   - Track all agreements with this person
 
-- Notes & Docs Textbook (3/5)
+- Notes & Docs Textbook (4/5)
   - Write and format pages in a nice editor.
   - Tag, search, update, delete, and export to PDF.
 
-- Log Viewer (2/5)
+- Log Viewer (5/5)
   - Browse the app’s daily logs and search them if needed.
   Good for accountability when someone does something weird.
 
@@ -144,11 +144,8 @@ but I do not claim them to be fully secure.
     - Check the terminal and log files for errors.
     - Make sure the server is running, and you’re visiting the correct port (default 8020).
 - “I forgot my password”
-    - There’s no built‑in reset. Upload data.sqlite to a website meant
-    for reading .sqlite files and check the table "authbook" and
-    look for your password. I recommend 
-    https://inloop.github.io/sqlite-viewer/
-    - If you can't do that, make a new account or ask for help.
+    - There’s no built‑in reset password. 
+    - If you forgot your password, you'd better either remember it or make a new account, since passwords are Salted meaning you can't read it in the database without having the password.
 ---
 
 ## FAQ
@@ -157,9 +154,9 @@ but I do not claim them to be fully secure.
     - Yes, but only with people you trust.
 - Does it work offline?
     - Yes, it runs locally in your browser while the server is running.
-    But it won't work if you want to connect from another device.
+    But it won't work if you want to connect from another device while offline.
 - Can I use it on mobile?
-    - Yes, it's less good, but it works and still looks good.
+    - Yes, it's less good, but it works well and still looks good.
 
 ---
 
