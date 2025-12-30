@@ -32,9 +32,9 @@ if __name__ == "__main__":
         print("Configuration Complete. Further configuration available in 'settings' module of web app.\n")
         print("Thank you for choosing us, And welcome to Knowledge!\n")
 
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from library.auth import generate_self_signed_cert
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
 from library.logbook import LogBookHandler
 from library.database import database
 from fastapi import Request, FastAPI
@@ -43,13 +43,19 @@ import uvicorn
 import asyncio
 import secrets
 
-fastapp = FastAPI()
+fastapi = FastAPI()
 database.modernize()
 logbook = LogBookHandler('root')
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
+@fastapi.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt(request: Request):
+    with open('robots.txt') as f:
+        data = f.read()
+    return data
+
 # noinspection PyUnusedLocal
-@fastapp.exception_handler(401)
+@fastapi.exception_handler(401)
 async def unauthorized_handler(request: Request, exc):
     logbook.info(f"IP {request.client.host} Attempted to connect but was Unauthorized")
     # A Basic web page with the entire purpose of redirecting the user away from the page.
@@ -69,7 +75,7 @@ async def unauthorized_handler(request: Request, exc):
     """
     return HTMLResponse(content, status_code=401)
 
-@fastapp.exception_handler(403)
+@fastapi.exception_handler(403)
 async def forbidden_handler(request: Request, exc):
     logbook.info(f"IP {request.client.host} Attempted to connect but was Forbidden")
     if str(exc) == "403: Account is arrested":
@@ -81,21 +87,21 @@ async def forbidden_handler(request: Request, exc):
     return HTMLResponse(content, status_code=403)
 
 # noinspection PyUnusedLocal
-@fastapp.exception_handler(404)
+@fastapi.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     logbook.info(f"IP {request.client.host} Attempted to connect but was Not Found")
     with open("modules/404.html", "r") as file:
         content = file.read()
     return HTMLResponse(content, status_code=404)
 
-fastapp.mount(
+fastapi.mount(
     "/static/login",
     StaticFiles(directory=os.path.join("modules", "login", "static")),
     name="register_static"
 )
 
 # Fake to the browser's that /favicon.ico exists
-@fastapp.get("/favicon.ico", include_in_schema=False)
+@fastapi.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     image_path = "favicon.png"
     if os.path.exists(image_path):
@@ -120,7 +126,7 @@ for module_name in os.listdir(modules_dir):
         static_path = os.path.join(module_path, "static")
         if os.path.isdir(static_path):
             mount_path = f"/static/{module_name}"
-            fastapp.mount(mount_path, StaticFiles(directory=static_path), name=f"{module_name}_static")
+            fastapi.mount(mount_path, StaticFiles(directory=static_path), name=f"{module_name}_static")
             logbook.info(f"[✓] Mounted static files for {module_name} at {mount_path}")
         else:
             raise FileNotFoundError(f"No static directory found in {module_name}")
@@ -131,7 +137,7 @@ for module_name in os.listdir(modules_dir):
             try:
                 module = importlib.import_module(f"modules.{module_name}.routes")
                 if hasattr(module, "router"):
-                    fastapp.include_router(module.router)
+                    fastapi.include_router(module.router)
                     logbook.info(f"[✓] Loaded router from {module_name} module")
                 else:
                     logbook.info(f"[!] No 'router' found in {module_name}.routes")
@@ -190,7 +196,7 @@ if __name__ == "__main__":
         ssl_keyfile_dir = None
 
     config = uvicorn.Config(
-        "knowledge:fastapp",
+        "knowledge:fastapi",
         host="0.0.0.0",
         port=WEB_PORT,
         loop="asyncio",
