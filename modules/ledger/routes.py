@@ -1178,3 +1178,178 @@ async def get_invoice_items(request: Request, token: str = Depends(require_prech
             logbook.error(f"Database error occurred while fetching invoice items: {err}", exception=err)
             conn.rollback()
             return JSONResponse(content={}, status_code=500)
+
+class db_odometer:
+    def get_last_odometer(user: str):
+        """Returns the last odometer reading for the user, or None if none exist."""
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT odometer FROM odometer_entries WHERE user = ? ORDER BY entry_id DESC LIMIT 1",
+                (user,)
+            )
+            row = cur.fetchone()
+        return row[0] if row else None
+
+    def delete_entry(entry_id:int, user: str):
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                DELETE FROM odometer_entries WHERE entry_id = ? AND user = ?
+                """,
+                (entry_id, user,)
+            )
+            conn.commit()
+        return True
+    
+    def add_entry(date: str, odometer: int, purpose: str, fuel_used_ml: int, for_user: str):
+        last_odo = db_odometer.get_last_odometer(for_user)
+        distance_travelled = odometer - last_odo if last_odo is not None else 0
+
+        if distance_travelled < 0:
+            raise ValueError("Odometer cannot go backwards")
+
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO odometer_entries
+                (datetime, odometer, distance_travelled, purpose, fuel_used_ml, user)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (date, odometer, distance_travelled, purpose, fuel_used_ml, for_user)
+            )
+            conn.commit()
+        return True
+    
+    def read_fuel_ml_usage(user:str):
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT ml_per_km FROM odometer_fuel_usages WHERE for_user = ?
+                """,
+                (user,)
+            )
+            data = cur.fetchone()
+        if data:
+            return data[0]
+        else:
+            return 0
+    
+    def write_fuel_ml_usage(user:str, amount_ml:int):
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO odometer_fuel_usages (ml_per_km, for_user)
+                VALUES (?, ?)
+                ON CONFLICT(for_user) DO UPDATE SET ml_per_km = excluded.ml_per_km
+                """,
+                (amount_ml, user)
+            )
+            conn.commit()
+        return True
+
+    def read_odo_entries(user):
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT entry_id, datetime, odometer, distance_travelled, purpose, fuel_used_ml FROM odometer_entries
+                WHERE user = ?
+                """,
+                (user,)
+            )
+            unparsed_data = cur.fetchall()
+        parsed_data = {}
+        for item in unparsed_data:
+            parsed_data[str(item[0])] = {
+                "entry_id": item[0],
+                "datetime": item[1],
+                "odometer": item[2],
+                "distance_travelled": item[3],
+                "purpose": item[4],
+                "fuel_used_ml": item[5]
+            }
+        return parsed_data
+
+@router.get("/ledger/odometering", response_class=HTMLResponse)
+@set_permission(permission=["ledger", "odometering"])
+async def show_odo_page(request: Request, token: str = Depends(require_prechecks)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the digitized odometer page.")
+    return templates.TemplateResponse(
+        request,
+        "odometering.html",
+    )
+
+@router.get("/api/ledger/odometer/entries/read")
+@set_permission(permission=["ledger", "odometering"])
+async def read_odo_entries(request: Request, token: str = Depends(require_prechecks)):
+    user = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {user}) Is reading all odometer entries.")
+    entries = db_odometer.read_odo_entries(user)
+    return JSONResponse(
+        content=entries,
+        status_code=200
+    )
+
+class odo_entry_data(BaseModel):
+    date: str
+    odometer: int
+    purpose: str
+
+@router.post("/api/ledger/odometer/entries/write")
+@set_permission(permission=["ledger", "odometering"])
+async def write_odo_entry(request: Request, data: odo_entry_data, token: str = Depends(require_prechecks)):
+    user = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {user}) Is adding a new odometer entry.")
+    success = db_odometer.add_entry(
+        date=data.date,
+        odometer=data.odometer,
+        purpose=data.purpose,
+        fuel_used_ml=db_odometer.read_fuel_ml_usage(user),
+        for_user=user
+    )
+    if success:
+        return HTMLResponse("ok", status_code=200)
+    else:
+        return HTMLResponse("not ok", status_code=400)
+
+@router.delete("/api/ledger/odometer/entries/delete/{entry_id}")
+@set_permission(permission=["ledger", "odometering"])
+async def delete_odo_entries(request: Request, entry_id, token: str = Depends(require_prechecks)):
+    user = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {user}) Is deleting an odometer entry.")
+    success = db_odometer.delete_entry(entry_id, user)
+    if success:
+        return HTMLResponse("ok", status_code=200)
+    else:
+        return HTMLResponse("not ok", status_code=400)
+
+@router.get("/api/ledger/odometer/fuel-rate")
+@set_permission(permission=["ledger", "odometering"])
+async def get_fuel_rate(request: Request, token: str = Depends(require_prechecks)):
+    user = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {user}) Is getting their fuel rate.")
+    return JSONResponse(
+        content={
+            "usage_ml": db_odometer.read_fuel_ml_usage(user)
+        },
+        status_code=200
+    )
+
+class put_fuel_rate(BaseModel):
+    usage_ml: int
+
+@router.put("/api/ledger/odometer/fuel-rate")
+@set_permission(permission=["ledger", "odometering"])
+async def set_fuel_rate(request: Request, data: put_fuel_rate, token: str = Depends(require_prechecks)):
+    user = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {user}) Is setting their recorded fuel rate.")
+    success = db_odometer.write_fuel_ml_usage(user=user, amount_ml=data.usage_ml)
+    if success:
+        return HTMLResponse("ok", status_code=200)
+    else:
+        return HTMLResponse("not ok", status_code=400)

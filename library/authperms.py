@@ -24,7 +24,8 @@ valid_perms = [
     'ftp_server',
     'auth_page',
     'app_settings',
-    'signal_server'
+    'signal_server',
+    'odometering'
 ]
 
 

@@ -203,6 +203,9 @@ body {
   font-size: 0.8rem;
   cursor: pointer;
   float: right;
+  padding: 4px;
+  border: none;
+  border-radius: 5px;
 }
 
 /* --- Account header --- */

@@ -336,7 +336,20 @@ class database:
                 "activity": "TEXT NOT NULL",
                 "auditor": "TEXT NOT NULL",
                 "room": "TEXT NOT NULL",
-            }
+            },
+            "odometer_entries": {
+                "entry_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "datetime": "DATE NOT NULL DEFAULT CURRENT_DATE",
+                "odometer": "INT NOT NULL",
+                "distance_travelled": "INT NOT NULL DEFAULT 0",
+                "purpose": "TEXT NOT NULL",
+                "fuel_used_ml": "INT NOT NULL",
+                "user": "TEXT NOT NULL",  # The account that made the entry.
+            },
+            "odometer_fuel_usages": {
+                "for_user": "TEXT NOT NULL PRIMARY KEY",
+                "ml_per_km": "INT NOT NULL",
+            },
         }
 
         conn = sqlite3.connect(DB_PATH)

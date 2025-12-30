@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ledger – Odometer Tracking</title>
+
+  <link rel="stylesheet" href="/static/ledger/css/ledger/sidebar.css">
+  <link rel="stylesheet" href="/static/ledger/css/odometering/odometering.css">
+</head>
+
+<body>
+  <aside class="sidebar">
+    <h1>Ledger</h1>
+    <nav class="nav">
+      <a href="/apps"> ⬅️ Go Back</a>
+      <a href="/ledger">Accounts</a>
+      <a href="/ledger/planning">Financial Planning</a>
+      <a href="/ledger/debts">Debts</a>
+      <a href="/ledger/invoices">Invoices</a>
+      <a href="/ledger/odometering" class="active">Odometer Tracking</a>
+    </nav>
+  </aside>
+
+  <main>
+    <h2>Odometer Tracking</h2>
+
+    <div class="card">
+      <h3>Settings</h3>
+      <label>
+        Fuel consumption (ml per km)
+        <input type="number" id="fuelRate" step="0.01" placeholder="e.g. 80">
+      </label>
+      <p class="muted">This is used for all future entries</p>
+    </div>
+
+    <div class="card">
+      <h3>New Odometer Entry</h3>
+
+      <label>
+        Current odometer (km)
+        <input type="number" id="odometer" step="0.1">
+      </label>
+
+      <label>
+        Purpose of travel
+        <input type="text" id="purpose" placeholder="Work, personal, delivery…">
+      </label>
+
+      <button id="addEntryBtn">Add Entry</button>
+    </div>
+
+    <div class="card">
+      <h3>Log</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Odometer (km)</th>
+            <th>Distance (km)</th>
+            <th>Purpose</th>
+            <th>Fuel Used</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="logTable"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/static/ledger/js/odometering/odometer.js"></script>
+</body>
+</html>
