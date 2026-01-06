@@ -137,6 +137,26 @@ table td:last-child {
   width: 1%;
 }
 
+/* Make tables scrollable on smaller screens */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+}
+
+.table-wrapper table {
+  width: 100%;
+  min-width: 600px; /* ensures table doesn’t squish too much */
+  table-layout: auto; /* default, allows columns to size naturally */
+}
+
+/* Optional: remove horizontal scroll on big screens */
+@media (min-width: 769px) {
+  .table-wrapper {
+    overflow-x: visible;
+  }
+}
+
 /* Light theme overrides */
 html[data-theme="light"] {
   --bg-main: #f4f6f8;

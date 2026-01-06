@@ -35,7 +35,7 @@ To show you how built-out each system is, we'll show you a number from 1 to 5!<b
   - If you are a Dianetics Auditor, keep track of their case!
   - Track all agreements with this person
 
-- Notes & Docs Textbook (4/5)
+- Notes & Docs Textbook (5/5)
   - Write and format pages in a nice editor.
   - Tag, search, update, delete, and export to PDF.
 
@@ -43,7 +43,7 @@ To show you how built-out each system is, we'll show you a number from 1 to 5!<b
   - Browse the app’s daily logs and search them if needed.
   Good for accountability when someone does something weird.
 
-- Ledger (4/5)
+- Ledger (5/5)
   - Create accounts and record income/expenses.
   - Plan recurring costs and see totals and charts. (Also called a "Financial Plan No. 1")
   - Track debts and payments between people.

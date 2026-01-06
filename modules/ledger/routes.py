@@ -10,8 +10,8 @@ from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
 from library import settings
-import sqlite3
 import datetime
+import sqlite3
 import magic
 import os
 import io
@@ -1212,14 +1212,18 @@ class db_odometer:
 
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
-            cur.execute(
-                """
-                INSERT INTO odometer_entries
-                (datetime, odometer, distance_travelled, purpose, fuel_used_ml, user)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (date, odometer, distance_travelled, purpose, fuel_used_ml, for_user)
-            )
+            try:
+                cur.execute(
+                    """
+                    INSERT INTO odometer_entries
+                    (datetime, odometer, distance_travelled, purpose, fuel_used_ml, user)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (date, odometer, distance_travelled, purpose, fuel_used_ml, for_user)
+                )
+            except OverflowError:  # Int too large for SQLite
+                logbook.error(f"Overflow error adding odometer entry for user {for_user} with odometer {odometer}.")
+                return False
             conn.commit()
         return True
     

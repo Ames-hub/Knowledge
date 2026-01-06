@@ -7,88 +7,61 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/browser/css/index.css">
-  <meta name="description" content="Module-based app browser — clean, keyboard-friendly, responsive." />
+  <meta name="description" content="Module-based app browser — top navbar, responsive." />
 </head>
 <body>
   <header class="topbar" role="banner">
     <div class="topbar-inner">
-      <h1 id="brand" class="brand" aria-label="App Browser">App Browser</h1>
+      <h1 id="brand" class="brand" aria-label="App Browser">Knowledge</h1>
 
-      <div class="controls">
-        <label class="search" for="app-search">
-          <svg class="icon-search" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <input id="app-search" type="search" placeholder="Search apps..." aria-label="Search apps" />
-        </label>
+      <nav class="app-nav" aria-label="Application Navigation">
+        <a href="/files" class="nav-icon" aria-label="Open Central Files" tabindex="0">
+          <img src="/static/browser/icons/files.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/battleplans" class="nav-icon" aria-label="Open Battle Plans" tabindex="0">
+          <img src="/static/browser/icons/battleplans.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/textbook" class="nav-icon" aria-label="Open Textbook" tabindex="0">
+          <img src="/static/browser/icons/archives.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/ledger" class="nav-icon" aria-label="Open Ledger" tabindex="0">
+          <img src="/static/browser/icons/ledger.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/ftp" class="nav-icon" aria-label="Open FTP Server" tabindex="0">
+          <img src="/static/browser/icons/ftp.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/signals" class="nav-icon muted" aria-label="Open Signal Server" tabindex="0">
+          <img src="/static/browser/icons/signals.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/logs" class="nav-icon" aria-label="Open App Logs" tabindex="0">
+          <img src="/static/browser/icons/logs.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/auth" class="nav-icon muted" aria-label="Open Auth and Permissions" tabindex="0">
+          <img src="/static/browser/icons/auth.svg" alt="" aria-hidden="true" />
+        </a>
+        <a href="/knowledge" class="nav-icon muted" aria-label="Open Knowledge" tabindex="0">
+          <img src="/static/browser/icons/knowledge.svg" alt="" aria-hidden="true" />
+        </a>
+      </nav>
 
-        <button id="theme-toggle" class="icon-btn" aria-label="Toggle color theme" title="Toggle color theme">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/></svg>
-        </button>
-      </div>
+      <button id="theme-toggle" class="icon-btn" aria-label="Toggle color theme" title="Toggle color theme">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>
+        </svg>
+      </button>
     </div>
   </header>
 
   <main id="main" class="main" role="main">
-    <p id="splash_text" class="splash" aria-live="polite">Starting up, Welcome to "Knowledge"</p>
+    <!-- Placeholder for your content -->
+    <div id="workspace" class="workspace">
+      <p>This section is a work in progress lol. Expect to see interesting things here</p>
+    </div>
 
-    <!-- Desktop grid & mobile horizontal scroll container -->
-    <section id="scrollsection" class="scrollsection" aria-label="Applications">
-      <div id="container" class="container" role="list">
-        <!-- App cards: keep hrefs and icon paths as you have them -->
-        <a href="/files"     class="app-card" role="listitem" aria-label="Open Central Files" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/files.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">Central Files</div>
-        </a>
-
-        <a href="/battleplans" class="app-card" role="listitem" aria-label="Open Battle Plans" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/battleplans.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">Battle Plans</div>
-        </a>
-
-        <a href="/textbook"  class="app-card" role="listitem" aria-label="Open Bulletin" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/archives.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">Textbook</div>
-        </a>
-
-        <a href="/ledger"    class="app-card" role="listitem" aria-label="Open Ledger" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/ledger.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">Ledger</div>
-        </a>
-
-        <a href="/ftp"       class="app-card" role="listitem" aria-label="Open FTP Server" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/ftp.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">FTP Server</div>
-        </a>
-
-        <a href="/signals"  class="app-card muted" role="listitem" aria-label="Open Settings" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/signals.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">Signal Server</div>
-        </a>
-
-        <a href="/logs"      class="app-card" role="listitem" aria-label="Open App Logs" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/logs.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">App Logs</div>
-        </a>
-
-        <a href="/auth"  class="app-card muted" role="listitem" aria-label="Open Auth and Permissions Page" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/auth.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">Auth Permissions</div>
-        </a>
-
-        <a href="/knowledge"  class="app-card muted" role="listitem" aria-label="Open Settings" tabindex="0">
-          <div class="app-icon"><img src="/static/browser/icons/knowledge.svg" alt="" aria-hidden="true" /></div>
-          <div class="app-name">Knowledge</div>
-        </a>
-      </div>
-    </section>
     <div id="logout-container">
       <button id="logout-btn">End Session</button>
     </div>
   </main>
-
-  <footer class="footer" role="contentinfo">
-    <small>Tip: use <kbd>Tab</kbd> to focus cards, <kbd>Enter</kbd> to open. Mobile: swipe horizontally.</small>
-  </footer>
-
   <script src="/static/browser/js/browser.js"></script>
 </body>
 </html>
