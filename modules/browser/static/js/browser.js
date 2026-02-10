@@ -5,7 +5,6 @@
     if (parts.length === 2) return parts.pop().split(';')[0];
 }
 
-
 (function () {
     const cards = Array.from(document.querySelectorAll('.app-card'));
     const themeToggle = document.getElementById('theme-toggle');

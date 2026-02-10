@@ -6,8 +6,10 @@ from library.auth import require_prechecks
 from library.logbook import LogBookHandler
 from library.database import DB_PATH
 from library.auth import authbook
+from typing import Dict, Optional
 from collections import Counter
 from pydantic import BaseModel
+import asyncio
 import datetime
 import sqlite3
 import base64
@@ -40,7 +42,7 @@ class NoteCreateData(BaseModel):
     note: str
 
 class DeleteNameData(BaseModel):
-    name: str
+    cfid: int
 
 class centralfiles:
     class errors:
@@ -518,6 +520,24 @@ class centralfiles:
                     conn.rollback()
                     return False
 
+        def profile_type(self, value):
+            with sqlite3.connect(DB_PATH) as conn:
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        INSERT INTO cf_name_types (cfid, nametype) VALUES (?, ?)
+                        ON CONFLICT(cfid) DO UPDATE SET nametype=excluded.nametype
+                        """,
+                        (self.cfid, value)
+                    )
+                    conn.commit()
+                    return True
+                except sqlite3.OperationalError as err:
+                    logbook.error(f"Error updating cfid {self.cfid}'s profile type: {err}", exception=err)
+                    conn.rollback()
+                    return False
+
         def email_address(self, value):
             with sqlite3.connect(DB_PATH) as conn:
                 try:
@@ -922,7 +942,32 @@ class centralfiles:
             conn.close()
 
     @staticmethod
-    def add_name(name):
+    def get_profile_is_staff(cfid):
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT username from cf_staff_usernames WHERE cfid = ?
+                """,
+                (cfid,),
+            )
+            is_staff = not cursor.fetchone() != None
+            return is_staff
+        except sqlite3.OperationalError:
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    @staticmethod
+    def add_name(name, staff_username=None):
+        """
+        Docstring for add_name
+        
+        :param name: The full name for the person being added
+        :param staff_username: If the user is staff, enter their username and we'll assosciate the username with the person.
+        """
         conn = sqlite3.connect(DB_PATH)
         try:
             cursor = conn.cursor()
@@ -934,6 +979,11 @@ class centralfiles:
             )
             cfid = cursor.lastrowid
             # Inserts into the other fields some data
+            if staff_username is not None:
+                cursor.execute(
+                    "INSERT INTO cf_staff_usernames (cfid, username) VALUES (?, ?)",
+                    (cfid, staff_username)
+                )
             cursor.execute(
                 "INSERT INTO cf_ages (cfid, age) VALUES (?, ?)",
                 (cfid, -1)
@@ -963,13 +1013,17 @@ class centralfiles:
             conn.close()
 
     @staticmethod
-    def delete_name(name):
+    def delete_name(cfid):
+        is_staff = centralfiles.get_profile_is_staff(cfid)
+        if is_staff:
+            return -1
+
         conn = sqlite3.connect(DB_PATH)
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "DELETE FROM cf_names WHERE name = ?",
-                (name,),
+                "DELETE FROM cf_names WHERE cfid = ?",
+                (cfid,),
             )
             conn.commit()
             # Returns True if any row deleted
@@ -1029,8 +1083,11 @@ class centralfiles:
                         (cfid,),
                     )
                     data = cursor.fetchone()
-                    cfid = data[0]
-                    name = data[1]
+                    try:
+                        cfid = data[0]
+                        name = data[1]
+                    except TypeError:
+                        return False
 
                 cfid = int(cfid)
                 name = str(name)
@@ -1043,6 +1100,19 @@ class centralfiles:
                     (cfid,),
                 )
                 stored_age = cursor.fetchone()[0]
+
+                # Gets the profile type of the individual
+                cursor.execute(
+                    """
+                    SELECT nametype from cf_name_types WHERE cfid = ?
+                    """,
+                    (cfid,),
+                )
+                profile_type = cursor.fetchone()
+                if not profile_type:
+                    profile_type = "Unspecified"
+                else:
+                    profile_type = profile_type[0]
 
                 cursor.execute(
                     """
@@ -1159,7 +1229,8 @@ class centralfiles:
             "date_of_birth": date_of_birth,
             "phone_no": phone_no,
             "email_addr": email_addr,
-            "home_addr": home_addr
+            "home_addr": home_addr,
+            "type": profile_type
         }
 
         return profile
@@ -1378,6 +1449,9 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
         elif data.field == "home_addr":
             centralfiles.modify(data.cfid).home_address(data.value)
             success = True
+        elif data.field == "prof_type":
+            centralfiles.modify(data.cfid).profile_type(data.value)
+            success = True
         else:
             if data.field not in dn_fields:
                 raise ValueError(f"Invalid field specified, {data.field}")
@@ -1528,10 +1602,18 @@ async def create_name(request: Request, data: NamePostData, token: str = Depends
 @router.post("/api/files/delete", response_class=JSONResponse)
 @set_permission(permission="central_files")
 async def delete_name(request: Request, data: DeleteNameData, token: str = Depends(require_prechecks)):
-    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to DELETE name '{data.name}'")
-    success = centralfiles.delete_name(data.name)
-    if success:
+    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to DELETE CFID '{data.cfid}'")
+    success = centralfiles.delete_name(data.cfid)
+    if success is True:
         return JSONResponse(content={"success": True}, status_code=200)
+    elif success == -1:  # Staff account
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": "This is a staff account, and can only be deleted through the staff management portal."
+            },
+            status_code=401
+        )
     else:
         return JSONResponse(content={"success": False, "error": "Deletion failed"}, status_code=400)
 
@@ -1567,6 +1649,92 @@ async def get_profile_image(request: Request, cfid: int, token: str = Depends(re
         content=image_data,
         media_type="image/jpeg"  # or "image/png", "image/gif" depending on your image format
     )
+
+# Simple in-memory cache with TTL
+class ProfileCache:
+    def __init__(self, ttl_seconds: int = 300):  # 5 minutes default TTL
+        self.cache: Dict[int, Dict] = {}
+        self.timestamps: Dict[int, float] = {}
+        self.ttl = ttl_seconds
+        self.lock = asyncio.Lock()
+    
+    async def get(self, cfid: int) -> Optional[Dict]:
+        async with self.lock:
+            if cfid in self.cache:
+                # Check if cache entry is still valid
+                if asyncio.get_event_loop().time() - self.timestamps[cfid] < self.ttl:
+                    return self.cache[cfid]
+                else:
+                    # Remove expired entry
+                    del self.cache[cfid]
+                    del self.timestamps[cfid]
+            return None
+    
+    async def set(self, cfid: int, profile: Dict):
+        async with self.lock:
+            self.cache[cfid] = profile
+            self.timestamps[cfid] = asyncio.get_event_loop().time()
+    
+    async def invalidate(self, cfid: int):
+        async with self.lock:
+            if cfid in self.cache:
+                del self.cache[cfid]
+                del self.timestamps[cfid]
+
+# Initialize cache
+profile_cache = ProfileCache()
+
+async def get_cached_profile(cfid: int) -> Optional[Dict]:
+    """Get profile from cache or database with caching"""
+    # Try cache first
+    cached_profile = await profile_cache.get(cfid)
+    if cached_profile:
+        logbook.info(f"Cache hit for profile cfid {cfid}")
+        return cached_profile
+    
+    # Cache miss, fetch from database
+    profile = centralfiles.get_profile(cfid=cfid)
+    if profile:
+        await profile_cache.set(cfid, profile)
+    
+    return profile
+
+# Helper function for common response logic
+async def get_profile_field(cfid: int, field_name: str, field_display_name: str, request: Request, token: str):
+    """Helper to get a specific field from profile with caching"""
+    logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to get profile {field_display_name} for cfid {cfid}")
+    
+    profile = await get_cached_profile(cfid)
+    if not profile:
+        return HTMLResponse(content="Profile Not Found", status_code=404)
+    
+    field_value = profile.get(field_name)
+    if field_value is None:
+        return HTMLResponse(content=f"{field_display_name.capitalize()} Not Available", status_code=404)
+    
+    return HTMLResponse(content=field_value, status_code=200)
+
+# Used by invoicing
+@router.get("/api/files/{cfid}/name")
+@set_permission(permission="central_files")
+async def get_profile_name(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+    return await get_profile_field(cfid, 'name', 'name', request, token)
+
+# Used by invoicing
+@router.get("/api/files/{cfid}/address")
+@set_permission(permission="central_files")
+async def get_profile_address(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+    return await get_profile_field(cfid, 'home_addr', 'address', request, token)
+
+@router.get("/api/files/{cfid}/email")
+@set_permission(permission="central_files")
+async def get_profile_email(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+    return await get_profile_field(cfid, 'email_addr', 'email', request, token)
+
+@router.get("/api/files/{cfid}/phone")
+@set_permission(permission="central_files")
+async def get_profile_phone(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+    return await get_profile_field(cfid, 'phone_no', 'phone number', request, token)
 
 class UploadProfileImageData(BaseModel):
     cfid: int

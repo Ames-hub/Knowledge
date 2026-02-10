@@ -25,6 +25,10 @@ class database:
                 'permission': 'TEXT NOT NULL',
                 'allowed': 'BOOLEAN NOT NULL DEFAULT TRUE',
             },
+            'route_permissions': {
+                'route': 'TEXT NOT NULL PRIMARY KEY',
+                'permissions': 'TEXT NOT NULL',
+            },
             'revoked_tokens': {
                 'token': 'TEXT NOT NULL PRIMARY KEY',
                 'revoked_at': 'DATETIME DEFAULT CURRENT_TIMESTAMP',
@@ -38,6 +42,14 @@ class database:
             "cf_names": {
                 "cfid": "INTEGER PRIMARY KEY AUTOINCREMENT",  # Must add a name before anything else can be done
                 "name": "TEXT NOT NULL",
+            },
+            "cf_staff_usernames": {
+                "cfid": "INTEGER PRIMARY KEY",
+                "username": "TEXT NOT NULL",
+            },
+            "cf_name_types": {
+                "cfid": "INTEGER PRIMARY KEY",
+                "nametype": "TEXT NOT NULL",
             },
             "cf_ages": {
                 "cfid": "INTEGER PRIMARY KEY NOT NULL",

@@ -3,116 +3,167 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Ledger</title>
-    <link rel="stylesheet" href="/static/ledger/css/invoices/invoices.css">
+    <title>Invoice Manager | Ledger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/ledger/css/ledger/sidebar.css">
+    <link rel="stylesheet" href="/static/ledger/css/invoices/invoices.css">
 </head>
 <body>
-<aside class="sidebar">
-    <h1>Ledger</h1>
-    <nav class="nav">
-        <a href="/apps"> ⬅️ Go Back</a>
-        <a href="/ledger">Accounts</a>
-        <a href="/ledger/planning">Financial Planning</a>
-        <a href="/ledger/debts">Debts</a>
-        <a href="/ledger/invoices" class="active">Invoices</a>
-        <a href="/ledger/odometering">Odometer Tracking</a>
-    </nav>
-</aside>
+    <!-- Sidebar -->
+    <link rel="stylesheet" href="/static/ledger/css/ledger/sidebar.css">
+    <aside class="sidebar">
+        <h1>Ledger</h1>
+        <nav class="nav">
+            <a href="/apps"> ⬅️ Go Back</a>
+            <a href="/ledger">Accounts</a>
+            <a href="/ledger/planning">Financial Planning</a>
+            <a href="/ledger/debts">Debts</a>
+            <a href="/ledger/invoices" class="active">Invoices</a>
+            <a href="/ledger/odometering">Odometer Tracking</a>
+        </nav>
+    </aside>
 
-<main class="main">
-  <!-- Available Items Section -->
-  <section class="items-section">
-    <h2>Available Items</h2>
-    <ul id="item-list"></ul>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="invoice-dashboard">
+            <!-- Items Panel -->
+            <section class="card items-section">
+                <div class="card-header">
+                    <h2 class="card-title">Item Catalog</h2>
+                    <span class="badge" id="item-count">0 items</span>
+                </div>
+                
+                <ul class="items-list" id="item-list">
+                    <!-- Items will be loaded here -->
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <p>Loading items...</p>
+                    </div>
+                </ul>
+                
+                <form id="add-item-form" class="add-item-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Item Name</label>
+                            <input type="text" id="new-item-name" class="form-input" placeholder="Service or product" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price ($)</label>
+                            <input type="number" id="new-item-price" class="form-input" placeholder="0.00" min="0" step="0.01" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-plus"></i> Add to Catalog
+                    </button>
+                </form>
+            </section>
 
-    <!-- Add new item form -->
-    <form id="add-item-form" class="add-item-form">
-      <input type="text" id="new-item-name" placeholder="Item name" required>
-      <input type="number" id="new-item-price" placeholder="Price" required min="0" step="0.01">
-      <button type="submit">Add Item</button>
-    </form>
-  </section>
+            <!-- Invoice Preview -->
+            <section class="card preview-section">
+                <div class="card-header">
+                    <h2 class="card-title">Current Invoice</h2>
+                </div>
+                
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice-table-body">
+                        <tr class="empty-state-row">
+                            <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                <i class="fas fa-receipt" style="font-size: 2rem; opacity: 0.3; margin-bottom: 10px; display: block;"></i>
+                                <p>Add items from the catalog to build your invoice</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="invoice-summary">
+                    <span style="font-weight: 600;">Total:</span>
+                    <span class="total-amount" id="invoice-total">$0.00</span>
+                </div>
+                
+                <div class="preview-actions">
+                    <button id="save-invoice" class="btn btn-success">
+                        <i class="fas fa-save"></i> Save Invoice
+                    </button>
+                    <button id="generate-pdf" class="btn btn-primary">
+                        <i class="fas fa-file-pdf"></i> Generate PDF
+                    </button>
+                </div>
+            </section>
 
-  <!-- Invoice Preview Section -->
-  <section class="invoice-section">
-    <h2>Invoice Preview</h2>
-    <div class="invoice-wrapper">
-      <table id="invoice-table">
-        <thead>
-        <tr>
-          <th>Item</th>
-          <th>Qty</th>
-          <th>Value</th>
-          <th>Remove</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-        <tfoot>
-          <tr>
-            <td><strong>Total</strong></td>
-            <td id="invoice-total">$0</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-    <div class="invoice-actions">
-      <div class="invoice-cfid">
-        <label for="cfid-input">CFID (optional): </label>
-        <input type="number" id="cfid-input" placeholder="Enter CFID">
-      </div>
-      <button id="save-invoice">Save Invoice</button>
-      <button id="generate-pdf">Generate PDF</button>
-    </div>
-  </section>
+            <!-- Invoice Details -->
+            <section class="card details-section">
+                <div class="card-header">
+                    <h2 class="card-title">Invoice Details</h2>
+                </div>
+                
+                <form id="details-form" class="details-form">
+                    <div class="form-group">
+                        <label class="form-label">CFID (Optional)</label>
+                        <input type="number" id="cfid-input" class="form-input" placeholder="Enter CFID if applicable">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Billing Name *</label>
+                        <input type="text" id="billing-name" class="form-input" placeholder="Customer/Company Name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Billing Address</label>
+                        <textarea id="billing-address" class="form-input" rows="3" placeholder="Street address, city, ZIP"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="billing-email" class="form-input" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" id="billing-phone" class="form-input" placeholder="+1 (555) 000-0000">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="invoice-notes" class="form-input" rows="2" placeholder="Additional information"></textarea>
+                    </div>
+                </form>
+            </section>
 
-  <!-- Past Invoices Section -->
-  <section class="past-invoices-section">
-    <h2>Past Invoices</h2>
+            <!-- Invoice History -->
+            <section class="card history-section">
+                <div class="card-header">
+                    <h2 class="card-title">Invoice History</h2>
+                    <div class="history-filters">
+                        <select id="filter-status" class="form-input" style="flex: 1;">
+                            <option value="all">All Status</option>
+                            <option value="paid">Paid Only</option>
+                            <option value="unpaid">Unpaid Only</option>
+                        </select>
+                        <input type="text" id="search-invoices" class="form-input" style="flex: 2;" placeholder="Search invoices...">
+                    </div>
+                </div>
+                
+                <div class="history-list" id="history-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>Loading invoice history...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
 
-    <!-- Filter/Search -->
-    <div class="filters">
-      <select id="filter-status">
-        <option value="all">All</option>
-        <option value="paid">Paid</option>
-        <option value="unpaid">Unpaid</option>
-      </select>
-      <input type="text" id="search-invoices" placeholder="Search invoices...">
-    </div>
-
-    <ul id="past-invoices"></ul>
-  </section>
-
-  <!-- Invoice Details Section -->
-  <section class="invoice-details-section">
-    <h2>Invoice Details</h2>
-    <form id="invoice-details-form" class="invoice-details-form">
-      <div class="form-row">
-        <label for="billing-name">Billing Name:</label>
-        <input type="text" id="billing-name" placeholder="Customer Name" required>
-      </div>
-      <div class="form-row">
-        <label for="billing-address">Billing Address:</label>
-        <textarea id="billing-address" placeholder="Street, City, ZIP" rows="3" required></textarea>
-      </div>
-      <div class="form-row">
-        <label for="billing-email">Email:</label>
-        <input type="email" id="billing-email" placeholder="customer@example.com">
-      </div>
-      <div class="form-row">
-        <label for="billing-phone">Phone:</label>
-        <input type="tel" id="billing-phone" placeholder="+61 400 000 000">
-      </div>
-      <div class="form-row">
-        <label for="invoice-notes">Notes:</label>
-        <textarea id="invoice-notes" placeholder="Additional information (optional)" rows="2"></textarea>
-      </div>
-    </form>
-  </section>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="/static/ledger/js/invoices/invoices.js"></script>
-</main>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/static/ledger/js/invoices/invoices.js"></script>
 </body>
 </html>

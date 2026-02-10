@@ -15,31 +15,11 @@
       <h1 id="brand" class="brand" aria-label="App Browser">Knowledge</h1>
 
       <nav class="app-nav" aria-label="Application Navigation">
-        <a href="/files" class="nav-icon" aria-label="Open Central Files" tabindex="0">
-          <img src="/static/browser/icons/files.svg" alt="" aria-hidden="true" />
-        </a>
-        <a href="/battleplans" class="nav-icon" aria-label="Open Battle Plans" tabindex="0">
-          <img src="/static/browser/icons/battleplans.svg" alt="" aria-hidden="true" />
-        </a>
-        <a href="/textbook" class="nav-icon" aria-label="Open Textbook" tabindex="0">
-          <img src="/static/browser/icons/archives.svg" alt="" aria-hidden="true" />
-        </a>
-        <a href="/ledger" class="nav-icon" aria-label="Open Ledger" tabindex="0">
-          <img src="/static/browser/icons/ledger.svg" alt="" aria-hidden="true" />
-        </a>
-        <a href="/ftp" class="nav-icon" aria-label="Open FTP Server" tabindex="0">
-          <img src="/static/browser/icons/ftp.svg" alt="" aria-hidden="true" />
-        </a>
-        <a href="/signals" class="nav-icon muted" aria-label="Open Signal Server" tabindex="0">
-          <img src="/static/browser/icons/signals.svg" alt="" aria-hidden="true" />
-        </a>
-        <a href="/logs" class="nav-icon" aria-label="Open App Logs" tabindex="0">
-          <img src="/static/browser/icons/logs.svg" alt="" aria-hidden="true" />
-        </a>
-        <!-- Admin Panel -->
-        <a href="/knowledge" class="nav-icon muted" aria-label="Open Knowledge" tabindex="0">
-          <img src="/static/browser/icons/knowledge.svg" alt="" aria-hidden="true" />
-        </a>
+        {% for m in modules %}
+          <a href="{{ m.url }}" class="nav-icon" aria-label="Open {{ m.name }}">
+            <img src="{{ m.icon }}" alt="" />
+          </a>
+        {% endfor %}
       </nav>
 
       <button id="theme-toggle" class="icon-btn" aria-label="Toggle color theme" title="Toggle color theme">

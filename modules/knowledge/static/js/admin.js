@@ -6,41 +6,53 @@ let validPermissions = [];
 // ===== Permission Icons Mapping =====
 const PERMISSION_ICONS = {
     // Auth/Admin permissions
-    'auth_page': '👁️',
     'admin_panel': '🛡️',
-    'app_settings': '⚙️',
+    'perms_manage': '🔐',
+
+    // Other
+    'central_files': '📁',
+    'bulletin_archives': '🗒️', 
+    'ftp_server': '☁️',
+    'dianetics': '🔺',
+    'battleplans': '🎯',
+
+    // Finances
+    'accounts_view': '📒',
+    'accounts_add': '📒',
+    'accounts_delete': '📒',
+    'accounts_add_transaction': '📒',
+    'accounts_del_transaction': '📒',
     
-    // General app permissions
-    'view_pages': '📄',
-    'edit_content': '✏️',
-    'delete_content': '🗑️',
-    
-    // Module-specific permissions
-    'battleplans_view': '📊',
-    'battleplans_edit': '📝',
-    'ledger_view': '💰',
-    'ledger_edit': '💳',
-    'knowledge_view': '📚',
-    'knowledge_edit': '📖',
-    
-    // User management
-    'user_manage': '👤',
-    'user_delete': '❌',
-    
-    // System permissions
-    'system_logs': '📋',
-    'system_backup': '💾',
-    'system_restore': '🔄'
+    'invoices_view': '🧾',
+    'invoices_create': '🧾',
+    'invoices_delete': '🧾',
+    'invoices_modify': '🧾',
+
+    'debt_viewing': '💸',
+    'debt_editting': '💸',
+
+    'FP_view': '💳',
+    'FP_edit': '💳',
+    'odometering': '🛞',
+
+    // System
+    'app_logs': '📋',
+    'app_settings': '💾',
 };
 
 // ===== Permission Categories =====
 const PERMISSION_CATEGORIES = {
-    'Administration': ['admin_panel', 'auth_page', 'app_settings'],
-    'User Management': ['central_files'],
-    'Content': ['bulletin_archives', 'ftp_server'],
-    'Finances': ['ledger', 'invoicing', 'debt_tracking', 'financial_planning'],
-    'production': ['battleplans', 'dianetics'],
-    'System': ['app_logs', 'admin_panel']
+    'Management': ['central_files', 'battleplans', 'dianetics'],
+    'Finances': [
+        'accounts_view', 'accounts_add', 'accounts_delete', 'accounts_add_transaction', 'accounts_del_transaction',
+        'invoices_view', 'invoices_create', 'invoices_delete', 'invoices_modify',
+        'debt_viewing', 'debt_editting',
+        'FP_edit', 'FP_view',
+        'odometering',
+        'ledger'
+    ],
+    'System': ['app_logs', 'admin_panel', 'app_settings', 'perms_manage'],
+    'Other': ['bulletin_archives', 'ftp_server'],
 };
 
 // ===== PLACE-SAVING =====
@@ -66,10 +78,6 @@ function switchTab(tabName) {
         'auth': 'Staff Management',
         'settings': 'System Settings'
     };
-    
-    document.getElementById('headerSubtitle').textContent = 
-        tabName === 'auth' ? 'Manage users, permissions, and arrest status' : 
-        'Configure application settings and module behavior';
     
     document.getElementById('currentTabIndicator').textContent = 
         `Currently viewing: ${tabNames[tabName]}`;
@@ -344,39 +352,165 @@ function createUserCard(username, info) {
     return card;
 }
 
-async function loadUsers() {
-    const container = document.getElementById('userGrid');
-    container.innerHTML = '<div class="loading">👥 Loading users...</div>';
-    
+function renderGroupedPermissions(username, info) {
+  const permArea = document.getElementById('permArea');
+  permArea.innerHTML = '';
+
+  const grouped = groupPermissionsByCategory();
+
+  Object.entries(grouped).forEach(([category, perms]) => {
+    const validInCategory = perms.filter(p => validPermissions.includes(p));
+    if (validInCategory.length === 0) return;
+
+    const categoryDiv = document.createElement('div');
+    categoryDiv.className = 'permission-category';
+
+    const header = document.createElement('div');
+    header.className = 'category-header';
+    header.innerHTML = `
+      <span class="category-icon">📁</span>
+      <span>${category}</span>
+    `;
+    categoryDiv.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'permissions-grid';
+
+    validInCategory.forEach(perm => {
+      grid.appendChild(createPermissionItem(perm, username, info));
+    });
+
+    categoryDiv.appendChild(grid);
+    permArea.appendChild(categoryDiv);
+  });
+}
+
+function wireArrestButton(username, info) {
+  const btn = document.getElementById('toggleArrestBtn');
+
+  btn.addEventListener('click', async () => {
+    const action = info.arrested ? 'release' : 'arrest';
+    const confirmText = info.arrested
+      ? `Release ${username}?`
+      : `Arrest ${username}? This will block system access.`;
+
+    if (!confirm(confirmText)) return;
+
     try {
-        const data = await fetchUserData();
-        validPermissions = data.valid_permissions || [];
-        currentUsers = data.users || {};
-        
-        container.innerHTML = '';
-        
-        if (Object.keys(currentUsers).length === 0) {
-            container.innerHTML = '<div class="loading">No users found</div>';
-            return;
-        }
-        
-        // Sort users: admins first, then alphabetical
-        const sortedUsernames = Object.keys(currentUsers).sort((a, b) => {
-            const aAdmin = currentUsers[a].is_admin;
-            const bAdmin = currentUsers[b].is_admin;
-            if (aAdmin && !bAdmin) return -1;
-            if (!aAdmin && bAdmin) return 1;
-            return a.localeCompare(b);
-        });
-        
-        sortedUsernames.forEach(username => {
-            container.appendChild(createUserCard(username, currentUsers[username]));
-        });
-        
-        console.log(`Loaded ${sortedUsernames.length} users`, 'success');
+      const res = await fetch(
+        `/api/knowledge/${action}/${encodeURIComponent(username)}`,
+        { method: 'GET' }
+      );
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Action failed', 'error');
+        return;
+      }
+
+      // Update local state
+      info.arrested = !info.arrested;
+      currentUsers[username] = info;
+
+      showToast(data.message || 'User updated', 'success');
+
+      // Refresh detail + sidebar
+      showUserDetail(username);
+      refreshUserListItem(username);
+
     } catch (err) {
-        container.innerHTML = '<div class="error">❌ Failed to load user data</div>';
+      console.error(err);
+      showToast('Failed to update user', 'error');
     }
+  });
+}
+
+function showUserDetail(username) {
+  const container = document.getElementById('userDetail');
+  const info = currentUsers[username];
+
+  container.innerHTML = `
+    <h2>${username}${info.is_admin ? ' 👑' : ''}</h2>
+
+    <div class="user-detail-grid">
+      <!-- META COLUMN -->
+      <div class="detail-column">
+        <h3>User Info</h3>
+        <p><strong>Role:</strong> ${info.is_admin ? 'Admin' : 'User'}</p>
+        <p><strong>Status:</strong> 
+          <span class="status ${info.arrested ? 'arrested' : 'free'}">
+            ${info.arrested ? 'Arrested' : 'Active'}
+          </span>
+        </p>
+
+        <button id="toggleArrestBtn"
+          class="btn ${info.arrested ? 'release' : 'arrest'}">
+          ${info.arrested ? 'Release' : 'Arrest'}
+        </button>
+      </div>
+
+      <!-- PERMISSIONS COLUMN -->
+      <div class="detail-column">
+        <h3>Permissions</h3>
+        <div id="permArea" class="permissions"></div>
+      </div>
+
+      <!-- STATS COLUMN -->
+      <div class="detail-column">
+        <h3>Stats</h3>
+        <p>
+          ${
+            Object.values(info.permissions).filter(v => v).length
+          } / ${validPermissions.length} enabled
+        </p>
+      </div>
+    </div>
+  `;
+
+  renderGroupedPermissions(username, info);
+  wireArrestButton(username, info);
+}
+
+function createUserListItem(username) {
+  const info = currentUsers[username];
+  const item = document.createElement('div');
+  item.className = 'user-list-item';
+
+  item.innerHTML = `
+    <span>${username}${info.is_admin ? ' 👑' : ''}</span>
+    <span class="status ${info.arrested ? 'arrested' : 'free'}"></span>
+  `;
+
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.user-list-item')
+      .forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    showUserDetail(username);
+  });
+
+  return item;
+}
+
+async function loadUsers() {
+  const list = document.getElementById('userList');
+  list.innerHTML = '<div class="loading">Loading...</div>';
+
+  try {
+    const data = await fetchUserData();
+    validPermissions = data.valid_permissions || [];
+    currentUsers = data.users || {};
+
+    list.innerHTML = '';
+
+    Object.keys(currentUsers)
+      .sort()
+      .forEach(username => {
+        list.appendChild(createUserListItem(username));
+      });
+
+  } catch {
+    list.innerHTML = '<div class="error">Failed to load users</div>';
+  }
 }
 
 // ===== Settings Management Functions =====
@@ -562,29 +696,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('backBtn').addEventListener('click', () => {
         window.location.href = '/apps';
     });
-    
-    // Add view toggle button for permissions
-    const viewToggle = document.createElement('button');
-    viewToggle.id = 'viewToggle';
-    viewToggle.className = 'nav-btn';
-    viewToggle.textContent = '🔍 Compact View';
-    viewToggle.style.marginLeft = '10px';
-    
-    viewToggle.addEventListener('click', () => {
-        const cards = document.querySelectorAll('.user-card');
-        const isCompact = cards[0]?.classList.contains('compact-view');
-        
-        cards.forEach(card => {
-            card.classList.toggle('compact-view', !isCompact);
-            card.querySelector('.permissions-grid')?.classList.toggle('compact-view', !isCompact);
-        });
-        
-        viewToggle.textContent = isCompact ? '🔍 Compact View' : '🔍 Normal View';
-    });
-    
-    // Insert after theme toggle
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.parentNode.insertBefore(viewToggle, themeToggle.nextSibling);
     
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {

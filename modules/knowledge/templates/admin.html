@@ -16,10 +16,6 @@
         <button id="tabSettings" class="tab-btn" data-tab="settings">⚙️ System Settings</button>
       </div>
     </div>
-    <div class="header-center">
-      <h1>Unified Admin Panel</h1>
-      <p id="headerSubtitle">Manage users, permissions, and system configuration</p>
-    </div>
     <div class="header-right">
       <button id="themeToggle" class="nav-btn">☀️ Light Mode</button>
     </div>
@@ -33,7 +29,18 @@
         <h2>User Management</h2>
         <p>Manage user accounts, permissions, and arrest status</p>
       </div>
-      <div id="userGrid" class="grid"></div>
+
+      <div class="auth-layout">
+        <!-- LEFT: User List -->
+        <aside id="userList" class="user-list"></aside>
+
+        <!-- RIGHT: Selected User Detail -->
+        <section id="userDetail" class="user-detail">
+          <div class="empty-state">
+            Select a user to view details
+          </div>
+        </section>
+      </div>
     </div>
 
     <!-- Settings Tab Content -->

@@ -1,0 +1,66 @@
+{
+    "files": {
+        "name": "files",
+        "icon": "/static/browser/icons/files.svg",
+        "url": "/files",
+        "enabled": true,
+        "order": 0,
+        "display_perm": "central_files"
+    },
+    "battleplans": {
+        "name": "battleplans",
+        "icon": "/static/browser/icons/battleplans.svg",
+        "url": "/battleplans",
+        "enabled": true,
+        "order": 1,
+        "display_perm": "battleplans"
+    },
+    "textbook": {
+        "name": "textbook",
+        "icon": "/static/browser/icons/archives.svg",
+        "url": "/textbook",
+        "enabled": true,
+        "order": 2,
+        "display_perm": "bulletin_archives"
+    },
+    "ledger": {
+        "name": "ledger",
+        "icon": "/static/browser/icons/ledger.svg",
+        "url": "/ledger",
+        "enabled": true,
+        "order": 3,
+        "display_perm": "ledger"
+    },
+    "ftp": {
+        "name": "ftp",
+        "icon": "/static/browser/icons/ftp.svg",
+        "url": "/ftp",
+        "enabled": true,
+        "order": 4,
+        "display_perm": "ftp_server"
+    },
+    "signals": {
+        "name": "signals",
+        "icon": "/static/browser/icons/signals.svg",
+        "url": "/signals",
+        "enabled": false,
+        "order": 5,
+        "display_perm": "signal_server"
+    },
+    "logs": {
+        "name": "logs",
+        "icon": "/static/browser/icons/logs.svg",
+        "url": "/logs",
+        "enabled": true,
+        "order": 6,
+        "display_perm": "app_logs"
+    },
+    "knowledge": {
+        "name": "knowledge",
+        "icon": "/static/browser/icons/knowledge.svg",
+        "url": "/knowledge",
+        "enabled": true,
+        "order": 7,
+        "display_perm": "admin_panel"
+    }
+}

@@ -1,4 +1,4 @@
-async function makeEditable(fieldId, cfid, fieldType = 'text') {
+async function makeEditable(fieldId, cfid, fieldType = 'text', options = []) {
 
     function detectDateFormat() {
         // This function uses how the system parses the date to a string to
@@ -53,6 +53,21 @@ async function makeEditable(fieldId, cfid, fieldType = 'text') {
             input.type = "date";
             input.value = value;
             input.className = "inline-input date-input";
+            break;
+
+        case 'dropdown-text':
+            input = document.createElement("select");
+            input.className = "inline-select";
+
+            options.forEach(opt => {
+                const optionEl = document.createElement("option");
+                optionEl.value = opt;
+                optionEl.textContent = opt;
+                if (opt === value) {
+                    optionEl.selected = true;
+                }
+                input.appendChild(optionEl);
+            });
             break;
             
         default: // text
@@ -141,6 +156,14 @@ async function makeEditable(fieldId, cfid, fieldType = 'text') {
 
                 break;
                 
+                case 'dropdown-text':
+                    isValid = options.includes(newValue);
+                    if (!isValid) {
+                        cancelEdit();
+                        return;
+                    }
+                    break;
+
             default:
                 isValid = newValue !== '';
         }
@@ -155,7 +178,7 @@ async function makeEditable(fieldId, cfid, fieldType = 'text') {
         newSpan.id = fieldId;
         newSpan.className = "editable";
         newSpan.innerText = displayedValue;
-        newSpan.onclick = () => makeEditable(fieldId, cfid, fieldType);
+        newSpan.onclick = () => makeEditable(fieldId, cfid, fieldType, options);
 
         input.replaceWith(newSpan);
 

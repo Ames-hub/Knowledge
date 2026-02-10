@@ -134,6 +134,15 @@
                 <label>Home Address</label>
                 <span id="field-home_addr" class="editable" onclick="makeEditable('field-home_addr', '{{ profile.cfid }}')">{{ profile.home_addr }}</span>
               </div>
+              <div class="field">
+                <label>Profile Type</label>
+                <span
+                  id="field-prof_type"
+                  class="editable"
+                  onclick="makeEditable('field-prof_type', '{{ profile.cfid }}', 'dropdown-text', ['Business', 'Individual', 'Group Leader'])">
+                    {{ profile.type }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -166,12 +175,6 @@
                 <label>Pronouns</label>
                 <span id="field-pronouns" class="editable" onclick="makeEditable('field-pronouns', '{{ profile.cfid }}')">
                   {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}
-                </span>
-              </div>
-              <div class="field">
-                <label>Is Dianetics PC</label>
-                <span id="field-is_dianetics" class="editable" onclick="makeEditable('field-is_dianetics', '{{ profile.cfid }}', 'bool')">
-                  {{ profile.is_dianetics_pc }}
                 </span>
               </div>
               <div class="field">

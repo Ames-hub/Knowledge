@@ -159,8 +159,15 @@ main {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ======== Auth Tab Styles ======== */
@@ -243,6 +250,88 @@ main {
 
 .btn:hover {
   opacity: 0.9;
+}
+
+/* ======== AUTH LAYOUT ======== */
+.auth-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* LEFT USER LIST */
+.user-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-y: auto;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-list-item {
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-list-item:hover {
+  background: rgba(var(--accent), 0.08);
+}
+
+.user-list-item.active {
+  background: rgba(var(--accent), 0.18);
+  color: var(--accent);
+}
+
+/* RIGHT DETAIL PANEL */
+.user-detail {
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  min-height: 550px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 4rem 2rem;
+}
+
+/* DETAIL GRID */
+.user-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 1.5rem;
+
+  height: 520px;
+  align-items: stretch;
+}
+
+.detail-column {
+  background: rgba(var(--text), 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+
+  display: flex;
+  flex-direction: column;
+
+  min-height: 0;
+  overflow: hidden;
+}
+
+.detail-column>*:not(h3) {
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* ======== Permissions Section Redesign ======== */
@@ -386,12 +475,7 @@ main {
   opacity: 1;
 }
 
-/* Compact View */
-.permissions-grid.compact-view {
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-}
-
-.user-card.compact-view .permission-label {
+.permission-label {
   font-size: 0.75rem;
 }
 
@@ -493,7 +577,7 @@ input[type="checkbox"] {
   cursor: pointer;
   outline: none;
   transition: background var(--transition), box-shadow var(--transition);
-  box-shadow: inset 0 0 4px rgba(0,0,0,0.25);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.25);
   display: block;
   margin: 0.5rem auto;
 }
@@ -602,7 +686,8 @@ footer {
 }
 
 /* ======== Loading & Error States ======== */
-.loading, .error {
+.loading,
+.error {
   text-align: center;
   padding: 3rem;
   font-size: 1.1rem;
@@ -620,17 +705,18 @@ footer {
     gap: 1rem;
     text-align: center;
   }
-  
-  .header-left, .header-right {
+
+  .header-left,
+  .header-right {
     width: 100%;
     justify-content: center;
   }
-  
+
   .header-tabs {
     justify-content: center;
     flex-wrap: wrap;
   }
-  
+
   footer {
     flex-direction: column;
     gap: 0.5rem;
@@ -642,11 +728,12 @@ footer {
   main {
     padding: 1rem;
   }
-  
-  .grid, .settings-grid {
+
+  .grid,
+  .settings-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .config-card {
     padding: 1rem;
   }

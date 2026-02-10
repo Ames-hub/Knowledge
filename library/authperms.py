@@ -17,7 +17,28 @@ valid_perms = [
     'central_files',
     'bulletin_archives',
     'app_logs',
-    'ledger', 'invoicing', 'debt_tracking', 'financial_planning',
+
+    # Finances
+    'ledger',
+
+    'accounts_view',
+    'accounts_add',
+    'accounts_delete',
+    'accounts_add_transaction',
+    'accounts_del_transaction',
+
+    'invoices_view',
+    'invoices_create',
+    'invoices_delete',
+    'invoices_modify',
+
+    'debt_viewing',
+    'debt_editting',
+    
+    'FP_edit',
+    'FP_view',
+    
+    # Other
     'dianetics',
     'battleplans',
     'ftp_server',
@@ -84,9 +105,6 @@ def _normalize_path(path: str):
 
 
 def set_permission(permission):
-    if not os.path.exists(SETTINGS_PATH):
-        make_settings_file()
-
     perms = permission if isinstance(permission, list) else [permission]
 
     def decorator(route_func):
@@ -94,15 +112,30 @@ def set_permission(permission):
         async def wrapper(request: Request, *args, **kwargs):
             path = _normalize_path(request.scope.get("route").path)
 
-            # Register once per process lifetime
             if path not in _registered_routes:
-                data = lock_and_load_settings(SETTINGS_PATH)
-                if data.get("route_perms") is None:
-                    data['route_perms'] = {}
+                with sqlite3.connect(DB_PATH) as conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "CREATE TABLE IF NOT EXISTS route_permissions (route TEXT PRIMARY KEY, permissions TEXT)"
+                    )
 
-                if data['route_perms'].get(path) != perms:
-                    data['route_perms'][path] = perms
-                    lock_and_write_settings(SETTINGS_PATH, data)
+                    cur.execute(
+                        "SELECT permissions FROM route_permissions WHERE route = ?",
+                        (path,)
+                    )
+                    row = cur.fetchone()
+                    perms_json = json.dumps(perms)
+                    if not row:
+                        cur.execute(
+                            "INSERT INTO route_permissions (route, permissions) VALUES (?, ?)",
+                            (path, perms_json)
+                        )
+                    elif row[0] != perms_json:
+                        cur.execute(
+                            "UPDATE route_permissions SET permissions = ? WHERE route = ?",
+                            (perms_json, path)
+                        )
+                    conn.commit()
 
                 _registered_routes.add(path)
 
@@ -115,16 +148,20 @@ def set_permission(permission):
 def get_permission(route: str):
     route = _normalize_path(route)
 
-    if not os.path.exists(SETTINGS_PATH):
-        return None
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT route, permissions FROM route_permissions"
+        )
+        rows = cur.fetchall()
 
-    data = lock_and_load_settings(SETTINGS_PATH)
-    route_perms = data.get("route_perms") or {}
+    # rows now contains tuples like: ('/ledger/debts', '["ledger", "debt_viewing"]')
+    route_perms = {r: json.loads(p) for r, p in rows}
 
     if route in route_perms:
         return route_perms[route]
 
-    # Dynamic fallback
+    # Dynamic fallback (parameterized routes)
     for pattern_route, perms in route_perms.items():
         escaped = re.escape(pattern_route)
         pattern = re.sub(r"\\\{[^/]+\\\}", r"[^/]+", escaped)
@@ -148,6 +185,7 @@ class AuthPerms:
     def verify_user(username, requested_route: str):
         requested_route = _normalize_path(requested_route)
 
+        # Allow static and excepted routes
         if requested_route.startswith('/static/'):
             return True
         if requested_route in excepted_routes:
@@ -155,22 +193,20 @@ class AuthPerms:
 
         needed_perms = get_permission(requested_route)
         if not needed_perms:
-            logbook.info(
-                f'Route "{requested_route}" has no defined permission set.'
-            )
+            logbook.info(f'Route "{requested_route}" has no defined permission set.')
             return True
+
+        # Ensure needed_perms is always a list
+        if isinstance(needed_perms, str):
+            needed_perms = [needed_perms]
 
         user_perms = AuthPerms.perms_for_user(username)
 
-        if isinstance(needed_perms, str):
-            return bool(user_perms.get(needed_perms, False))
-
+        # Check each required permission
         for perm in needed_perms:
             if not user_perms.get(perm, False):
                 perms_str = ", ".join([p for p, a in user_perms.items() if a]) or "no permissions"
-                logbook.info(
-                    f'{username} missing permission "{perm}". Has {perms_str}'
-                )
+                logbook.info(f'{username} missing permission "{perm}". Has {perms_str}')
                 return False
 
         return True

@@ -27,7 +27,7 @@ modal.addEventListener('click', (e) => {
 document.getElementById('cancel-delete').addEventListener('click', closeModal);
 document.getElementById('confirm-delete').addEventListener('click', async () => {
     if (deletePersonData.card && deletePersonData.cfid && deletePersonData.name) {
-        await deletePerson(deletePersonData.name, deletePersonData.cfid, deletePersonData.card);
+        await deletePerson(deletePersonData.cfid, deletePersonData.card);
         closeModal();
     }
 });
@@ -105,23 +105,27 @@ function showDeleteConfirmation(card) {
 }
 
 // Delete person API
-async function deletePerson(name, cfid, card) {
+async function deletePerson(cfid, card) {
     try {
-        const data = await fetchJSON('/api/files/delete', {
+        const response = await fetch('/api/files/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
+            body: JSON.stringify({ cfid })
         });
+
+        // Always parse JSON, even if status is not 200
+        const data = await response.json();
 
         if (data.success) {
             card.remove();
             if (!list.querySelector('.person-card-container')) showEmptyState();
         } else {
-            alert('Server failed to delete name');
+            // Show the server-provided error message
+            alert(data.error || 'Server failed to delete name');
         }
     } catch (err) {
         console.error('Error deleting name:', err);
-        alert('Error deleting name');
+        alert('Error deleting name: ' + err.message);
     }
 }
 

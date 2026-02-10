@@ -164,6 +164,10 @@ class authbook:
                     if not okay:
                         logbook.warning("Error giving user all perms! User may be unfairly restricted.")
 
+                # Create a CF Entry for the staff member too
+                from modules.centralfiles.routes import centralfiles
+                centralfiles.add_name(username)
+
                 return True
         except sqlite3.IntegrityError:
             logbook.info(f"Attempted creation of existing account: {username}")
