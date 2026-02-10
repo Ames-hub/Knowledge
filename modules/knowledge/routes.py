@@ -1,40 +1,43 @@
-from library.authperms import valid_perms, set_permission, AuthPerms
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
-from starlette.responses import HTMLResponse
-from library.auth import require_prechecks
+from library.authperms import valid_perms, set_permission, AuthPerms
+from library.auth import require_prechecks, authbook
 from library.logbook import LogBookHandler
-from fastapi.responses import JSONResponse
 from library.database import DB_PATH
-from library.auth import authbook
+from pydantic import BaseModel
+from library import settings
 import sqlite3
+import json
 import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
-logbook = LogBookHandler("Auth Manager System")
+logbook = LogBookHandler("Admin Panel")
 
-@router.get("/auth", response_class=HTMLResponse)
-@set_permission(permission="auth_page")
-async def show_auth_page(request: Request, token: str = Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the auth manager page.")
+# ===== Admin Panel Main Page =====
+@router.get("/knowledge", response_class=HTMLResponse)
+@set_permission(permission="admin_panel")
+async def show_admin_panel(request: Request, token: str = Depends(require_prechecks)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the admin panel.")
     return templates.TemplateResponse(
         request,
-        "auth.html",
+        "admin.html",
     )
 
-@router.get("/api/auth/userlist")
-@set_permission(permission="auth_page")
+# ===== Auth Management Endpoints =====
+@router.get("/api/knowledge/userlist")
+@set_permission(permission="admin_panel")
 async def list_users(request: Request, token: str = Depends(require_prechecks)):
-    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all users, their permissions, and arrested status.")
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing all users.")
     users = authbook.list_users()
     return JSONResponse({
         "valid_permissions": valid_perms,
         "users": users
     }, status_code=200)
 
-@router.get("/api/auth/arrest/{username}")
-@set_permission(permission="auth_page")
+@router.get("/api/knowledge/arrest/{username}")
+@set_permission(permission="admin_panel")
 async def arrest_user(request: Request, username: str, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} (user: {owner}) is arresting user {username}.")
@@ -65,14 +68,14 @@ async def arrest_user(request: Request, username: str, token: str = Depends(requ
                 (username,)
             )
             conn.commit()
-            return HTMLResponse("User arrested successfully.", status_code=200)
+            return JSONResponse({"success": True, "message": "User arrested successfully."}, status_code=200)
         except sqlite3.OperationalError as err:
-            logbook.error(f"Database error occurred while arresting user: {err}", exception=err)
+            logbook.error(f"Database error while arresting user: {err}", exception=err)
             conn.rollback()
-            return JSONResponse({"success": False, "error": "Database error occurred while arresting user."}, status_code=500)
+            return JSONResponse({"success": False, "error": "Database error occurred."}, status_code=500)
 
-@router.get("/api/auth/release/{username}")
-@set_permission(permission="auth_page")
+@router.get("/api/knowledge/release/{username}")
+@set_permission(permission="admin_panel")
 async def release_user(request: Request, username: str, token: str = Depends(require_prechecks)):
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is releasing user {username}.")
     with sqlite3.connect(DB_PATH) as conn:
@@ -83,15 +86,14 @@ async def release_user(request: Request, username: str, token: str = Depends(req
                 (username,)
             )
             conn.commit()
-            return HTMLResponse("User released successfully.", status_code=200)
+            return JSONResponse({"success": True, "message": "User released successfully."}, status_code=200)
         except sqlite3.OperationalError as err:
-            logbook.error(f"Database error occurred while releasing user: {err}", exception=err)
+            logbook.error(f"Database error while releasing user: {err}", exception=err)
             conn.rollback()
-            return JSONResponse({"success": False, "error": "Database error occurred while releasing user."}, status_code=500)
+            return JSONResponse({"success": False, "error": "Database error occurred."}, status_code=500)
 
-
-@router.get("/api/auth/perm/set/{username}/{permission}/{value}")
-@set_permission(permission="auth_page")
+@router.get("/api/knowledge/perm/set/{username}/{permission}/{value}")
+@set_permission(permission="admin_panel")
 async def set_user_permission(request: Request, username: str, permission: str, value: bool, token: str = Depends(require_prechecks)):
     owner = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} (user: {owner}) is setting permission '{permission}' = {value} for user {username}.")
@@ -122,7 +124,6 @@ async def set_user_permission(request: Request, username: str, permission: str, 
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
-
             user_perms = AuthPerms.perms_for_user(username, fill_not_set=False)
 
             if user_perms.get(permission) is None:
@@ -139,8 +140,47 @@ async def set_user_permission(request: Request, username: str, permission: str, 
                     """,
                     (value, username, permission)
                 )
-
+            conn.commit()
         return JSONResponse({"success": True, "permission": permission, "value": value}, status_code=200)
     except sqlite3.OperationalError as err:
-        logbook.error(f"Database error occurred while updating permission: {err}", exception=err)
-        return JSONResponse({"success": False, "error": "Database error occurred while updating permission."}, status_code=500)
+        logbook.error(f"Database error while updating permission: {err}", exception=err)
+        return JSONResponse({"success": False, "error": "Database error occurred."}, status_code=500)
+
+# ===== Settings Management Endpoints =====
+class SettingsData(BaseModel):
+    config: dict
+
+@router.get("/api/knowledge/settings/load")
+@set_permission(permission="admin_panel")
+async def load_settings(request: Request, token: str = Depends(require_prechecks)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is loading settings.")
+    try:
+        with open('settings.json', 'r') as f:
+            data = json.load(f)
+        
+        data['route_perms'] = ["You're not allowed to see this."]  # Hide sensitive data
+        return JSONResponse(data)
+    except Exception as err:
+        logbook.error(f"Error loading settings: {err}", exception=err)
+        return JSONResponse({"error": "Failed to load settings"}, status_code=500)
+
+@router.post("/api/knowledge/settings/save")
+@set_permission(permission="admin_panel")
+async def save_settings(request: Request, data: SettingsData, token: str = Depends(require_prechecks)):
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is saving settings.")
+    for setting, value in data.config.items():
+        setting = str(setting).lower()
+        if setting not in settings.valid_settings.keys():
+            return JSONResponse(
+                content={"success": False, "error": f"Setting key '{setting}' is invalid."},
+                status_code=400
+            )
+        try:
+            settings.save(key=setting, value=value)
+        except Exception as err:
+            logbook.error(f"Error saving setting '{setting}': {err}", exception=err)
+            return JSONResponse(
+                content={"success": False, "error": f"Failed to save setting '{setting}'."},
+                status_code=500
+            )
+    return JSONResponse({"success": True, "message": "Settings saved successfully."})

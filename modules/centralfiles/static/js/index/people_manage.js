@@ -48,7 +48,7 @@ async function fetchJSON(url, options) {
 function showEmptyState() {
     list.innerHTML = `
         <div class="empty-state">
-            <div class="empty-icon">\U0001f50d</div>
+            <div class="empty-icon">👤</div>
             <p>No people found. Add someone to get started.</p>
         </div>
     `;

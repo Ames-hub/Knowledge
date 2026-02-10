@@ -1,6 +1,5 @@
-import sqlite3
-import logging
 from library.logbook import LogBookHandler
+import sqlite3
 
 DB_PATH = "data.sqlite"
 logbook = LogBookHandler('DB Manager')

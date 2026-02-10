@@ -12,6 +12,7 @@ import secrets
 import bcrypt
 import time
 import os
+import shutil
 
 logbook = LogBookHandler('AUTH')
 expiration_hours = 168  # 1 Week
@@ -20,47 +21,49 @@ expiration_hours = 168  # 1 Week
 _login_attempts = {}
 arrested_ips = []
 
+
+# -----------------------------
+# Utility Helpers
+# -----------------------------
+def flag_ip(ip):
+    if ip and ip not in arrested_ips:
+        arrested_ips.append(ip)
+        logbook.info(f"Arrested IP detected: {ip}. Saving IP to list.")
+
+
+# -----------------------------
+# Certificate
+# -----------------------------
 def generate_self_signed_cert(country_name, province_name, locality_name, organisation_name, common_name="localhost", valid_days=365):
     key_file = "certs/key.pem"
     cert_file = "certs/cert.pem"
 
-    if os.path.exists(key_file) or os.path.exists(cert_file):
-        os.remove('certs')
-        os.makedirs('certs')
+    if os.path.exists("certs"):
+        shutil.rmtree("certs", ignore_errors=True)
+    os.makedirs("certs", exist_ok=True)
 
-    # Generate private key
-    key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-    )
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
-    # Generate a self-signed certificate
     subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, u"{}".format(country_name)),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"{}".format(province_name)),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, u"{}".format(locality_name)),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"{}".format(organisation_name)),
+        x509.NameAttribute(NameOID.COUNTRY_NAME, country_name),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, province_name),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, locality_name),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, organisation_name),
         x509.NameAttribute(NameOID.COMMON_NAME, common_name),
     ])
 
-    cert = x509.CertificateBuilder().subject_name(
-        subject
-    ).issuer_name(
-        issuer
-    ).public_key(
-        key.public_key()
-    ).serial_number(
-        x509.random_serial_number()
-    ).not_valid_before(
-        datetime.datetime.now(datetime.timezone.utc)
-    ).not_valid_after(
-        datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=valid_days)
-    ).add_extension(
-        x509.SubjectAlternativeName([x509.DNSName(common_name)]),
-        critical=False,
-    ).sign(key, hashes.SHA256())
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+        .not_valid_after(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=valid_days))
+        .add_extension(x509.SubjectAlternativeName([x509.DNSName(common_name)]), critical=False)
+        .sign(key, hashes.SHA256())
+    )
 
-    # Write private key to file
     with open(key_file, "wb") as f:
         f.write(key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -68,144 +71,83 @@ def generate_self_signed_cert(country_name, province_name, locality_name, organi
             encryption_algorithm=serialization.NoEncryption()
         ))
 
-    # Write certificate to file
     with open(cert_file, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
 
-    print(f"Self-signed certificate saved to {cert_file}")
-    print(f"Private key saved to {key_file}")
-    return {
-        "cert_file": cert_file,
-        "key_file": key_file
-    }
+    return {"cert_file": cert_file, "key_file": key_file}
 
-def require_prechecks(request: Request):
-    token = request.cookies.get("sessionKey") or request.headers.get("Authorization")
 
-    if not token or not authbook.verify_token(token):
-        raise HTTPException(status_code=401, detail="Invalid token")
+# -----------------------------
+# Central Access Validator
+# -----------------------------
+def validate_access(token: str, path: str, ip=None, do_ip_ban=False):
+    if not token:
+        return {"ok": False, "reason": "NO_TOKEN"}
 
     username = authbook.token_owner(token)
-
-    good_authority = AuthPerms.verify_user(username, request.url.path)
-    if not good_authority:
-        raise HTTPException(status_code=403, detail="Invalid permissions to access this route.")
+    if not username:
+        return {"ok": False, "reason": "INVALID_TOKEN"}
 
     if authbook.check_arrested(username):
-        if request.client.host not in arrested_ips:
-            arrested_ips.append(request.client.host)
-            logbook.info(f"Arrested IP detected: {request.client.host}. Saving IP to list.")
-        else:
-            logbook.info(f"Arrested IP detected: {request.client.host}.")
-        raise HTTPException(status_code=403, detail="Account is arrested")
+        if do_ip_ban:
+            flag_ip(ip)
+        return {"ok": False, "reason": "ARRESTED", "username": username}
+
+    if not AuthPerms.verify_user(username, path):
+        return {"ok": False, "reason": "NO_PERMISSION", "username": username}
+
+    return {"ok": True, "username": username}
+
+
+# -----------------------------
+# Request Helpers
+# -----------------------------
+def require_prechecks(request: Request):
+    token = request.cookies.get("sessionKey") or request.headers.get("Authorization")
+    result = validate_access(token, request.url.path, request.client.host)
+
+    if not result["ok"]:
+        raise HTTPException(status_code=403, detail=result["reason"])
 
     return token
 
-def check_valid_login(token, url_target, client_ip, do_IP_ban:bool=False):
-    if not token or not authbook.verify_token(token):
-        return [False, "Invalid token."]
 
-    username = authbook.token_owner(token)
+def check_valid_login(token, url_target, client_ip, do_IP_ban: bool = False):
+    result = validate_access(token, url_target, client_ip, do_IP_ban)
+    return [result["ok"], result.get("reason")]
 
-    good_authority = AuthPerms.verify_user(username, url_target)
-    if not good_authority:
-        return [False, "Insufficient permissions for the requested URL path."]  
-
-    if authbook.check_arrested(username):
-        if client_ip not in arrested_ips:
-            if do_IP_ban:
-                arrested_ips.append(client_ip)
-            return [False, "User is arrested. IP saved to blacklist."]
-        else:
-            return [False, "User is arrested."]
-        
-    return [True, "User login and permissions valid."]
 
 def get_user(request: Request):
     token = request.cookies.get("sessionKey") or request.headers.get("Authorization")
-
-    if not token or not authbook.verify_token(token):
+    if not token:
         return {"token": None, "username": None}
 
     username = authbook.token_owner(token)
     return {"token": token, "username": username}
 
+
+# -----------------------------
+# Errors
+# -----------------------------
 class autherrors:
-    class InvalidPassword(Exception):
-        def __init__(self, password):
-            self.password = password
+    class InvalidPassword(Exception): ...
+    class UserNotFound(Exception): ...
+    class ExistingUser(Exception): ...
+    class AccountArrested(Exception): ...
 
-        def __str__(self):
-            return f"Password \"{self.password}\" is invalid for that account."
 
-    class UserNotFound(Exception):
-        def __init__(self, username):
-            self.username = username
-
-        def __str__(self):
-            return f"User \"{self.username}\" not found."
-
-    class ExistingUser(Exception):
-        def __init__(self, username):
-            self.username = username
-
-        def __str__(self):
-            return f"User \"{self.username}\" already exists."
-
-    class AccountArrested(Exception):
-        def __init__(self, username):
-            self.username = username
-
-        def __str__(self):
-            return f"User \"{self.username}\" Unauthorised, Account has been arrested. IP Logged for security purposes."
-
+# -----------------------------
+# Authbook
+# -----------------------------
 class authbook:
     @staticmethod
-    def list_users():
-        users = AuthPerms.list_users_perms()
-        return users
-
-    @staticmethod
-    def is_user_admin(username: str):
-        try:
-            with sqlite3.connect(DB_PATH) as conn:
-                cur = conn.cursor()
-                cur.execute("SELECT admin FROM authbook WHERE username = ?", (username,))
-                row = cur.fetchone()
-                if not row:
-                    raise autherrors.UserNotFound(username)
-                is_admin = bool(row[0])
-                return is_admin
-        except sqlite3.Error as err:
-            logbook.error("Database error in is_user_admin", exception=err)
-            return False
-
-    @staticmethod
-    def token_owner(token: str):
-        try:
-            with sqlite3.connect(DB_PATH) as conn:
-                cur = conn.cursor()
-                cur.execute(
-                    "SELECT username FROM user_sessions WHERE token = ? AND expires_at > ? ORDER BY created_at DESC",
-                    (token, datetime.datetime.now())
-                )
-                row = cur.fetchone()
-                if not row:
-                    return None
-                # Check if the token is revoked
-                cur.execute("SELECT 1 FROM revoked_tokens WHERE token = ?", (token,))
-                if cur.fetchone():
-                    return None
-                return row[0]
-        except sqlite3.Error as err:
-            logbook.error("Database error in token_owner", exception=err)
-            return None
-
-    @staticmethod
-    def create_account(username: str, password: str):
-        # Checks if there are 0 other accounts. First account is admin always
+    def create_account(username:str, password:str, is_admin:bool=None):
         user_count = len(authbook.list_users())
-        is_admin = user_count == 0
+
+        # Checks if there are 0 other accounts. First account is admin always
+        if is_admin is None:
+            is_admin = user_count == 0
+
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()
@@ -231,51 +173,46 @@ class authbook:
             return False
 
     @staticmethod
-    def check_password(username: str, password: str):
-        # Rate limiting: max 5 attempts per 5 minutes
-        key = f"{username}"
-        attempts = _login_attempts.get(key, [])
-        now = time.time()
-        # Keep only attempts in the last 5 minutes
-        attempts = [t for t in attempts if now - t < 300]
-        if len(attempts) >= 5:
-            logbook.warning(f"Too many login attempts for {username}")
-            return False  # block login but still check the password below
-
+    def token_owner(token: str):
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()
-                cur.execute("SELECT password FROM authbook WHERE username = ?", (username,))
+                cur.execute(
+                    "SELECT username FROM user_sessions WHERE token = ? AND expires_at > ? ORDER BY created_at DESC",
+                    (token, datetime.datetime.now())
+                )
                 row = cur.fetchone()
                 if not row:
-                    raise autherrors.UserNotFound(username)
-                stored_pass = row[0]
+                    return None
 
-                # Detect if a stored password is hashed (bcrypt hashes start with $2b$ or $2a$)
-                if stored_pass.startswith("$2b$") or stored_pass.startswith("$2a$"):
-                    hashed = stored_pass.encode('utf-8')
-                    valid = bcrypt.checkpw(password.encode(), hashed)
-                else:
-                    # Legacy plaintext password detected: hash it now
-                    valid = password == stored_pass
-                    if valid:
-                        hashed_new = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
-                        cur.execute("UPDATE authbook SET password = ? WHERE username = ?", (hashed_new, username))
-                        conn.commit()
-                        logbook.info(f"Upgraded plaintext password for user {username} to bcrypt hash.")
+                cur.execute("SELECT 1 FROM revoked_tokens WHERE token = ?", (token,))
+                if cur.fetchone():
+                    return None
+
+                return row[0]
         except sqlite3.Error as err:
-            logbook.error("Database error in check_password", exception=err)
-            return False
-
-        # Log this attempt
-        _login_attempts[key] = attempts + [now]
-
-        return valid
+            logbook.error("Database error in token_owner", exception=err)
+            return None
 
     @staticmethod
+    def is_user_admin(username):
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT admin FROM authbook WHERE username = ?",
+                    (username,)
+                )
+                row = cur.fetchone()
+                if not row:
+                    return False
+                return bool(row[0])
+        except sqlite3.Error as err:
+            logbook.error("Database error fetching is user is admin", exception=err)
+            return None
+    @staticmethod
     def verify_token(token: str):
-        owner = authbook.token_owner(token)
-        return owner is not None
+        return authbook.token_owner(token) is not None
 
     @staticmethod
     def check_arrested(username: str):
@@ -284,91 +221,106 @@ class authbook:
                 cur = conn.cursor()
                 cur.execute("SELECT arrested FROM authbook WHERE username = ?", (username,))
                 row = cur.fetchone()
-                if not row:
-                    raise autherrors.UserNotFound(username)
-                arrested = bool(row[0])
-                return arrested
-        except sqlite3.Error as err:
-            logbook.error("Database error in check_arrested", exception=err)
-            return True  # assume arrested if DB fails
+                return bool(row[0]) if row else True
+        except sqlite3.Error:
+            return True
 
     @staticmethod
-    def set_arrested(username: str, arrested: bool):
+    def check_password(username: str, password: str):
+        key = username
+        attempts = _login_attempts.get(key, [])
+        now = time.time()
+
+        attempts = [t for t in attempts if now - t < 300]
+
+        if len(attempts) >= 5:
+            _login_attempts[key] = attempts
+            logbook.warning(f"Too many login attempts for {username}")
+            return False
+
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()
-                cur.execute("UPDATE authbook SET arrested = ? WHERE username = ?", (arrested, username))
-                conn.commit()
-                return True
-        except sqlite3.Error as err:
-            logbook.error("Database error in set_arrested", exception=err)
+                cur.execute("SELECT password FROM authbook WHERE username = ?", (username,))
+                row = cur.fetchone()
+                if not row:
+                    return False
+
+                stored_pass = row[0]
+
+                if stored_pass.startswith("$2"):
+                    valid = bcrypt.checkpw(password.encode(), stored_pass.encode())
+                else:
+                    valid = password == stored_pass
+                    if valid:
+                        hashed_new = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                        cur.execute("UPDATE authbook SET password = ? WHERE username = ?", (hashed_new, username))
+                        conn.commit()
+        except sqlite3.Error:
             return False
 
+        _login_attempts[key] = attempts + [now]
+        return valid
+
+    @staticmethod
+    def list_users():
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT username, arrested, admin FROM authbook")
+                rows = cur.fetchall()
+        except sqlite3.Error as err:
+            logbook.error("Error fetching users!", exception=err)
+            return []
+        
+        data = {}
+        for row in rows:
+            data[row[0]] = {
+                "username": row[0],
+                "arrested": row[1],
+                "is_admin": row[2],
+                "permissions": AuthPerms.perms_for_user(row[0])
+            }
+        return data
+
+# -----------------------------
+# User Login
+# -----------------------------
 class UserLogin:
     def __init__(self, details: dict):
         self.token = details.get("token")
         self.logged_via_forcekey = False
+
         if self.token:
-            # Token-based login
             self.username = authbook.token_owner(self.token)
             if not self.username:
-                raise autherrors.UserNotFound("Unknown token")
+                raise Exception("Invalid token")
             self.password = None
         else:
-            # Username/password login.
             self.username = details["username"]
             self.password = details["password"].strip()
             self.request_ip = details["request_ip"]
 
-            with open('forcekey', 'r') as f:
-                forcekey = f.read().strip()
-
-            if self.password == forcekey:
-                self.arrested = authbook.check_arrested(self.username)
-                self.token = self.gen_token()
-                if not self.token or details.get("token") is None:
-                    self.store_token(self.token)
-                logbook.info(f"{self.request_ip} logged in as {self.username} | FORCE KEY ACCESS")
-                self.logged_via_forcekey = True
-                return
-
-            request_ip = details["request_ip"]
-            if authbook.check_arrested(self.username):
-                arrested_ips.append(request_ip)
-
-            if request_ip in arrested_ips:
-                logbook.info(f"Arrested IP detected: {request_ip}. Arresting user who tried to connect from that IP.")
-                # Arrest the account that tried to connect with that IP
-                authbook.set_arrested(self.username, True)
-                raise autherrors.AccountArrested(self.username)
-
             if not authbook.check_password(self.username, self.password):
-                raise autherrors.InvalidPassword(self.password)
+                raise Exception("Invalid password")
+
             self.token = self.gen_token()
 
-        self.arrested = authbook.check_arrested(self.username)
-        if self.arrested:
-            raise autherrors.AccountArrested(self.username)
+        if authbook.check_arrested(self.username):
+            flag_ip(details.get("request_ip"))
+            raise Exception("Account arrested")
 
-        if not self.token or details.get("token") is None:
-            self.store_token(self.token)
+        self.store_token(self.token)
 
     def store_token(self, token: str):
         expires_at = datetime.datetime.now() + datetime.timedelta(hours=expiration_hours)
-        logbook.info(f"Token for {self.username} saved")
-        try:
-            with sqlite3.connect(DB_PATH) as conn:
-                cur = conn.cursor()
-                cur.execute(
-                    "INSERT INTO user_sessions (username, token, created_at, expires_at) VALUES (?, ?, ?, ?)",
-                    (self.username, token, datetime.datetime.now(), expires_at)
-                )
-                conn.commit()
-                return True
-        except sqlite3.Error as err:
-            logbook.error("Failed to store login token", exception=err)
-            return False
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO user_sessions (username, token, created_at, expires_at) VALUES (?, ?, ?, ?)",
+                (self.username, token, datetime.datetime.now(), expires_at)
+            )
+            conn.commit()
 
     def gen_token(self):
-        logbook.info(f"Token for {self.username} randomly generated.")
         return f"{secrets.token_hex(8)}-{secrets.token_hex(4)}.KNOWLEDGE.{secrets.token_hex(4)}-{secrets.token_hex(8)}"

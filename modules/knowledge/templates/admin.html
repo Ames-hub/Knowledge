@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unified Admin Panel</title>
+  <link rel="stylesheet" href="/static/knowledge/css/admin.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <button id="backBtn" class="nav-btn">← Back to Apps</button>
+      <div class="header-tabs">
+        <button id="tabAuth" class="tab-btn active" data-tab="auth">👥 Staff Management</button>
+        <button id="tabSettings" class="tab-btn" data-tab="settings">⚙️ System Settings</button>
+      </div>
+    </div>
+    <div class="header-center">
+      <h1>Unified Admin Panel</h1>
+      <p id="headerSubtitle">Manage users, permissions, and system configuration</p>
+    </div>
+    <div class="header-right">
+      <button id="themeToggle" class="nav-btn">☀️ Light Mode</button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main>
+    <!-- Auth Tab Content -->
+    <div id="authTab" class="tab-content active">
+      <div class="tab-header">
+        <h2>User Management</h2>
+        <p>Manage user accounts, permissions, and arrest status</p>
+      </div>
+      <div id="userGrid" class="grid"></div>
+    </div>
+
+    <!-- Settings Tab Content -->
+    <div id="settingsTab" class="tab-content">
+      <div class="tab-header">
+        <h2>System Configuration</h2>
+        <p>Configure application settings and module behavior</p>
+      </div>
+      
+      <!-- Notice -->
+      <div class="notice-box">
+        <h3>📝 Notice</h3>
+        <p>
+          Settings are divided into individual sections per module.<br>
+          Settings not for a specific module will not apply elsewhere unless stated so.<br>
+          Settings do not save unless "Save Settings" is clicked.<br>
+          Settings here are 'system-wide' and over-ride or limit user preference.
+        </p>
+      </div>
+
+      <!-- Settings Sections -->
+      <div class="settings-section">
+        <h3 class="section-title">📱 App Config</h3>
+        <div class="settings-grid">
+          <section class="config-card">
+            <label for="registration-allowed">Allow new user registrations?</label>
+            <input type="checkbox" id="registration-allowed" data-config-name="registration_allowed">
+          </section>
+
+          <section class="config-card">
+            <label for="web_port">Knowledge app port number:</label>
+            <input type="number" id="web_port" data-config-name="web_port" min="0" max="65535">
+          </section>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="section-title">💰 Ledger/Finances Module</h3>
+        <div class="settings-grid">
+          <section class="config-card">
+            <label for="lookback-length">Ledger lookback period (days):</label>
+            <input type="number" id="lookback-length" data-config-name="lookback_length" min="0">
+            <span class="config-hint">This will limit how many days backwards the ledger will go, so transactions, say, 365 days old, will not show up.</span>
+          </section>
+          <section class="config-card">
+            <label for="debts_overpay_payback_tracking">Track overpayment for debts as new debts?</label>
+            <input type="checkbox" id="debts_overpay_payback_tracking" data-config-name="debts_overpay_payback_tracking">
+            <span class="config-hint">If enabled, when a debt is overpaid, the excess amount will be recorded as a new debt entry for accurate tracking.
+            So if Joe owes Sam $20 and Joe pays $25 to Sam, It will be recorded that Sam owes Joe $5 Now.</span>
+          </section>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button class="save-btn" onclick="saveSettings()">💾 Save All Settings</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <span>&copy; 2026 Admin System</span>
+    <span id="currentTabIndicator">Currently viewing: Staff Management</span>
+  </footer>
+
+  <!-- Toast Container -->
+  <div id="toast" class="toast"></div>
+
+  <!-- JavaScript -->
+  <script src="/static/knowledge/js/admin.js"></script>
+</body>
+</html>
