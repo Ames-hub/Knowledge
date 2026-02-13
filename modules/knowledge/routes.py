@@ -158,7 +158,7 @@ async def load_settings(request: Request, token: str = Depends(require_prechecks
         with open('settings.json', 'r') as f:
             data = json.load(f)
         
-        data['route_perms'] = ["You're not allowed to see this."]  # Hide sensitive data
+        del data['route_perms']  # Hide sensitive data
         return JSONResponse(data)
     except Exception as err:
         logbook.error(f"Error loading settings: {err}", exception=err)

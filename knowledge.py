@@ -50,6 +50,7 @@ DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 @fastapi.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt(request: Request):
+    logbook.info(f"{request.client.host} Is asking for the robots.txt")
     with open('robots.txt') as f:
         data = f.read()
     return data
@@ -113,38 +114,88 @@ async def favicon():
 modules_dir = "modules"
 disabled_modules = []
 
-for module_name in os.listdir(modules_dir):
-    if module_name in disabled_modules:
-        logbook.info(f"[!] Skipping disabled module: {module_name}")
-        continue
-    module_path = os.path.join(modules_dir, module_name)
+loaded_routers = set()
+mounted_statics = set()
+checked_route_modules = set()
+loaded_middlewares = set()
 
-    if os.path.isfile(module_path) or module_name == "__pycache__":
+for root, dirs, files in os.walk(modules_dir):
+    rel_path = os.path.relpath(root, modules_dir)
+    if rel_path == ".":
         continue
-    if os.path.isdir(module_path):
-        # 🔧 Mount static files if they exist
-        static_path = os.path.join(module_path, "static")
-        if os.path.isdir(static_path):
-            mount_path = f"/static/{module_name}"
-            fastapi.mount(mount_path, StaticFiles(directory=static_path), name=f"{module_name}_static")
-            logbook.info(f"[✓] Mounted static files for {module_name} at {mount_path}")
-        else:
-            raise FileNotFoundError(f"No static directory found in {module_name}")
 
-        # 📦 Import and register router
-        routes_file = os.path.join(module_path, "routes.py")
-        if os.path.exists(routes_file):
+    module_parts = rel_path.split(os.sep)
+    top_level_module = module_parts[0]
+
+    if top_level_module in disabled_modules:
+        logbook.info(f"[!] Skipping disabled module: {top_level_module}")
+        dirs[:] = []
+        continue
+
+    if "__pycache__" in module_parts:
+        continue
+
+    # Static Mounting
+    static_path = os.path.join(root, "static")
+    if os.path.isdir(static_path):
+        mount_key = rel_path.replace(os.sep, "/")
+        if mount_key not in mounted_statics:
+            mount_path = f"/static/{mount_key}"
+            fastapi.mount(
+                mount_path,
+                StaticFiles(directory=static_path),
+                name=f"{mount_key}_static"
+            )
+            mounted_statics.add(mount_key)
+            logbook.info(f"[✓] Mounted static files for {mount_key} at {mount_path}")
+
+    # Middleware Handling
+    if top_level_module == "middleware" and "middleware.py" in files:
+        module_import_path = "modules." + ".".join(module_parts) + ".middleware"
+
+        if module_import_path not in loaded_middlewares:
             try:
-                module = importlib.import_module(f"modules.{module_name}.routes")
-                if hasattr(module, "router"):
-                    fastapi.include_router(module.router)
-                    logbook.info(f"[✓] Loaded router from {module_name} module")
+                module = importlib.import_module(module_import_path)
+
+                if hasattr(module, "middleware"):
+                    fastapi.middleware("http")(module.middleware)
+                    loaded_middlewares.add(module_import_path)
+                    logbook.info(f"[✓] Loaded middleware from {module_import_path}")
                 else:
-                    logbook.info(f"[!] No 'router' found in {module_name}.routes")
+                    logbook.info(f"[!] No 'middleware' callable in {module_import_path}")
+
             except Exception as err:
-                logbook.error(f"[✗] Failed to load {module_name}: {err}", exception=err)
-        else:
-            raise FileNotFoundError(f"No routes.py found in {module_name}")
+                logbook.error(
+                    f"[✗] Failed to load middleware {module_import_path}: {err}",
+                    exception=err
+                )
+
+        continue  # don't also try to treat middleware as router
+
+    # Router Handling
+    if "routes.py" in files:
+        module_import_path = "modules." + ".".join(module_parts) + ".routes"
+
+        if module_import_path in checked_route_modules:
+            continue
+
+        checked_route_modules.add(module_import_path)
+
+        try:
+            module = importlib.import_module(module_import_path)
+            if hasattr(module, "router"):
+                fastapi.include_router(module.router)
+                loaded_routers.add(module_import_path)
+                logbook.info(f"[✓] Loaded router from {module_import_path}")
+            else:
+                logbook.info(f"[!] No 'router' found in {module_import_path}")
+        except Exception as err:
+            logbook.error(
+                f"[✗] Failed to load {module_import_path}: {err}",
+                exception=err
+            )
+
+import subprocess
 
 if __name__ == "__main__":
     # The forcekey should never be revealed.
@@ -158,8 +209,10 @@ if __name__ == "__main__":
     if settings.get.use_ssl() is True:
         ssl_certfile_dir = os.path.abspath("certs/cert.pem")
         ssl_keyfile_dir = os.path.abspath("certs/key.pem")
-        if not os.path.exists(ssl_certfile_dir) and not os.path.exists(ssl_keyfile_dir):
-            print("To do that, we need to ask some questions.\n1. What's the base URL people will use to connect to this app on the web? (Default: localhost)")
+        setup_ssl = not (os.path.exists(ssl_certfile_dir) and os.path.exists(ssl_keyfile_dir))
+
+        if setup_ssl:
+            print("To setup SSL, we need to ask some questions.\n1. What's the base URL people will use to connect to this app on the web? (Default: localhost)")
             common_name = input(">>> ")
             if not common_name:  # Entered nothing.
                 common_name = "localhost"
@@ -191,6 +244,7 @@ if __name__ == "__main__":
                 organisation_name=organisation_name,
                 common_name=common_name,
             )
+            print("Warning: These certificates are self-signed. To get a trusted, free certificate, use cert bot.")
     else:
         ssl_certfile_dir = None
         ssl_keyfile_dir = None

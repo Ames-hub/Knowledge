@@ -10,9 +10,9 @@ import datetime
 import sqlite3
 import secrets
 import bcrypt
+import shutil
 import time
 import os
-import shutil
 
 logbook = LogBookHandler('AUTH')
 expiration_hours = 168  # 1 Week
