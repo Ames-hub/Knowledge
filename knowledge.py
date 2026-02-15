@@ -29,11 +29,46 @@ if __name__ == "__main__":
             WEB_PORT = int(WEB_PORT)
             break
 
+        print("""
+============================================================
+                     SECURITY DISCLAIMER
+============================================================
+
+Knowledge is a fairly advanced app, with multiple security
+features to help keep users safe, including salting passwords,
+SSL setup, permissions management, and more.
+
+That said, it is your responsibility to ensure this app is not
+compromised. Knowledge is secure only when our effort is combined
+with yours.
+
+- You are responsible for ensuring SSL is configured, that
+  firewall rules are set, user access is set, etc. etc..
+- We can provide advice if you ask, but we are not liable 
+  for any breaches, data loss, or misuse.
+- Running this app on an exposed network or with incorrect 
+  settings may put your data and users at risk.
+              
+The data at
+risk may be:
+1. Internal finance documents
+2. The names, addresses, phone numbers, etc. of whoever is recorded in the "Central Files" Module
+3.  
+
+If you don't know if its secure, I'd honestly rather
+that you ask an AI than you ask nobody.
+              
+For any questions or inquiries about Knowledge app:
+My discord is: @friendlyfox.exe
+              
+Please make sure your system is secure before going live.
+============================================================
+        """)
         print("Configuration Complete. Further configuration available in 'settings' module of web app.\n")
         print("Thank you for choosing us, And welcome to Knowledge!\n")
 
+from library.auth import setup_selfsigned, setup_certbot_ssl, get_ssl_filepaths
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from library.auth import generate_self_signed_cert
 from fastapi.staticfiles import StaticFiles
 from library.logbook import LogBookHandler
 from library.database import database
@@ -195,7 +230,13 @@ for root, dirs, files in os.walk(modules_dir):
                 exception=err
             )
 
-import subprocess
+def is_running_as_sudo():
+    """
+    Specifically for checking if we can run certbot without problems.
+    """
+    if os.name != "nt":
+        return os.geteuid() == 0
+    return -1
 
 if __name__ == "__main__":
     # The forcekey should never be revealed.
@@ -207,44 +248,31 @@ if __name__ == "__main__":
         f.write(FORCE_KEY)
 
     if settings.get.use_ssl() is True:
-        ssl_certfile_dir = os.path.abspath("certs/cert.pem")
-        ssl_keyfile_dir = os.path.abspath("certs/key.pem")
+        ssl_keyfile_dir, ssl_certfile_dir = get_ssl_filepaths()
         setup_ssl = not (os.path.exists(ssl_certfile_dir) and os.path.exists(ssl_keyfile_dir))
 
         if setup_ssl:
-            print("To setup SSL, we need to ask some questions.\n1. What's the base URL people will use to connect to this app on the web? (Default: localhost)")
-            common_name = input(">>> ")
-            if not common_name:  # Entered nothing.
-                common_name = "localhost"
+            if settings.get.domain() is not None:
+                logbook.info(f"Running server under domain {settings.get.domain()}")
 
-            while True:
-                print("2. What is the code for the name of your country? (Eg, 'US')")
-                country_name = input(">>> ")
-                if len(country_name) != 2:
-                    print("This must be a country code, eg, 'AU' or 'US', not a country name")
-                    continue
-                break
+            print("To setup server certificates, do you want to use certbot? (Recommended) (y/n)")
+            use_certbot = input(">>> ") == "y"
 
-            print("3. What is the name of your province? (Eg, 'California')")
-            province_name = input(">>> ")
+            if use_certbot:
+                is_sudo = is_running_as_sudo()
+                continue_certbot = False
+                if not is_sudo:
+                    raise PermissionError("We need sudo to setup certbot certificates. Please run as sudo.")
+                elif is_sudo == -1:
+                    print("Certbot is only available on Linux systems. Defaulting to self-signed certificates.")
+                    setup_selfsigned()
+                else:
+                    continue_certbot = True
 
-            print("4. What is your locality? (Eg, 'San Francisco')")
-            locality_name = input(">>> ")
-
-            print("5. What is your organisation name? (If you don't have one, leave it blank.)")
-            organisation_name = input(">>> ")
-            if not organisation_name:
-                organisation_name = "N/A"
-            
-            os.makedirs('certs')
-            generate_self_signed_cert(
-                country_name=country_name,
-                province_name=province_name,
-                locality_name=locality_name,
-                organisation_name=organisation_name,
-                common_name=common_name,
-            )
-            print("Warning: These certificates are self-signed. To get a trusted, free certificate, use cert bot.")
+                if continue_certbot:
+                    setup_certbot_ssl()
+            else:
+                setup_selfsigned()
     else:
         ssl_certfile_dir = None
         ssl_keyfile_dir = None

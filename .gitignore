@@ -6,6 +6,6 @@ venv
 logs
 ftp_user_files/*
 settings.json
-*.pem
+certs
 forcekey
 modules/signals/route_funcs/private

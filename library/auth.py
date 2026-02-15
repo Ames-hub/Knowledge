@@ -4,8 +4,11 @@ from library.logbook import LogBookHandler
 from fastapi import HTTPException, Request
 from cryptography.x509.oid import NameOID
 from library.authperms import AuthPerms
+from library.settings import get, save
 from library.database import DB_PATH
 from cryptography import x509
+import subprocess
+import requests
 import datetime
 import sqlite3
 import secrets
@@ -30,17 +33,239 @@ def flag_ip(ip):
         arrested_ips.append(ip)
         logbook.info(f"Arrested IP detected: {ip}. Saving IP to list.")
 
+def get_ssl_filepaths(domain:str=None):
+    """
+    Returns:
+    keyfile_path, certfile_path
+    """
+    if not domain:
+        domain = get.domain()
+    key_file = f"certs/config/live/{domain}/privkey.pem"
+    cert_file = f"certs/config/live/{domain}/fullchain.pem"
+    return key_file, cert_file
 
 # -----------------------------
-# Certificate
+# Certificates
 # -----------------------------
+def update_dns_txt(provider: str, api_token: str, domain_name: str, record_name: str, txt_value: str) -> bool:
+    """
+    Create or update a TXT record for DNS-01 challenge on Cloudflare or Dynu.
+
+    :param provider: "cloudflare" or "dynu"
+    :param api_token: API token/key for the DNS provider
+    :param domain_name: Domain/zone name, e.g., 'example.com'
+    :param record_name: Full TXT record name, e.g., '_acme-challenge.example.com'
+    :param txt_value: TXT value to set
+    :return: True if successful, False otherwise
+    """
+
+    # TODO: Please someone test if the cloudflare updating works. I can't :')
+    if provider.lower() == "cloudflare":
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json"
+        }
+
+        # 1. Get zone ID
+        zones = requests.get(f"https://api.cloudflare.com/client/v4/zones?name={domain_name}", headers=headers).json()
+        if not zones.get("result"):
+            print("Cloudflare zone not found")
+            return False
+        zone_id = zones["result"][0]["id"]
+
+        # 2. Check if TXT record exists
+        records = requests.get(f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records?type=TXT&name={record_name}", headers=headers).json()
+
+        if records["result"]:
+            record_id = records["result"][0]["id"]
+            response = requests.put(
+                f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records/{record_id}",
+                headers=headers,
+                json={"type": "TXT", "name": record_name, "content": txt_value, "ttl": 120}
+            )
+        else:
+            response = requests.post(
+                f"https://api.cloudflare.com/client/v4/zones/{zone_id}/dns_records",
+                headers=headers,
+                json={"type": "TXT", "name": record_name, "content": txt_value, "ttl": 120}
+            )
+
+        return response.ok
+
+    elif provider.lower() == "dynu":
+        headers = {
+            "Api-Key": api_token,
+            "Content-Type": "application/json"
+        }
+
+        # 1. Get domain ID
+        domains = requests.get(f"https://api.dynu.com/v2/dns/{domain_name}", headers=headers).json()
+        if "records" not in domains:
+            print("Dynu zone not found")
+            return False
+
+        # 2. Look for existing TXT record
+        record_id = None
+        for record in domains["records"]:
+            if record["name"] == record_name and record["type"] == "TXT":
+                record_id = record["id"]
+                break
+
+        if record_id:
+            response = requests.put(
+                f"https://api.dynu.com/v2/dns/{domain_name}/records/{record_id}",
+                headers=headers,
+                json={"name": record_name, "type": "TXT", "data": txt_value, "ttl": 120}
+            )
+        else:
+            response = requests.post(
+                f"https://api.dynu.com/v2/dns/{domain_name}/records",
+                headers=headers,
+                json={"name": record_name, "type": "TXT", "data": txt_value, "ttl": 120}
+            )
+
+        return response.ok
+
+    else:
+        print("Unsupported provider")
+        return False
+
+def generate_certbot_cert(
+    domain: str, 
+    email: str, 
+    auth_hook: str = None, 
+    interactive: bool = True
+) -> str | bool:
+    """
+    Generate a DNS-01 cert for a domain using Certbot.
+
+    :param domain: Domain to generate cert for
+    :param email: Your email
+    :param auth_hook: Optional path to a hook script to auto-set TXT record
+    :param interactive: If True, wait for manual "press Enter" to continue; if False, run non-interactively
+    :return: TXT code for manual DNS if interactive=True and no hook, or True if successful with hook or non-interactive
+    """
+    os.makedirs('certs', exist_ok=True)
+    try:
+        cmd = [
+            "sudo",
+            "certbot",
+            "certonly",
+            "--manual",
+            "--preferred-challenges", "dns",
+            "-d", domain,
+            "-m", email,
+            "--agree-tos",
+            "--config-dir", "./certs/config",
+            "--work-dir", "./certs/work",
+            "--logs-dir", "./certs/logs",
+        ]
+
+        if not interactive:
+            cmd += ["--non-interactive", "--manual-public-ip-logging-ok"]
+
+        if auth_hook:
+            cmd += ["--manual-auth-hook", auth_hook, "--manual-cleanup-hook", auth_hook]
+
+        # Run certbot and capture stdout/stderr
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logbook.info(f"Return code for setting up SSL with certbot: {result.returncode}")
+
+        # Fix permissions
+        os.chmod("certs", 0o755)
+
+        # If no auth hook and interactive, parse TXT from Certbot output
+        if interactive and not auth_hook:
+            for line in result.stdout.splitlines():
+                if "_acme-challenge" in line and "TXT value" in line:
+                    txt_value = line.split("value:")[-1].strip()
+                    return txt_value
+            return False
+
+        # Otherwise, just return True for success
+        return True
+
+    except subprocess.CalledProcessError as e:
+        logbook.error(f"Certbot failed for domain {domain}: {e.stderr}")
+        return False
+
+def setup_certbot_ssl():
+    print("What is the domain of your website for this certificate? eg, google.com")
+    domain = input(">>> ")
+    print("What's the email address you wish to use for the certificate?")
+    email_address = input(">>> ")
+
+    save("domain", domain)
+    save("domain_email", email_address)
+
+    success = generate_certbot_cert(
+        domain=domain,
+        email=email_address
+    )
+    print(f"SSL Setup success: {success}")
+    if not success:
+        print("Success failure. Defaulting to self-signed certs.")
+        setup_selfsigned()
+
+    print("Would you like to setup auto-renewing for the Certificates?")
+    do_auto_renew = input(">>> ") == "y"
+    if not do_auto_renew:
+        return True
+
+    # Setup auto-renew
+    print("There are two currently accepted providers for auto-renewing DNS's")
+    print("Please pick one by its number.")
+    print("1. Dynu.com (recommended)")
+    print("2. Cloudflare.com")
+    option = int(input(">>> "))
+    providers = {
+        1: "dynu",
+        2: "cloudflare"
+    }
+    provider = providers[option]
+    save("dns_provider", provider)
+
+    print(f"What is your API Token for {provider}?")
+    api_token = input(">>> ")
+    save("dns_token", api_token)
+
+    print("What did you set the record name as? (default: _acme-challenge)")
+    record_name = input(">>> ")
+    if not record_name:
+        record_name = "_acme-challenge"
+
+    save("record_name", record_name)
+
+    print("Configuration completed! Thank you. Would you like to test renew now? (y/n)")
+    do_test = input(">>> ")
+    if do_test:
+        new_txt_value = generate_certbot_cert(get.domain(), get.domain_email(), interactive=False)
+
+        update_dns_txt(
+            provider=provider,
+            api_token=api_token,
+            domain_name=get.domain(),
+            record_name=record_name,
+            txt_value=new_txt_value,
+        )
+
+def update_certbot_ssl():
+    new_txt_value = generate_certbot_cert(get.domain(), get.domain_email(), interactive=False)
+    success = update_dns_txt(
+        provider=get.dns_provider(),
+        api_token=get.dns_token(),
+        domain_name=get.domain(),
+        record_name=get.record_name(),
+        txt_value=new_txt_value
+    )
+    return success
+
 def generate_self_signed_cert(country_name, province_name, locality_name, organisation_name, common_name="localhost", valid_days=365):
-    key_file = "certs/key.pem"
-    cert_file = "certs/cert.pem"
+    key_file, cert_file = get_ssl_filepaths()
 
     if os.path.exists("certs"):
         shutil.rmtree("certs", ignore_errors=True)
-    os.makedirs("certs", exist_ok=True)
+    os.makedirs(f"certs/config/live/{common_name}", exist_ok=True)
 
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
@@ -76,6 +301,49 @@ def generate_self_signed_cert(country_name, province_name, locality_name, organi
 
     return {"cert_file": cert_file, "key_file": key_file}
 
+def setup_selfsigned():
+    print("To setup SSL, we need to ask some questions.\n1. What's the base URL people will use to connect to this app on the web? (Default: localhost)")
+    if not get.domain():
+        common_name = input(">>> ")
+        if not common_name:  # Entered nothing.
+            common_name = "localhost"
+
+        save("domain", common_name)
+
+    while True:
+        print("2. What is the code for the name of your country? (Eg, 'US')")
+        country_name = input(">>> ")
+        if len(country_name) != 2:
+            print("This must be a country code, eg, 'AU' or 'US', not a country name")
+            continue
+        break
+
+    print("3. What is the name of your province? (Eg, 'California')")
+    province_name = input(">>> ")
+
+    print("4. What is your locality? (Eg, 'San Francisco')")
+    locality_name = input(">>> ")
+
+    print("5. What is your organisation name? (If you don't have one, leave it blank.)")
+    organisation_name = input(">>> ")
+    if not organisation_name:
+        organisation_name = "N/A"
+    
+    os.makedirs('certs')
+    generate_self_signed_cert(
+        country_name=country_name,
+        province_name=province_name,
+        locality_name=locality_name,
+        organisation_name=organisation_name,
+        common_name=common_name,
+        valid_days=365
+    )
+
+    # Remember the cert expires in 1 year
+    one_yr_later = datetime.datetime.now() + datetime.timedelta(days=365)
+    save("time_to_ssl_expiration", one_yr_later.timestamp())
+
+    print("Warning: These certificates are self-signed. To get a trusted, free certificate, use cert bot.")
 
 # -----------------------------
 # Central Access Validator

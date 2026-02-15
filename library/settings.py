@@ -1,4 +1,5 @@
 from library.logbook import LogBookHandler
+from datetime import datetime
 import json
 import os
 
@@ -16,7 +17,13 @@ valid_settings = {
     "web_port": 8020,
     "route_perms": {},
     "debts_overpay_payback_tracking": True,  # If someone overpays a debt, log a new debt for the original debtee to pay back the overpaid amount.
-    "do_bot_identification": True
+    "do_bot_identification": True,
+    "domain": None,
+    "time_to_ssl_expiration": None,  #  timestamp
+    "dns_provider": None,
+    "dns_token": None,
+    "record_name": None,
+    "domain_email": None,
 }
 
 def make_settings_file():
@@ -72,6 +79,32 @@ class get:
     @staticmethod
     def do_bot_identification():
         return bool(get.get("do_bot_identification", True))
+
+    @staticmethod
+    def domain():
+        return str(get.get("domain", None))
+
+    @staticmethod
+    def time_to_ssl_expiration():
+        data = get.get('time_to_ssl_expiration', datetime.now().time())
+        expiration = datetime.fromtimestamp(float(data))
+        return expiration
+    
+    @staticmethod
+    def dns_provider():
+        return str(get.get("dns_provider", None))
+
+    @staticmethod
+    def dns_token():
+        return str(get.get("dns_token", None))
+
+    @staticmethod
+    def record_name():
+        return str(get.get("record_name", None))
+
+    @staticmethod
+    def domain_email():
+        return str(get.get("domain_email", None))
 
 def save(key, value):
     settings = {}
