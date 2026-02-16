@@ -69,17 +69,22 @@ Please make sure your system is secure before going live.
 
 from library.auth import setup_selfsigned, setup_certbot_ssl, get_ssl_filepaths
 from fastapi.responses import HTMLResponse, PlainTextResponse
+from modules.browser.routes import show_apps as apps_route
+from modules.login.routes import show_login as login_route
 from fastapi.staticfiles import StaticFiles
 from library.logbook import LogBookHandler
 from library.database import database
 from fastapi import Request, FastAPI
+from library.auth import get_user
+from fastapi import Depends
 import importlib
 import uvicorn
 import asyncio
 import secrets
 
 fastapi = FastAPI()
-database.modernize()
+if __name__ == "__main__":
+    database.modernize()
 logbook = LogBookHandler('root')
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
@@ -145,6 +150,19 @@ async def favicon():
             return HTMLResponse(content=image_file.read(), media_type="image/png")
     else:
         raise FileNotFoundError("No favicon.png found")
+
+@fastapi.get("/")
+async def show_login_or_browser(request: Request, user = Depends(get_user)):
+    logbook.info(f"IP {request.client.host} accessed the root route.")
+
+    if user['token'] == None or user['username'] is None:
+        # Route to login
+        result = await login_route(request)
+    else:
+        # Route to the app browser
+        result = await apps_route(request)
+
+    return result
 
 modules_dir = "modules"
 disabled_modules = []

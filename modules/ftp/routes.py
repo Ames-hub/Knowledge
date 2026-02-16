@@ -1,9 +1,9 @@
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from library.auth import require_prechecks, authbook
-from fastapi import APIRouter, Request, Depends
+from library.auth import route_prechecks, authbook
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
 from library.logbook import LogBookHandler
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import List
 import base64
@@ -64,7 +64,8 @@ async def ftp(request: Request):
 
 @router.post("/api/ftp/walk")
 @set_permission("ftp_server")
-async def walk_ftp(request: Request, data: walk_data, token: str = Depends(require_prechecks)):
+async def walk_ftp(request: Request, data: walk_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) accessed ftp dir {data.path}.")
 
     try:
@@ -97,7 +98,8 @@ class UploadData(BaseModel):
 
 @router.post("/api/ftp/upload")
 @set_permission("ftp_server")
-async def upload_ftp(request: Request, data: UploadData, token: str = Depends(require_prechecks)):
+async def upload_ftp(request: Request, data: UploadData):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is uploading files to {data.path}.")
 
     file_path, jail_real = resolve_path(data.path)
@@ -121,7 +123,8 @@ async def upload_ftp(request: Request, data: UploadData, token: str = Depends(re
 
 @router.get("/api/ftp/download")
 @set_permission("ftp_server")
-async def download_ftp(request: Request, path: str, token: str = Depends(require_prechecks)):
+async def download_ftp(request: Request, path: str):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) downloaded file {path}.")
 
     try:
@@ -139,7 +142,8 @@ class delete_data(BaseModel):
 
 @router.post("/api/ftp/delete")
 @set_permission("ftp_server")
-async def delete_ftp(request: Request, data: delete_data, token: str = Depends(require_prechecks)):
+async def delete_ftp(request: Request, data: delete_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is deleting file/folder {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -172,7 +176,8 @@ def validate_path(path):
 
 @router.post("/api/ftp/rename")
 @set_permission("ftp_server")
-async def rename_ftp(request: Request, data: rename_data, token: str = Depends(require_prechecks)):
+async def rename_ftp(request: Request, data: rename_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is renaming file/folder {data.path} to {data.new_name}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -198,7 +203,8 @@ class mk_folder_data(BaseModel):
 
 @router.post("/api/ftp/create-folder")
 @set_permission("ftp_server")
-async def create_folder(request: Request, data: mk_folder_data, token: str = Depends(require_prechecks)):
+async def create_folder(request: Request, data: mk_folder_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is creating folder {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -219,7 +225,8 @@ class mk_file_data(BaseModel):
 
 @router.post("/api/ftp/create-file")
 @set_permission("ftp_server")
-async def create_file(request: Request, data: mk_file_data, token: str = Depends(require_prechecks)):
+async def create_file(request: Request, data: mk_file_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is creating file {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -240,7 +247,8 @@ class read_file_data(BaseModel):
 
 @router.post("/api/ftp/read-file")
 @set_permission("ftp_server")
-async def read_file(request: Request, data: read_file_data, token: str = Depends(require_prechecks)):
+async def read_file(request: Request, data: read_file_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is reading file {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 
@@ -262,7 +270,8 @@ class save_file_data(BaseModel):
 
 @router.post("/api/ftp/save")
 @set_permission("ftp_server")
-async def save_file(request: Request, data: save_file_data, token: str = Depends(require_prechecks)):
+async def save_file(request: Request, data: save_file_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is the saving file {data.path}.")
     file_path, jail_real = resolve_path(data.path)
 

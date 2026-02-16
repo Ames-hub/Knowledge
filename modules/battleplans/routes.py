@@ -1,9 +1,9 @@
 from fastapi.responses import HTMLResponse, JSONResponse
-from library.auth import authbook, require_prechecks
-from fastapi import APIRouter, Request, Depends
+from library.auth import authbook, route_prechecks
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
 from library.logbook import LogBookHandler
+from fastapi import APIRouter, Request
 from library.database import DB_PATH
 from pydantic import BaseModel
 from library import settings
@@ -89,13 +89,15 @@ def get_quota_done_helper(date: str, owner: str):
 
 @router.get("/battleplans", response_class=HTMLResponse)
 @set_permission(permission="battleplans")
-async def show_login(request: Request, token: str = Depends(require_prechecks)):
+async def show_login(request: Request):
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the battleplans page.")
+    token:str = route_prechecks(request)
     return templates.TemplateResponse(request, "battleplans.html")
 
 @router.get("/api/bps/list", response_class=JSONResponse)
-async def list_bps(request: Request, token: str = Depends(require_prechecks)):
+async def list_bps(request: Request):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is listing all battleplans.")
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
@@ -114,8 +116,9 @@ async def list_bps(request: Request, token: str = Depends(require_prechecks)):
     return JSONResponse(parsed_data, status_code=200)
 
 @router.get("/api/bps/get/{date}", response_class=JSONResponse)
-async def get_bp(request: Request, date: str, token: str = Depends(require_prechecks)):
+async def get_bp(request: Request, date: str):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is fetching all tasks for {date}.")
     date_obj = datetime.datetime.strptime(date, "%d-%B-%Y")
 
@@ -143,8 +146,9 @@ class task_state_data(BaseModel):
     state: bool
 
 @router.get("/api/bps/task/delete/{task_id}")
-async def delete_task(request: Request, task_id: str, token: str = Depends(require_prechecks)):
+async def delete_task(request: Request, task_id: str):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is deleting task {task_id}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -158,8 +162,9 @@ async def delete_task(request: Request, task_id: str, token: str = Depends(requi
             return JSONResponse({"success": False, "error": "Database error occurred while deleting task."}, status_code=500)
 
 @router.post("/api/bps/task/set_status", response_class=JSONResponse)
-async def set_task_status(request: Request, data: task_state_data, token: str = Depends(require_prechecks)):
+async def set_task_status(request: Request, data: task_state_data):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is setting status of task {data.task_id} to {data.state}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -189,8 +194,9 @@ def make_battplan(bp_date_obj, owner, return_bpid=False):
             return False
 
 @router.get("/api/bps/create/{date}")
-async def route_create_bp(request: Request, date: str, token: str = Depends(require_prechecks)):
+async def route_create_bp(request: Request, date: str):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is creating battleplan for {date}.")
     date_obj = datetime.datetime.strptime(date, "%d-%B-%Y")
 
@@ -209,8 +215,9 @@ class add_task_data(BaseModel):
     category: str
 
 @router.post("/api/bps/task/add")
-async def add_task(request: Request, data: add_task_data, token: str = Depends(require_prechecks)):
+async def add_task(request: Request, data: add_task_data):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is adding task to battleplan for {data.date}.")
     data.date = dateformatenforcer(data.date)
     date_obj = datetime.datetime.strptime(data.date, "%d-%m-%Y")
@@ -250,8 +257,9 @@ class quota_delete(BaseModel):
     quota_id: int
 
 @router.post("/api/bps/quota/delete")
-async def delete_quota(request: Request, data: quota_delete, token: str = Depends(require_prechecks)):
+async def delete_quota(request: Request, data: quota_delete):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is deleting the quota {data.quota_id}.")
     with sqlite3.connect(DB_PATH) as conn:
         try:
@@ -286,8 +294,9 @@ def check_quota_exists(bp_id: int, quota_name: str) -> bool:
             return False
 
 @router.post("/api/bps/quota/create")
-async def create_quota(request: Request, data: quota_make, token: str = Depends(require_prechecks)):
+async def create_quota(request: Request, data: quota_make):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is creating the quota {data.quota_name} for BP with ID {data.bp_id}.")
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -322,8 +331,9 @@ async def create_quota(request: Request, data: quota_make, token: str = Depends(
             return JSONResponse({"success": False, "error": "Database error occurred while creating quota."}, status_code=500)
 
 @router.get("/api/bps/quota/list/{bp_date}")
-async def list_quotas(request: Request, bp_date:str, token: str = Depends(require_prechecks)):
+async def list_quotas(request: Request, bp_date:str):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     bp_date = dateformatenforcer(bp_date)
     logbook.info(f"IP {request.client.host} ({owner}) is listing all quotas for {bp_date}.")
 
@@ -371,8 +381,9 @@ class notfounderror(Exception):
         return self.message
 
 @router.post("/api/bps/quota/done/set")
-async def set_quota_done(request: Request, data: quota_data_set_done, token: str = Depends(require_prechecks)):
+async def set_quota_done(request: Request, data: quota_data_set_done):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is setting quota done amount for quota {data.quota_id} to {data.amount}.")
 
     with sqlite3.connect(DB_PATH) as conn:
@@ -440,8 +451,9 @@ def set_planned_quota(amount, quota_id, owner):
             return False
 
 @router.post("/api/bps/quota/wanted/set")
-async def route_set_quota_wanted(request: Request, data: quota_data_set, token: str = Depends(require_prechecks)):
+async def route_set_quota_wanted(request: Request, data: quota_data_set):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is setting the wanted quota amount for quota {data.quota_id} to {data.amount}.")
 
     success = set_planned_quota(data.amount, data.quota_id, owner)
@@ -505,8 +517,9 @@ def get_quota_name(quota_id):
             return None
 
 @router.post("/api/bps/quota/weekly_target/set")
-async def set_weekly_target(request: Request, data: quota_data_set, token: str = Depends(require_prechecks)):
+async def set_weekly_target(request: Request, data: quota_data_set):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({owner}) Has set weekly target for quota {data.quota_id} to {data.amount}.")
 
     # First, get the quota's current data and verify it exists
@@ -604,8 +617,9 @@ class weekly_prod_get(BaseModel):
     date: str
 
 @router.post("/api/bps/quota/weekly")
-async def get_weekly_production(request: Request, data: weekly_prod_get, token: str = Depends(require_prechecks)):
+async def get_weekly_production(request: Request, data: weekly_prod_get):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is fetching weekly production for {data.date}.")
 
     # Ensure date format
@@ -657,8 +671,9 @@ class clearbp_data(BaseModel):
     date: str
 
 @router.post("/api/bps/clear")
-async def clear_bp(request: Request, data: clearbp_data, token: str = Depends(require_prechecks)):
+async def clear_bp(request: Request, data: clearbp_data):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is clearing battleplan for {data.date}.")
     date_obj = datetime.datetime.strptime(data.date, "%d-%B-%Y")
 
@@ -758,8 +773,9 @@ def import_quotas(conn, owner, today_bp_id, yesterday_bp_id, date_today, save=Tr
     return quotas_list
 
 @router.post("/api/bps/yesterday_import")
-async def yesterday_import(request: Request, data: yesterday_import_bp_data, token: str = Depends(require_prechecks)):
+async def yesterday_import(request: Request, data: yesterday_import_bp_data):
     owner = authbook.token_owner(token)
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({owner}) is importing yesterday's battleplan to {data.date_today}.")
 
     date_today = datetime.datetime.strptime(data.date_today, "%d-%B-%Y")

@@ -1,9 +1,9 @@
 from fastapi.responses import JSONResponse, HTMLResponse, Response
 from library.authperms import set_permission, AuthPerms
-from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
-from library.auth import require_prechecks
 from library.logbook import LogBookHandler
+from library.auth import route_prechecks
+from fastapi import APIRouter, Request
 from library.database import DB_PATH
 from library.auth import authbook
 from typing import Dict, Optional
@@ -952,7 +952,11 @@ class centralfiles:
                 """,
                 (cfid,),
             )
-            is_staff = not cursor.fetchone() != None
+            data = cursor.fetchone()
+            if data:
+                is_staff = bool(data[0])
+            else:
+                is_staff = False
             return is_staff
         except sqlite3.OperationalError:
             conn.rollback()
@@ -1230,7 +1234,8 @@ class centralfiles:
             "phone_no": phone_no,
             "email_addr": email_addr,
             "home_addr": home_addr,
-            "type": profile_type
+            "type": profile_type,
+            "is_staff": authbook.check_exists(cfid=cfid)
         }
 
         return profile
@@ -1358,13 +1363,15 @@ class centralfiles:
 # noinspection PyUnusedLocal
 @router.get("/files", response_class=HTMLResponse)
 @set_permission(permission="central_files")
-async def show_reg(request: Request, token: str = Depends(require_prechecks)):
+async def show_reg(request: Request):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host}, User {authbook.token_owner(token)} has accessed the C/F Page.")
     return templates.TemplateResponse(request, "index.html")
 
 @router.get("/files/dupecheck/{name}", response_class=HTMLResponse)
 @set_permission(permission="central_files")
-async def dupe_check(request: Request, name: str, token: str = Depends(require_prechecks)):
+async def dupe_check(request: Request, name: str):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host}, User {authbook.token_owner(token)} Has checked for duplicates for cfid {name}")
     result = centralfiles.dupe_check(str(name))
     if result["exists"]:
@@ -1377,7 +1384,8 @@ async def dupe_check(request: Request, name: str, token: str = Depends(require_p
 
 @router.get("/files/get/{cfid}")
 @set_permission(permission="central_files")
-async def get_file(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+async def get_file(request: Request, cfid: int):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} Has fetched the folder for cfid {cfid} under account {authbook.token_owner(token)}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     assosciated_invoices = centralfiles.get_assosciated_invoices(cfid)
@@ -1397,9 +1405,11 @@ async def get_file(request: Request, cfid: int, token: str = Depends(require_pre
 
 @router.post("/api/files/modify", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def modify_file(request: Request, data: ModifyFileData, token: str = Depends(require_prechecks)):
+async def modify_file(request: Request, data: ModifyFileData):
+    token:str = route_prechecks(request)
     user = authbook.token_owner(token)
     logbook.info(f"Request from {request.client.host} ({user}) to modify cfid {data.cfid}: field '{data.field}' with value '{data.value}'")
+    is_staff = centralfiles.get_profile_is_staff(data.cfid)
 
     dn_fields = [
         'is_dianetics',
@@ -1429,9 +1439,13 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
             )
             success = True
         elif data.field == "occupation":
+            if is_staff:
+                return JSONResponse(content={"success": False, "error": "You cannot modify a staff members occupation using CF."}, status_code=400)
             centralfiles.modify(data.cfid).occupation(data.value)
             success = True
         elif data.field == "pronouns":
+            if not len(data.value.split("/")) == 2:
+                return JSONResponse(content={"success": False, "error": "Format for pronouns is Invalid. Enter pronouns like She/Her or They/Him"}, status_code=400)
             centralfiles.modify(data.cfid).pronouns(
                 subjective=data.value.split("/")[0],
                 objective=data.value.split("/")[1],
@@ -1512,7 +1526,8 @@ async def modify_file(request: Request, data: ModifyFileData, token: str = Depen
 
 @router.post("/api/files/note/modify", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def modify_note(request: Request, data: NoteData, token: str = Depends(require_prechecks)):
+async def modify_note(request: Request, data: NoteData):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host} under account {authbook.token_owner(token)} to modify note ID {data.note_id} to \"{data.note}\"")
     success = centralfiles.notes(data.note_id).modify(data.note)
     if success:
@@ -1522,7 +1537,8 @@ async def modify_note(request: Request, data: NoteData, token: str = Depends(req
 
 @router.post("/api/files/note/delete", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def delete_note(request: Request, data: NoteDeleteData, token: str = Depends(require_prechecks)):
+async def delete_note(request: Request, data: NoteDeleteData):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host} to DELETE note ID {data.note_id} by account {authbook.token_owner(token)}")
     success = centralfiles.notes(data.note_id).delete()
     if success:
@@ -1532,7 +1548,8 @@ async def delete_note(request: Request, data: NoteDeleteData, token: str = Depen
 
 @router.post("/api/files/note/create", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def create_note(request: Request, data: NoteCreateData, token: str = Depends(require_prechecks)):
+async def create_note(request: Request, data: NoteCreateData):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host} to CREATE a note by account {authbook.token_owner(token)}")
 
     author = authbook.token_owner(token)
@@ -1553,7 +1570,8 @@ async def create_note(request: Request, data: NoteCreateData, token: str = Depen
 
 @router.get("/api/files/get_names", response_class=HTMLResponse)
 @set_permission(permission="central_files")
-async def get_names(request: Request, token: str = Depends(require_prechecks)):
+async def get_names(request: Request):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} Has fetched all names under account {authbook.token_owner(token)}")
     names, cfid_list = centralfiles.get_names()
     data = {
@@ -1567,7 +1585,8 @@ async def get_names(request: Request, token: str = Depends(require_prechecks)):
 
 @router.get("/api/files/get_all_profile", response_class=HTMLResponse)
 @set_permission(permission="central_files")
-async def get_all_profiles(request: Request, token: str = Depends(require_prechecks)):
+async def get_all_profiles(request: Request):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} Has fetched all names under account {authbook.token_owner(token)}")
     data = {
         "profiles": centralfiles.get_all_profiles(),
@@ -1579,7 +1598,8 @@ async def get_all_profiles(request: Request, token: str = Depends(require_preche
 
 @router.post("/api/files/get_profile", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def get_profile(request: Request, data: NamePostData, token: str = Depends(require_prechecks)):
+async def get_profile(request: Request, data: NamePostData):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} fetched profile '{data.name}' under account {authbook.token_owner(token)}")
     try:
         profile = centralfiles.get_profile(name=data.name)
@@ -1591,7 +1611,8 @@ async def get_profile(request: Request, data: NamePostData, token: str = Depends
 
 @router.post("/api/files/create", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def create_name(request: Request, data: NamePostData, token: str = Depends(require_prechecks)):
+async def create_name(request: Request, data: NamePostData):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to CREATE name '{data.name}'")
     cfid = centralfiles.add_name(data.name)
     if cfid is not None:
@@ -1601,7 +1622,8 @@ async def create_name(request: Request, data: NamePostData, token: str = Depends
 
 @router.post("/api/files/delete", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def delete_name(request: Request, data: DeleteNameData, token: str = Depends(require_prechecks)):
+async def delete_name(request: Request, data: DeleteNameData):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to DELETE CFID '{data.cfid}'")
     success = centralfiles.delete_name(data.cfid)
     if success is True:
@@ -1623,7 +1645,8 @@ class SubmitActionData(BaseModel):
 
 @router.post("/api/files/submit_action", response_class=JSONResponse)
 @set_permission(["central_files", "dianetics"])
-async def submit_action(request: Request, data: SubmitActionData, token: str = Depends(require_prechecks)):
+async def submit_action(request: Request, data: SubmitActionData):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to SUBMIT action '{data.action}' for cfid {data.cfid}")
     success = centralfiles.dianetics.modify(data.cfid).add_action(data.action)
     if success:
@@ -1633,14 +1656,16 @@ async def submit_action(request: Request, data: SubmitActionData, token: str = D
 
 @router.get("/api/files/get_actions/{cfid}", response_class=JSONResponse)
 @set_permission(["central_files", "dianetics"])
-async def submit_action(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def submit_action(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host}; Request from account {authbook.token_owner(token)} to get all auditing actions for cfid {cfid}")
     actions = centralfiles.dianetics.list_actions(cfid)
     return JSONResponse(content=actions, status_code=200)
 
 @router.get("/api/files/{cfid}/profile_icon")
 @set_permission(permission="central_files")
-async def get_profile_image(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+async def get_profile_image(request: Request, cfid: int):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to get profile image for cfid {cfid}")
     image_data = centralfiles.get_profile_image(cfid)
     
@@ -1717,24 +1742,36 @@ async def get_profile_field(cfid: int, field_name: str, field_display_name: str,
 # Used by invoicing
 @router.get("/api/files/{cfid}/name")
 @set_permission(permission="central_files")
-async def get_profile_name(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+async def get_profile_name(request: Request, cfid: int):
+    token:str = route_prechecks(request)
     return await get_profile_field(cfid, 'name', 'name', request, token)
 
 # Used by invoicing
 @router.get("/api/files/{cfid}/address")
 @set_permission(permission="central_files")
-async def get_profile_address(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+async def get_profile_address(request: Request, cfid: int):
+    token:str = route_prechecks(request)
     return await get_profile_field(cfid, 'home_addr', 'address', request, token)
 
 @router.get("/api/files/{cfid}/email")
 @set_permission(permission="central_files")
-async def get_profile_email(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+async def get_profile_email(request: Request, cfid: int):
+    token:str = route_prechecks(request)
     return await get_profile_field(cfid, 'email_addr', 'email', request, token)
 
 @router.get("/api/files/{cfid}/phone")
 @set_permission(permission="central_files")
-async def get_profile_phone(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+async def get_profile_phone(request: Request, cfid: int):
+    token:str = route_prechecks(request)
     return await get_profile_field(cfid, 'phone_no', 'phone number', request, token)
+
+@router.get("/api/files/{cfid}/is_staff")
+@set_permission(permission="central_files")
+async def get_profile_is_staff(request: Request, cfid: int):
+    route_prechecks(request)
+    return {
+        "is_staff": centralfiles.get_profile_is_staff(cfid)
+    }
 
 class UploadProfileImageData(BaseModel):
     cfid: int
@@ -1742,7 +1779,8 @@ class UploadProfileImageData(BaseModel):
 
 @router.post("/api/files/upload_profile_picture", response_class=JSONResponse)
 @set_permission(permission="central_files")
-async def upload_profile_image(request: Request, data: UploadProfileImageData, token: str = Depends(require_prechecks)):
+async def upload_profile_image(request: Request, data: UploadProfileImageData):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to upload profile image for cfid {data.cfid}")
     
     try:
@@ -1764,7 +1802,8 @@ async def upload_profile_image(request: Request, data: UploadProfileImageData, t
 
 @router.get("/api/files/{cfid}/occupation")
 @set_permission(permission="central_files")
-async def get_occupation(request: Request, cfid: int, token: str = Depends(require_prechecks)):
+async def get_occupation(request: Request, cfid: int):
+    token:str = route_prechecks(request)
     logbook.info(f"Request from IP {request.client.host}; account {authbook.token_owner(token)} to get the occupation for cfid {cfid}")
     try:
         occupation_data = centralfiles.get_occupation(cfid)
@@ -1775,7 +1814,8 @@ async def get_occupation(request: Request, cfid: int, token: str = Depends(requi
 # A Webpage for full PC Management
 @router.get("/files/get/{cfid}/auditing")
 @set_permission(["central_files", "dianetics"])
-async def load_pc_file(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def load_pc_file(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the PC folder of {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     dianetics_profile = centralfiles.dianetics.get_profile(cfid=cfid)
@@ -1794,7 +1834,8 @@ class SetThetaData(BaseModel):
 
 @router.post("/api/files/set_theta")
 @set_permission(["central_files", "dianetics"])
-async def set_theta(request: Request, post_data: SetThetaData, token: str = Depends(require_prechecks)):
+async def set_theta(request: Request, post_data: SetThetaData):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting CFID {post_data.cfid}'s Theta Count to {post_data.theta_count}")
     success = centralfiles.dianetics.modify(post_data.cfid).set_theta_count(post_data.theta_count)
     update_mind_class_estimation(str(post_data.cfid))
@@ -1806,7 +1847,8 @@ async def set_theta(request: Request, post_data: SetThetaData, token: str = Depe
 
 @router.get("/files/get/{cfid}/agreements")
 @set_permission(permission="central_files")
-async def load_agreements_page(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def load_agreements_page(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the PC folder of {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     return templates.TemplateResponse(
@@ -1823,7 +1865,8 @@ class add_agreement_data(BaseModel):
 
 @router.post("/api/files/{cfid}/agreements/add")
 @set_permission(permission="central_files")
-async def route_add_agreement(request: Request, data:add_agreement_data, cfid, token: str = Depends(require_prechecks)):
+async def route_add_agreement(request: Request, data:add_agreement_data, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has added an agreement for CFID {cfid}, that agreement being \"{data.agreement}\"")
     
     try:
@@ -1851,7 +1894,8 @@ async def route_add_agreement(request: Request, data:add_agreement_data, cfid, t
 
 @router.get('/api/files/{cfid}/agreements/get')
 @set_permission(permission="central_files")
-async def route_get_agreements(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def route_get_agreements(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
 
     agreements_list:list = centralfiles.agreements.get_agreements(cfid=cfid)
@@ -1873,7 +1917,8 @@ class SetFulfilledData(BaseModel):
 
 @router.post('/api/files/{cfid}/agreements/set')
 @set_permission(permission="central_files")
-async def route_set_fulfilled_status(request: Request, data: SetFulfilledData, cfid, token: str = Depends(require_prechecks)):
+async def route_set_fulfilled_status(request: Request, data: SetFulfilledData, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
 
     success = centralfiles.agreements.set_fulfilled_status(cfid=int(cfid), agreement_id=int(data.agreement_id), value=bool(data.value))
@@ -1888,7 +1933,8 @@ class DelAgreementData(BaseModel):
 
 @router.post('/api/files/{cfid}/agreements/delete')
 @set_permission(permission="central_files")
-async def route_set_fulfilled_status(request: Request, data: DelAgreementData, cfid, token: str = Depends(require_prechecks)):
+async def route_set_fulfilled_status(request: Request, data: DelAgreementData, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is listing all agreements with CFID {cfid}.")
 
     success = centralfiles.agreements.delete(cfid=cfid, agreement_id=int(data.agreement_id))
@@ -2190,7 +2236,8 @@ class AuditingLog:
 
 @router.get("/files/get/{cfid}/sessions")
 @set_permission(["central_files", "dianetics"])
-async def load_sessions_page(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def load_sessions_page(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the session records of {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     return templates.TemplateResponse(
@@ -2203,7 +2250,8 @@ async def load_sessions_page(request: Request, cfid, token: str = Depends(requir
 
 @router.get("/api/files/get/{cfid}/sessions/list_all")
 @set_permission(["central_files", "dianetics"])
-async def list_all_sessions(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def list_all_sessions(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed the session records of {cfid}")
     
     all_sessions = AuditingLog.list_all_sessions(cfid)
@@ -2215,7 +2263,8 @@ async def list_all_sessions(request: Request, cfid, token: str = Depends(require
 
 @router.get("/api/files/get/{cfid}/sessions/create/{date}")
 @set_permission(["central_files", "dianetics"])
-async def create_session(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
+async def create_session(request: Request, cfid:int, date:str):
+    token:str = route_prechecks(request)
     username = authbook.token_owner(token)
     logbook.info(f"{request.client.host} ({username}) Has accessed the session records of {cfid}")
     
@@ -2251,7 +2300,8 @@ async def create_session(request: Request, cfid:int, date:str, token: str = Depe
 
 @router.get("/files/get/{cfid}/sessions/{session_id}")
 @set_permission(["central_files", "dianetics"])
-async def load_sessions_page(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+async def load_sessions_page(request: Request, cfid, session_id):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Has accessed to access the specific session {session_id} for {cfid}")
     
     try:
@@ -2289,7 +2339,8 @@ class set_details_data(BaseModel):
 
 @router.post("/files/get/{cfid}/sessions/{session_id}/set_details")
 @set_permission(["central_files", "dianetics"])
-async def route_set_session_details(request: Request, cfid, session_id, data: set_details_data, token: str = Depends(require_prechecks)):
+async def route_set_session_details(request: Request, cfid, session_id, data: set_details_data):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
     
     success = AuditingLog.session(session_id).set_session_details(
@@ -2312,7 +2363,8 @@ class set_remarks_data(BaseModel):
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/set_remarks")
 @set_permission(["central_files", "dianetics"])
-async def route_set_session_details(request: Request, cfid, session_id, data: set_remarks_data, token: str = Depends(require_prechecks)):
+async def route_set_session_details(request: Request, cfid, session_id, data: set_remarks_data):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
 
     success = AuditingLog.session(session_id).set_remarks_value(session_id, data.text_value)
@@ -2332,7 +2384,8 @@ class AddEngramData(BaseModel):
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/add_engram")
 @set_permission(["central_files", "dianetics"])
-async def route_add_engram(request: Request, cfid, session_id, data: AddEngramData, token: str = Depends(require_prechecks)):
+async def route_add_engram(request: Request, cfid, session_id, data: AddEngramData):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
 
     success = AuditingLog.session(session_id).add_engram(data.actions, data.incident, data.somatic, data.incident_age)
@@ -2346,7 +2399,8 @@ async def route_add_engram(request: Request, cfid, session_id, data: AddEngramDa
 
 @router.get("/api/files/get/{cfid}/sessions/{session_id}/list_engrams")
 @set_permission(["central_files", "dianetics"])
-async def route_list_engrams(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+async def route_list_engrams(request: Request, cfid, session_id):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is setting details for the session {session_id} for CFID {cfid}")
 
     engrams = AuditingLog.session(session_id).list_engrams()
@@ -2361,7 +2415,8 @@ async def route_list_engrams(request: Request, cfid, session_id, token: str = De
 
 @router.delete("/api/files/get/{cfid}/sessions/{session_id}/delete_engram/{engram_id}")
 @set_permission(["central_files", "dianetics"])
-async def route_delete_engram(request: Request, cfid, session_id, engram_id, token: str = Depends(require_prechecks)):
+async def route_delete_engram(request: Request, cfid, session_id, engram_id):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is attempting to delete engram {engram_id} for session {session_id}, CFID {cfid}")
     success = AuditingLog.session(session_id=session_id).delete_engram(engram_id)
     return JSONResponse(
@@ -2373,7 +2428,8 @@ async def route_delete_engram(request: Request, cfid, session_id, engram_id, tok
 
 @router.delete("/api/files/get/{cfid}/delete/session/{session_id}")
 @set_permission(["central_files", "dianetics"])
-async def delete_session(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
+async def delete_session(request: Request, cfid, session_id):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is attempting to delete the session {session_id} for {cfid}")
     success = AuditingLog.session(session_id).delete_session()
     return JSONResponse(
@@ -2385,7 +2441,8 @@ async def delete_session(request: Request, cfid, session_id, token: str = Depend
 
 @router.put("/api/files/get/{cfid}/session/set_status/{session_id}/{status_code}")
 @set_permission(["central_files", "dianetics"])
-async def session_set_status(request: Request, cfid, session_id:int, status_code:int, token: str = Depends(require_prechecks)):
+async def session_set_status(request: Request, cfid, session_id:int, status_code:int):
+    token:str = route_prechecks(request)
     valid_statuses = [
         1,  # Completed
         2,  # Pending
@@ -2411,8 +2468,8 @@ async def session_set_status(request: Request, cfid, session_id:int, status_code
 
 @router.get("/api/files/get/{cfid}/sessions/{session_id}/list_actions")
 @set_permission(["central_files", "dianetics"])
-async def list_session_actions(request: Request, cfid, session_id, token: str = Depends(require_prechecks)):
-
+async def list_session_actions(request: Request, cfid, session_id):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) is listing planned actions for session {session_id} (CFID {cfid})")
     
     actions_list = AuditingLog.session(session_id).list_planned_actions()
@@ -2436,7 +2493,8 @@ class AddActionData(BaseModel):
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/add_action")
 @set_permission(["central_files", "dianetics"])
-async def add_session_action(request: Request, cfid, session_id, data: AddActionData, token: str = Depends(require_prechecks)):
+async def add_session_action(request: Request, cfid, session_id, data: AddActionData):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
     
     action_id = AuditingLog.session(session_id=session_id).add_action(data.action_text)
@@ -2453,7 +2511,8 @@ class CompletedActionData(BaseModel):
 
 @router.post("/api/files/get/{cfid}/sessions/{session_id}/update_action/{action_id}")
 @set_permission(["central_files", "dianetics"])
-async def update_session_action(request: Request, cfid, session_id, action_id, data: CompletedActionData, token: str = Depends(require_prechecks)):
+async def update_session_action(request: Request, cfid, session_id, action_id, data: CompletedActionData):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
     
     action_id = AuditingLog.session(session_id=session_id).set_action_status(data.completed, action_id=action_id)
@@ -2467,7 +2526,8 @@ async def update_session_action(request: Request, cfid, session_id, action_id, d
 
 @router.delete("/api/files/get/{cfid}/sessions/{session_id}/delete_action/{action_id}")
 @set_permission(["central_files", "dianetics"])
-async def delete_session_action(request: Request, cfid, session_id, action_id, token: str = Depends(require_prechecks)):
+async def delete_session_action(request: Request, cfid, session_id, action_id):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is adding an action for session {session_id}, CFID {cfid}")
     
     session_id = int(session_id)
@@ -2485,7 +2545,8 @@ async def delete_session_action(request: Request, cfid, session_id, action_id, t
 
 @router.get("/files/get/{cfid}/scheduling")
 @set_permission(["central_files", "dianetics"])
-async def open_scheduling_page(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def open_scheduling_page(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the scheduling page for {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     return templates.TemplateResponse(
@@ -2610,7 +2671,8 @@ def get_scheduling_data(cfid, reference_date=None):
 
 @router.get("/api/files/get/{cfid}/scheduling/fetch/week/{date}")
 @set_permission(["central_files", "dianetics"])
-async def open_scheduling_page(request: Request, cfid:int, date:str, token: str = Depends(require_prechecks)):
+async def open_scheduling_page(request: Request, cfid:int, date:str):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the set scheduling for {cfid}")
 
     try:
@@ -2643,9 +2705,9 @@ async def set_scheduling_cell(
     request: Request, 
     cfid: int, 
     day: str, 
-    postdata: ScheduleCellData, 
-    token: str = Depends(require_prechecks)
+    postdata: ScheduleCellData
 ):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) editing schedule for CFID {cfid} on {day}")
 
     if not postdata.activity and not postdata.auditor and not postdata.room:
@@ -2731,7 +2793,8 @@ async def set_scheduling_cell(
 
 @router.get("/files/get/{cfid}/flags")
 @set_permission("central_files")
-async def open_flags_page(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def open_flags_page(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is accessing the file flags for {cfid}")
     profile = centralfiles.get_profile(cfid=int(cfid))
     return templates.TemplateResponse(
@@ -2795,7 +2858,8 @@ class Dianetics_CF:
 
 @router.get("/api/dianetics/preclear/list")
 @set_permission(permission="dianetics")
-async def list_preclears(request: Request, token: str = Depends(require_prechecks)):
+async def list_preclears(request: Request):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) Is listing all preclears.")
 
     all_pcs = Dianetics_CF.list_all_pcs()
@@ -2862,7 +2926,8 @@ chart_columns = chart_to_db_map.keys()
 
 @router.get("/api/dianetics/dianometry/get-chart/{cfid}")
 @set_permission(permission="dianetics")
-async def get_chart(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def get_chart(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(
         f"IP {request.client.host} ({authbook.token_owner(token)}) is fetching the chart data for CFID {cfid}."
     )
@@ -3121,7 +3186,8 @@ def update_mind_class_estimation(cfid):
 
 @router.post("/api/dianetics/dianometry/update-chart")
 @set_permission(permission="dianetics")
-async def update_chart(request: Request, data: update_chart_data, token: str = Depends(require_prechecks)):
+async def update_chart(request: Request, data: update_chart_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is updating the chart data for CFID {data.cfid}, column {data.column_name}, tone level {data.tone_level}")
 
     if data.column_name not in chart_columns:
@@ -3164,7 +3230,8 @@ dynamic_map = {
 
 @router.post("/api/dianetics/dianometry/dyn_strengths/set")
 @set_permission(permission="dianetics")
-async def dyn_strengths(request: Request, data: dyn_strengths_data, token: str = Depends(require_prechecks)):
+async def dyn_strengths(request: Request, data: dyn_strengths_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is setting dyn strengths for {data.cfid}.")
 
     dyn_strength = int(data.strength)
@@ -3191,7 +3258,8 @@ async def dyn_strengths(request: Request, data: dyn_strengths_data, token: str =
 
 @router.get("/api/dianetics/dianometry/dyn_strengths/get/{cfid}")
 @set_permission(permission="dianetics")
-async def get_dyn_strengths(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def get_dyn_strengths(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting all dyn strengths for {cfid}.")
 
     update_mind_class_estimation(cfid)
@@ -3234,7 +3302,8 @@ class shutoffs_data(BaseModel):
 
 @router.post("/api/dianetics/dianometry/shutoffs/set")
 @set_permission(permission="dianetics")
-async def set_shutoffs(request: Request, data: shutoffs_data, token: str = Depends(require_prechecks)):
+async def set_shutoffs(request: Request, data: shutoffs_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is setting shutoff {data.name} for {data.cfid} to {data.state}.")
 
     update_mind_class_estimation(data.cfid)
@@ -3259,7 +3328,8 @@ async def set_shutoffs(request: Request, data: shutoffs_data, token: str = Depen
 
 @router.get("/api/dianetics/dianometry/shutoffs/get/{cfid}")
 @set_permission(permission=["dianetics", "central_files"])
-async def get_shutoffs(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def get_shutoffs(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting all shutoffs for {cfid}.")
 
     try:
@@ -3303,7 +3373,8 @@ mind_level_map = {
 
 @router.get("/api/dianetics/dianometry/get_mind_class/{cfid}")
 @set_permission(permission=["dianetics", "central_files"])
-async def get_mind_class(request: Request, cfid, token: str = Depends(require_prechecks)):
+async def get_mind_class(request: Request, cfid):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting mind class for {cfid}.")
     # Very often when getting mind class, other values have changed. So we update it here.
     with sqlite3.connect(DB_PATH) as conn:

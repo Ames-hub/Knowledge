@@ -24,6 +24,8 @@ valid_settings = {
     "dns_token": None,
     "record_name": None,
     "domain_email": None,
+    "system_email": None,
+    "sys_email_password": None
 }
 
 def make_settings_file():
@@ -85,8 +87,8 @@ class get:
         return str(get.get("domain", None))
 
     @staticmethod
-    def time_to_ssl_expiration():
-        data = get.get('time_to_ssl_expiration', datetime.now().time())
+    def time_to_ssl_expiration() -> datetime:
+        data = get.get('time_to_ssl_expiration', datetime.now().timestamp())
         expiration = datetime.fromtimestamp(float(data))
         return expiration
     
@@ -102,9 +104,19 @@ class get:
     def record_name():
         return str(get.get("record_name", None))
 
+    # The one used to register domains.
     @staticmethod
     def domain_email():
         return str(get.get("domain_email", None))
+    
+    # The one used to send emails.
+    @staticmethod
+    def system_email():
+        return str(get.get("system_email", None))
+    
+    @staticmethod
+    def sys_email_password():
+        return str(get.get("sys_email_password", None))
 
 def save(key, value):
     settings = {}

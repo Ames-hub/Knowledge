@@ -30,16 +30,68 @@
     </div>
   </header>
 
+  {% if do_warn_expiration %}
+  <div style="background-color: #FF6961; color: black; padding: 10px; border-radius: 20px; text-align: center;">
+    {{ ssl_expiration_msg }}
+  </div>
+  {% endif %}
+
   <main id="main" class="main" role="main">
-    <!-- Placeholder for your content -->
     <div id="workspace" class="workspace">
-      <p>This section is a work in progress lol. Expect to see interesting things here</p>
+      <!-- Profile Header from C/F - Compact version at top -->
+      <div class="profile-header-compact">
+        <div class="profile-header-content">
+          <div class="profile-picture-small">
+            <img 
+              class="profile-image-small" 
+              src="/api/files/{{ profile.cfid }}/profile_icon" 
+              alt="{{ profile.name }}"
+              onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
+            >
+          </div>
+          <div class="profile-info-compact">
+            <span class="profile-name-compact">{{ profile.name }}</span>
+            <span class="profile-occupation-compact">{{ profile.occupation }}</span>
+          </div>
+          <div class="profile-meta-compact">
+            <span class="meta-item-compact" title="CFID">🆔 {{ profile.cfid }}</span>
+            <span class="meta-item-compact" title="Age">🎂 {{ profile.age }}</span>
+            <span class="meta-item-compact" title="Pronouns">🔤 {{ profile.pronouns.subject_pron }}/{{ profile.pronouns.objective_pron }}</span>
+          </div>
+          <button class="change-photo-btn-compact" onclick="changeProfilePicture('{{ profile.cfid }}')" title="Change profile photo">
+            📷
+          </button>
+        </div>
+      </div>
+
+      <!-- Your main content goes here -->
+      <div class="workspace-content">
+        <!-- Other workspace content will go here -->
+      </div>
     </div>
 
     <div id="logout-container">
       <button id="logout-btn">End Session</button>
     </div>
   </main>
+
+  <!-- Profile Picture Modal -->
+  <div id="profile-picture-modal" class="modal">
+    <div class="modal-content">
+      <h3>Change Profile Picture</h3>
+      <p>Upload a new profile picture for {{ profile.name }}</p>
+      <form id="profile-picture-form">
+        <input type="file" id="profile-picture-input" accept="image/*" required>
+        <input type="hidden" id="profile-cfid" value="{{ profile.cfid }}">
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeProfilePictureModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Upload Picture</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="/static/browser/js/browser.js"></script>
+  <script src="/static/browser/js/modify_profile_picture.js"></script>
 </body>
 </html>

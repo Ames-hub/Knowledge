@@ -153,16 +153,15 @@ async function makeEditable(fieldId, cfid, fieldType = 'text', options = []) {
                 } else {
                     displayedValue = newValue;
                 }
-
                 break;
                 
-                case 'dropdown-text':
-                    isValid = options.includes(newValue);
-                    if (!isValid) {
-                        cancelEdit();
-                        return;
-                    }
-                    break;
+            case 'dropdown-text':
+                isValid = options.includes(newValue);
+                if (!isValid) {
+                    cancelEdit();
+                    return;
+                }
+                break;
 
             default:
                 isValid = newValue !== '';
@@ -174,12 +173,14 @@ async function makeEditable(fieldId, cfid, fieldType = 'text', options = []) {
             return;
         }
 
+        // Create the new span with the new value (temporarily)
         const newSpan = document.createElement("span");
         newSpan.id = fieldId;
         newSpan.className = "editable";
         newSpan.innerText = displayedValue;
         newSpan.onclick = () => makeEditable(fieldId, cfid, fieldType, options);
 
+        // Replace input with the new span (show optimistic update)
         input.replaceWith(newSpan);
 
         // Build payload for server
@@ -190,15 +191,44 @@ async function makeEditable(fieldId, cfid, fieldType = 'text', options = []) {
         };
 
         // Send update to server
-        await fetch(`/api/files/modify`, {
+        const response = await fetch(`/api/files/modify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
 
-        console.log(fieldId)
-        if (fieldId === "field-is_dianetics") {
-            location.reload()  // Reload the page to show changes
+        // Check if response is not OK (status code not in 200-299 range)
+        if (!response.ok) {
+            try {
+                const errorData = await response.json();
+                // Display error message from server response, or use status text as fallback
+                const errorMessage = errorData.message || errorData.error || `Error: ${response.status} ${response.statusText}`;
+                alert(`${errorMessage}`);
+                
+                // UNDO THE CHANGE: Revert back to original value
+                const originalSpan = document.createElement("span");
+                originalSpan.id = fieldId;
+                originalSpan.className = "editable";
+                originalSpan.innerText = value; // Use original value from outer scope
+                originalSpan.onclick = () => makeEditable(fieldId, cfid, fieldType, options);
+                newSpan.replaceWith(originalSpan);
+                
+            } catch (e) {
+                // If response is not valid JSON, show generic error with status
+                alert(`Update failed: ${response.status} ${response.statusText}`);
+                
+                // UNDO THE CHANGE: Revert back to original value
+                const originalSpan = document.createElement("span");
+                originalSpan.id = fieldId;
+                originalSpan.className = "editable";
+                originalSpan.innerText = value; // Use original value from outer scope
+                originalSpan.onclick = () => makeEditable(fieldId, cfid, fieldType, options);
+                newSpan.replaceWith(originalSpan);
+            }
+        } else {
+            if (fieldId === "field-is_dianetics") {
+                location.reload();  // Reload the page to show changes
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
-from library.auth import require_prechecks
 from library.logbook import LogBookHandler
 from fastapi.responses import JSONResponse
+from library.auth import route_prechecks
 from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
@@ -34,14 +34,16 @@ def check_archive_exists(archive_id):
 
 @router.get("/textbook")
 @set_permission(permission="bulletin_archives")
-async def load_index(request: Request, token: str = Depends(require_prechecks)):
+async def load_index(request: Request):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has accessed the bulletins / tech memory section.")
     return templates.TemplateResponse("index.html", {"request": request})
 
 # TODO: Need to change all "archive" to "textbook" later on.
 @set_permission(permission="bulletin_archives")
 @router.post("/api/archives/save")
-async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = Depends(require_prechecks)):
+async def save_pdf(request: Request, data: SavePDFRequestWithID):
+    token:str = route_prechecks(request)
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) is saving a PDF to the archives.")
 
@@ -76,7 +78,8 @@ async def save_pdf(request: Request, data: SavePDFRequestWithID, token: str = De
 
 @set_permission(permission="bulletin_archives")
 @router.post("/api/archives/delete")
-async def del_pdf(data: LoadRequest, request: Request, token: str = Depends(require_prechecks)):
+async def del_pdf(data: LoadRequest, request: Request):
+    token:str = route_prechecks(request)
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) is deleting archive ID {data.id}.")
 
@@ -94,7 +97,8 @@ async def del_pdf(data: LoadRequest, request: Request, token: str = Depends(requ
 
 @set_permission(permission="bulletin_archives")
 @router.get("/api/archives/get_all")
-async def get_all_pdfs(request: Request, token: str = Depends(require_prechecks)):
+async def get_all_pdfs(request: Request):
+    token:str = route_prechecks(request)
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) requested all PDF names in the archives.")
 
@@ -127,7 +131,8 @@ async def get_all_pdfs(request: Request, token: str = Depends(require_prechecks)
 
 @set_permission(permission="bulletin_archives")
 @router.post("/api/archives/load")
-async def load_pdf(data: LoadRequest, request: Request, token: str = Depends(require_prechecks)):
+async def load_pdf(data: LoadRequest, request: Request):
+    token:str = route_prechecks(request)
     logged_user = authbook.token_owner(token)
     logbook.info(f"IP {request.client.host} ({logged_user}) is loading archive ID {data.id}.")
 

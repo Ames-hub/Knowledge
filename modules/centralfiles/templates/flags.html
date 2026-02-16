@@ -114,9 +114,15 @@
           <div class="card-body">
             <div class="detail-grid">
               <div class="field">
-                <label>Is Dianetics PC</label>
+                <label title="Is this person undergoing Dianetics processing? If so, unlocks a few useful tools.">Is Dianetics PC</label>
                 <span id="field-is_dianetics" class="editable" onclick="makeEditable('field-is_dianetics', '{{ profile.cfid }}', 'bool')">
                   {{ profile.is_dianetics_pc }}
+                </span>
+              </div>
+              <div class="field">
+                <label title="Is this person a registered staff member on the Knowledge App?">Organisation Staff</label>
+                <span id="field-is_staff">
+                  {{ profile.is_staff }}
                 </span>
               </div>
             </div>

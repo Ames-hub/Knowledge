@@ -1,9 +1,9 @@
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
-from library.auth import require_prechecks
 from library.logbook import LogBookHandler
+from library.auth import route_prechecks
+from fastapi import APIRouter, Request
 from library.database import DB_PATH
 from library.auth import authbook
 from pydantic import BaseModel
@@ -18,7 +18,8 @@ logbook = LogBookHandler("Signal Server")
 
 @router.get("/signals", response_class=HTMLResponse)
 @set_permission(permission="signal_server")
-async def show_page(request: Request, token: str = Depends(require_prechecks)):
+async def show_page(request: Request):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the signal server.")
     return templates.TemplateResponse(
         request,
@@ -51,7 +52,8 @@ class mk_signal_data(BaseModel):
 
 @router.post("/api/signals/mknew", response_class=HTMLResponse)
 @set_permission(permission="signal_server")
-async def mksignal(request: Request, signal: mk_signal_data, token: str = Depends(require_prechecks)):
+async def mksignal(request: Request, signal: mk_signal_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has made a new signal.")
 
     if "/" in signal.signal_route or "\\" in signal.signal_route:
@@ -100,7 +102,8 @@ def save_signal_code(signal_route: str, http_code: int):
 
 @router.post("/api/signals/save/code")
 @set_permission(permission="signal_server")
-async def route_signalcode_save(request: Request, signal: SaveCodeSignalData, token=Depends(require_prechecks)):
+async def route_signalcode_save(request: Request, signal: SaveCodeSignalData):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has saved a signal for {signal.signal_route}.")
 
     success = save_signal_code(signal.signal_route, signal.http_code)
@@ -133,7 +136,8 @@ class SaveSignalData(BaseModel):
 
 @router.post("/api/signals/save/html")
 @set_permission(permission="signal_server")
-async def route_save_html_response(request: Request, signal: SaveSignalData, token=Depends(require_prechecks)):
+async def route_save_html_response(request: Request, signal: SaveSignalData):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) Has saved the HTML response for {signal.signal_route} as:\n{signal.html_response}\n")
 
     success = save_html_response(signal.signal_route, signal.html_response)
@@ -206,7 +210,8 @@ def get_route_closed(route):
 
 @router.get("/api/signals/list")
 @set_permission(permission="signal_server")
-async def list_signals(request: Request, token=Depends(require_prechecks)):
+async def list_signals(request: Request):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has listed all routes.")
 
     data = get_signals_list()
@@ -220,7 +225,8 @@ class loadSignalData(BaseModel):
 
 @router.post("/api/signals/load")
 @set_permission(permission="signal_server")
-async def load_signal(request: Request, signal: loadSignalData, token=Depends(require_prechecks)):
+async def load_signal(request: Request, signal: loadSignalData):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) has loaded the signal {signal.signal_route}.")
 
     data = get_signals_list().get(signal.signal_route, None)
@@ -314,7 +320,8 @@ class del_data(BaseModel):
 
 @router.post("/api/signals/delete")
 @set_permission(permission="signal_server")
-async def delete_route(request: Request, data: del_data, token=Depends(require_prechecks)):
+async def delete_route(request: Request, data: del_data):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) Is deleting route \"{data.signal_route}\"")
     success = del_route(data.signal_route)
     return HTMLResponse(
@@ -341,7 +348,8 @@ def close_route(signal_route):
 
 @router.post("/api/signals/close/{signal_route}")
 @set_permission(permission="signal_server")
-async def route_close_route(request: Request, signal_route, token=Depends(require_prechecks)):
+async def route_close_route(request: Request, signal_route):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)} Closing route \"{signal_route}\"")
 
     success = close_route(signal_route)
@@ -370,7 +378,8 @@ def open_route(signal_route):
 
 @router.post("/api/signals/open/{signal_route}")
 @set_permission(permission="signal_server")
-async def route_open_route(request: Request, signal_route, token=Depends(require_prechecks)):
+async def route_open_route(request: Request, signal_route):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)} opening route \"{signal_route}\"")
 
     success = open_route(signal_route)
@@ -382,7 +391,8 @@ async def route_open_route(request: Request, signal_route, token=Depends(require
 
 @router.get("/api/signals/datafetch/{signal_route}")
 @set_permission(permission="signal_server")
-async def route_get_results(request: Request, signal_route, token=Depends(require_prechecks)):
+async def route_get_results(request: Request, signal_route):
+    token:str = route_prechecks(request)
     logbook.info(f"IP {request.client.host} ({authbook.token_owner(token)}) is getting the data gathered or set by route function for \"{signal_route}\"")
     route_data = get_route_response(signal_route)
 

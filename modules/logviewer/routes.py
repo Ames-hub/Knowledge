@@ -1,7 +1,7 @@
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi import APIRouter, Request, Depends, Query
-from library.auth import authbook, require_prechecks
+from library.auth import authbook, route_prechecks
 from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Request, Query
 from library.authperms import set_permission
 import logging
 import os
@@ -11,7 +11,8 @@ templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "t
 
 @router.get("/logs", response_class=HTMLResponse)
 @set_permission("app_logs")
-async def show_login(request: Request, token: str = Depends(require_prechecks)):
+async def show_login(request: Request):
+    token:str = route_prechecks(request)
     logging.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed the bot logs page.")
     return templates.TemplateResponse(
         request,
@@ -23,8 +24,8 @@ async def show_login(request: Request, token: str = Depends(require_prechecks)):
 async def list_logs(
         request: Request,
         search: str = Query(None, description="String to search for in logs"),
-        token: str = Depends(require_prechecks)
 ):
+    token:str = route_prechecks(request)
     logging.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is listing the bot logs.")
 
     logs_dir = "logs"
@@ -77,7 +78,8 @@ async def list_logs(
 
 @router.get("/logs/{log_name}")
 @set_permission("app_logs")
-async def get_log(request: Request, log_name: str, token: str = Depends(require_prechecks)):
+async def get_log(request: Request, log_name: str):
+    token:str = route_prechecks(request)
     logging.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is getting the bot log {log_name}.")
 
     logs_dir = "logs"

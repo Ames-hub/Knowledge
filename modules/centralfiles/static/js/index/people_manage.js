@@ -54,20 +54,38 @@ function showEmptyState() {
     `;
 }
 
+// Helper function to check if a person is staff
+async function get_name_is_staff(cfid) {
+    try {
+        const response = await fetch(`/api/files/${cfid}/is_staff`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.is_staff ? " 🛡️" : "";
+        }
+        return "";
+    } catch (err) {
+        console.error('Error checking staff status:', err);
+        return "";
+    }
+}
+
 // Build a single person card
-function createPersonCard(name, cfid) {
+async function createPersonCard(name, cfid) {
     const cardContainer = document.createElement('div');
     cardContainer.className = 'person-card-container';
     cardContainer.dataset.cfid = cfid;
     cardContainer.dataset.name = name;
-
+    
+    // Get staff emoji asynchronously
+    const staffEmoji = await get_name_is_staff(cfid);
+    
     cardContainer.innerHTML = `
         <a class="person-card" href="/files/get/${cfid ?? encodeURIComponent(name)}">
             <div class="person-card-content">
                 <img class="profile-image" src="/api/files/${cfid}/profile_icon" alt="${name}"
                      onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9IiNlOWVjZWYiLz4KPHBhdGggZD0iTTMwIDMzQzMzLjMxMzcgMzMgMzYgMzAuMzEzNyAzNiAyN0MzNiAyMy42ODYzIDMzLjMxMzcgMjEgMzAgMjFDMjYuNjg2MyAyMSAyNCAyMy42ODYzIDI0IDI3QzI0IDMwLjMxMzcgMjYuNjg2MyAzMyAzMCAzM1oiIGZpbGw9IiM2Yzc1N2QiLz4KPHBhdGggZD0iTTQyIDM5QzQyIDQxLjIwOTEgNDAuMjA5MSA0MyAzOCA0M0gyMkMxOS43OTA5IDQzIDE4IDQxLjIwOTEgMTggMzlDMTggMzQuNTgyNSAyNS4zNzIgMzIgMzAgMzJDMzQuNjI4IDMyIDQyIDM0LjU4MjUgNDIgMzlaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='">
                 <div class="person-info">
-                    <div class="person-name">${name}</div>
+                    <div class="person-name">${name}${staffEmoji}</div>
                     <div class="person-occupation occupation-loading">Loading occupation...</div>
                 </div>
             </div>
@@ -152,7 +170,7 @@ async function addName() {
 
         if (data.success && data.cfid) {
             if (list.querySelector('.empty-state')) list.querySelector('.empty-state').remove();
-            const card = createPersonCard(name, data.cfid);
+            const card = await createPersonCard(name, data.cfid);
             list.appendChild(card);
             loadOccupation(card, data.cfid);
             input.value = '';
@@ -178,11 +196,20 @@ async function Get_Names() {
         if (data.names.length === 0) return showEmptyState();
 
         const fragment = document.createDocumentFragment();
-        data.names.forEach((name, i) => {
-            const card = createPersonCard(name, data.cfids[i]);
+        
+        // Create all cards concurrently
+        const cardPromises = data.names.map((name, i) => 
+            createPersonCard(name, data.cfids[i])
+        );
+        
+        const cards = await Promise.all(cardPromises);
+        
+        cards.forEach((card, i) => {
             fragment.appendChild(card);
+            // Load occupation separately
             loadOccupation(card, data.cfids[i]);
         });
+        
         list.appendChild(fragment);
     } catch (err) {
         console.error('Error fetching names:', err);

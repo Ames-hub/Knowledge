@@ -59,7 +59,7 @@ def update_dns_txt(provider: str, api_token: str, domain_name: str, record_name:
     :return: True if successful, False otherwise
     """
 
-    # TODO: Please someone test if the cloudflare updating works. I can't :')
+    # TODO: Please someone test if this all works, I can't do so with my setup :')
     if provider.lower() == "cloudflare":
         headers = {
             "Authorization": f"Bearer {api_token}",
@@ -98,34 +98,40 @@ def update_dns_txt(provider: str, api_token: str, domain_name: str, record_name:
             "Content-Type": "application/json"
         }
 
-        # 1. Get domain ID
-        domains = requests.get(f"https://api.dynu.com/v2/dns/{domain_name}", headers=headers).json()
-        if "records" not in domains:
-            print("Dynu zone not found")
+        # 1. Get domain info
+        domain_info = requests.get(f"https://api.dynu.com/v2/dns/{domain_name}", headers=headers).json()
+        if "records" not in domain_info:
+            print(f"Dynu domain not found: {domain_info}")
             return False
 
-        # 2. Look for existing TXT record
+        # 2. Convert full record name to Dynu relative name
+        record_short_name = record_name.replace(f".{domain_name}", "")
+
+        # 3. Look for existing TXT record
         record_id = None
-        for record in domains["records"]:
-            if record["name"] == record_name and record["type"] == "TXT":
+        for record in domain_info["records"]:
+            if record["name"] == record_short_name and record["type"] == "TXT":
                 record_id = record["id"]
                 break
 
+        # 4. Prepare payload
+        payload = {"name": record_short_name, "type": "TXT", "data": txt_value, "ttl": 120}
+
+        # 5. Update or create
         if record_id:
             response = requests.put(
                 f"https://api.dynu.com/v2/dns/{domain_name}/records/{record_id}",
                 headers=headers,
-                json={"name": record_name, "type": "TXT", "data": txt_value, "ttl": 120}
+                json=payload
             )
         else:
             response = requests.post(
                 f"https://api.dynu.com/v2/dns/{domain_name}/records",
                 headers=headers,
-                json={"name": record_name, "type": "TXT", "data": txt_value, "ttl": 120}
+                json=payload
             )
 
         return response.ok
-
     else:
         print("Unsupported provider")
         return False
@@ -133,15 +139,14 @@ def update_dns_txt(provider: str, api_token: str, domain_name: str, record_name:
 def generate_certbot_cert(
     domain: str, 
     email: str, 
-    auth_hook: str = None, 
-    interactive: bool = True
+    interactive: bool = True,
+    force_renewal: bool = False
 ) -> str | bool:
     """
     Generate a DNS-01 cert for a domain using Certbot.
 
     :param domain: Domain to generate cert for
     :param email: Your email
-    :param auth_hook: Optional path to a hook script to auto-set TXT record
     :param interactive: If True, wait for manual "press Enter" to continue; if False, run non-interactively
     :return: TXT code for manual DNS if interactive=True and no hook, or True if successful with hook or non-interactive
     """
@@ -156,34 +161,48 @@ def generate_certbot_cert(
             "-d", domain,
             "-m", email,
             "--agree-tos",
+            "--manual-auth-hook", "./certs/certbot_hook.py",
+            "--manual-cleanup-hook", "./certs/certbot_cleanup_hook.py",  # deletes TXT after validation
             "--config-dir", "./certs/config",
             "--work-dir", "./certs/work",
             "--logs-dir", "./certs/logs",
+            "--non-interactive",
+            "--manual-public-ip-logging-ok"
         ]
 
         if not interactive:
             cmd += ["--non-interactive", "--manual-public-ip-logging-ok"]
-
-        if auth_hook:
-            cmd += ["--manual-auth-hook", auth_hook, "--manual-cleanup-hook", auth_hook]
+        if force_renewal:
+            cmd += ['--force-renewal']
 
         # Run certbot and capture stdout/stderr
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        logbook.info(f"Return code for setting up SSL with certbot: {result.returncode}")
+        success = result.returncode == 0
+        logbook.info(f"Return code for setting up SSL with certbot: {success}")
+        cert_already_valid = "Certificate not yet due for renewal" in result.stdout
 
         # Fix permissions
-        os.chmod("certs", 0o755)
+        subprocess.run([
+            'sudo',
+            'chmod',
+            '-R',
+            '755',
+            './certs'
+        ])
 
         # If no auth hook and interactive, parse TXT from Certbot output
-        if interactive and not auth_hook:
-            for line in result.stdout.splitlines():
-                if "_acme-challenge" in line and "TXT value" in line:
-                    txt_value = line.split("value:")[-1].strip()
-                    return txt_value
-            return False
+        if not interactive:
+            if not cert_already_valid:                
+                for line in result.stdout.splitlines():
+                    if "_acme-challenge" in line and "TXT value" in line:
+                        txt_value = line.split("value:")[-1].strip()
+                        return txt_value
+                return False
+            else:
+                return True
 
         # Otherwise, just return True for success
-        return True
+        return success
 
     except subprocess.CalledProcessError as e:
         logbook.error(f"Certbot failed for domain {domain}: {e.stderr}")
@@ -207,7 +226,12 @@ def setup_certbot_ssl():
         print("Success failure. Defaulting to self-signed certs.")
         setup_selfsigned()
 
-    print("Would you like to setup auto-renewing for the Certificates?")
+    print("NOTICE: You will be required to do this every 90 days to keep up with Certbot's renewment policy.")
+    print("We will notify you.")
+    # TODO: Fix and make sure auto-renewing works. 
+    return True
+    print("Would you like to setup auto-renewing for the Certificates? (y/n)")
+
     do_auto_renew = input(">>> ") == "y"
     if not do_auto_renew:
         return True
@@ -241,13 +265,18 @@ def setup_certbot_ssl():
     if do_test:
         new_txt_value = generate_certbot_cert(get.domain(), get.domain_email(), interactive=False)
 
-        update_dns_txt(
+        success = update_dns_txt(
             provider=provider,
             api_token=api_token,
             domain_name=get.domain(),
             record_name=record_name,
             txt_value=new_txt_value,
         )
+
+        if success:
+            print("DNS Updating successfully!")
+        else:
+            print("Somethings not right with updating the DNS. Check the token and data in settings and try again.")
 
 def update_certbot_ssl():
     new_txt_value = generate_certbot_cert(get.domain(), get.domain_email(), interactive=False)
@@ -370,7 +399,7 @@ def validate_access(token: str, path: str, ip=None, do_ip_ban=False):
 # -----------------------------
 # Request Helpers
 # -----------------------------
-def require_prechecks(request: Request):
+def route_prechecks(request: Request):
     token = request.cookies.get("sessionKey") or request.headers.get("Authorization")
     result = validate_access(token, request.url.path, request.client.host)
 
@@ -393,21 +422,220 @@ def get_user(request: Request):
     username = authbook.token_owner(token)
     return {"token": token, "username": username}
 
+def __destroy_user_data(username: str):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    try:
+        # Check they exist
+        cur.execute("SELECT username FROM authbook WHERE username = ?", (username,))
+        if not cur.fetchone():
+            print("User not found.")
+            return False
+
+        # Get CFID if they have one
+        cur.execute("SELECT cfid FROM cf_staff_usernames WHERE username = ?", (username,))
+        row = cur.fetchone()
+        cfid = row[0] if row else None
+
+        # Username based tables
+        username_tables = [
+            ("auth_permissions", "username"),
+            ("user_sessions", "username"),
+            ("bulletin_archives", "owner"),
+            ("finance_accounts", "owner"),
+            ("battleplans", "owner"),
+            ("bp_tasks", "owner"),
+            ("bp_quotas", "owner"),
+            ("odometer_entries", "user"),
+        ]
+
+        for table, column in username_tables:
+            cur.execute(f"DELETE FROM {table} WHERE {column} = ?", (username,))
+
+        # CFID Based tables
+        if cfid is not None:
+            cfid_tables = [
+                "cf_names",
+                "cf_name_types",
+                "cf_ages",
+                "cf_pronouns",
+                "cf_profile_notes",
+                "cf_pc_contact_details",
+                "cf_is_dianetics_pc",
+                "cf_dn_stuck_case",
+                "cf_dn_control_case",
+                "cf_dn_shutoffs",
+                "cf_dn_fabricator_case",
+                "cf_dn_action_records",
+                "cf_tonescale_records",
+                "cf_pc_mind_class",
+                "cf_profile_images",
+                "cf_occupations",
+                "cf_dates_of_birth",
+                "cf_pc_theta_endowments",
+                "cf_pc_can_handle_life",
+                "cf_agreements",
+                "sessions_list",
+                "session_actions",
+                "session_engrams",
+                "cf_chem_assist",
+                "dn_schedule_data",
+                "dn_scheduling_data_repeating",
+                "cf_dynamic_strengths",
+                "CF_hubbard_chard_of_eval",
+            ]
+
+            for table in cfid_tables:
+                cur.execute(f"DELETE FROM {table} WHERE cfid = ?", (cfid,))
+
+        # Remove auth records
+        cur.execute("DELETE FROM authbook WHERE username = ?", (username,))
+        cur.execute("DELETE FROM cf_staff_usernames WHERE username = ?", (username,))
+
+        conn.commit()
+        return True
+    except sqlite3.OperationalError as err:
+        conn.rollback()
+        logbook.error("Error deleting a user's data.", err)
+        return False
+    finally:
+        conn.close()
 
 # -----------------------------
 # Errors
 # -----------------------------
 class autherrors:
-    class InvalidPassword(Exception): ...
-    class UserNotFound(Exception): ...
-    class ExistingUser(Exception): ...
-    class AccountArrested(Exception): ...
-
+    class InvalidPassword(Exception):
+        def __init__(self):
+            pass
+    class UserNotFound(Exception):
+        def __init__(self):
+            pass
+    class ExistingUser(Exception):
+        def __init__(self):
+            pass
+    class AccountArrested(Exception):
+        def __init__(self):
+            pass
 
 # -----------------------------
 # Authbook
 # -----------------------------
+class authtype:
+    class token:
+        def __init__(self, token):
+            self.token = str(token)
+        def __str__(self):
+            return str(self.token)
+    class password:
+        def __init__(self, password):
+            self.password = str(password)
+        def __str__(self):
+            return str(self.password)
+
 class authbook:
+    class user_account:
+        def __init__(self, username:str, authentication: authtype.password | authtype.token = None):
+            self.username = username
+            self.assosciated_cfid = self.get_assosciated_cfid()
+
+            if isinstance(authentication, authtype.password):
+                if not authbook.check_password(self.username, str(authentication)):
+                    raise autherrors.InvalidPassword
+            elif isinstance(authentication, authtype.token):
+                if not authbook.verify_token(str(authentication)):
+                    raise autherrors.InvalidPassword
+
+        class errors:
+            class nonconfirmation(Exception):
+                pass
+
+        def get_assosciated_cfid(self):
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT cfid FROM cf_staff_usernames WHERE username = ?", (self.username,))
+                row = cur.fetchone()
+            cfid = row[0] if row else None 
+            return cfid
+
+        def delete(self, confirm:bool):
+            if not confirm:
+                raise self.errors.nonconfirmation
+            
+            success = __destroy_user_data(self.username)
+
+            return success
+
+        def get_is_admin(self):
+            try:
+                with sqlite3.connect(DB_PATH) as conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT admin FROM authbook WHERE username = ?",
+                        (self.username,)
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        return bool(row[0])
+                    else:
+                        return False
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error fetching if {self.username} is an admin", err)
+                return False
+
+        def get_is_arrested(self):
+            try:
+                with sqlite3.connect(DB_PATH) as conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT arrested FROM authbook WHERE username = ?",
+                        (self.username,)
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        return bool(row[0])
+                    else:
+                        return False
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error fetching if {self.username} is arrested", err)
+                return False
+
+    @staticmethod
+    def check_exists(cfid:int=None, username:str=None):
+        if cfid and username:
+            raise ValueError("Pick one argument or the other, not both.")
+        if not cfid and not username:
+            raise ValueError("Too few arguments picked! Pick one or the other!")
+
+        if cfid:
+            try:
+                with sqlite3.connect(DB_PATH) as conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT username FROM cf_staff_usernames WHERE cfid = ?",
+                        (cfid,)
+                    )
+                    row = cur.fetchone()
+                    return row is not None
+            except sqlite3.Error as err:
+                logbook.error("Database error fetching if user exists", exception=err)
+                return False
+
+        if username:
+            try:
+                with sqlite3.connect(DB_PATH) as conn:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "SELECT admin FROM authbook WHERE username = ?",
+                        (username,)
+                    )
+                    row = cur.fetchone()
+                    return row is not None
+            except sqlite3.Error as err:
+                logbook.error("Database error fetching if user exists", exception=err)
+                return None
+
     @staticmethod
     def create_account(username:str, password:str, is_admin:bool=None):
         user_count = len(authbook.list_users())
@@ -434,7 +662,20 @@ class authbook:
 
                 # Create a CF Entry for the staff member too
                 from modules.centralfiles.routes import centralfiles
-                centralfiles.add_name(username)
+                cfid = centralfiles.add_name(username)
+
+                # Assosciate CFID with profile
+                cur.execute(
+                    "INSERT INTO cf_staff_usernames (cfid, username) VALUES (?, ?)",
+                    (cfid, username),
+                )
+
+                # Do not mark them as 'unemployed'
+                cur.execute(
+                    "INSERT INTO cf_occupations (cfid, occupation) VALUES (?, ?)",
+                    (cfid, "Not Known"),
+                )
+                conn.commit()
 
                 return True
         except sqlite3.IntegrityError:
@@ -451,13 +692,13 @@ class authbook:
                 cur = conn.cursor()
                 cur.execute(
                     "SELECT username FROM user_sessions WHERE token = ? AND expires_at > ? ORDER BY created_at DESC",
-                    (token, datetime.datetime.now())
+                    (str(token), datetime.datetime.now())
                 )
                 row = cur.fetchone()
                 if not row:
                     return None
 
-                cur.execute("SELECT 1 FROM revoked_tokens WHERE token = ?", (token,))
+                cur.execute("SELECT 1 FROM revoked_tokens WHERE token = ?", (str(token),))
                 if cur.fetchone():
                     return None
 
@@ -482,8 +723,12 @@ class authbook:
         except sqlite3.Error as err:
             logbook.error("Database error fetching is user is admin", exception=err)
             return None
+        
     @staticmethod
     def verify_token(token: str):
+        """
+        Checks if a token is valid, returns False if not.
+        """
         return authbook.token_owner(token) is not None
 
     @staticmethod
@@ -566,21 +811,21 @@ class UserLogin:
         if self.token:
             self.username = authbook.token_owner(self.token)
             if not self.username:
-                raise Exception("Invalid token")
+                raise autherrors.UserNotFound
             self.password = None
         else:
-            self.username = details["username"]
+            self.username = details["username"].strip()
             self.password = details["password"].strip()
             self.request_ip = details["request_ip"]
 
             if not authbook.check_password(self.username, self.password):
-                raise Exception("Invalid password")
+                raise autherrors.InvalidPassword
 
             self.token = self.gen_token()
 
         if authbook.check_arrested(self.username):
             flag_ip(details.get("request_ip"))
-            raise Exception("Account arrested")
+            raise autherrors.AccountArrested
 
         self.store_token(self.token)
 

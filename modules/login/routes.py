@@ -1,9 +1,8 @@
-from library.auth import authbook, UserLogin, autherrors, get_user, check_valid_login
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi import APIRouter, Request, Depends
+from library.auth import authbook, autherrors, UserLogin
 from fastapi.templating import Jinja2Templates
-from modules.browser.routes import templates as browser_templates
 from library.logbook import LogBookHandler
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 import os
 
@@ -21,18 +20,7 @@ class LoginData(BaseModel):
 @router.get("/login", response_class=HTMLResponse)
 async def show_login(request: Request):
     logbook.info(f"IP {request.client.host} accessed the login page.")
-    return templates.TemplateResponse("index.html", {"request": request})
-
-@router.get("/")
-async def show_login_or_browser(request: Request, user = Depends(get_user)):
-    logbook.info(f"IP {request.client.host} accessed the root route.")
-
-    if user['token'] == None or user['username'] is None:
-        # Route to login
-        return templates.TemplateResponse("index.html", {"request": request})
-    else:
-        # Route to the app browser
-        return browser_templates.TemplateResponse(request, "index.html")
+    return templates.TemplateResponse(request, "index.html")
 
 @router.post("/api/token/check")
 async def verify_token(request: Request, data: TokenData):
