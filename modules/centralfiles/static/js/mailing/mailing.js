@@ -265,7 +265,9 @@ function clearSelection() {
 
 function updateSelectionStats() {
     const stats = document.getElementById('selectionStats');
-    stats.textContent = `${selectedPeople.size} selected`;
+    if (stats) {
+        stats.textContent = `${selectedPeople.size} selected`;
+    }
 }
 
 function updateRecipientSummary() {
@@ -273,28 +275,40 @@ function updateRecipientSummary() {
     const count = document.getElementById('selectedCount');
     const badgesContainer = document.getElementById('selectedRecipientsList');
     
+    // Add null checks for all elements
     const selectedCount = selectedPeople.size;
-    count.textContent = selectedCount;
+    
+    if (count) {
+        count.textContent = selectedCount;
+    }
     
     if (selectedCount === 0) {
-        summary.textContent = 'No recipients selected';
-        badgesContainer.innerHTML = '<span style="color: var(--text-soft);">None selected</span>';
+        if (summary) {
+            summary.textContent = 'No recipients selected';
+        }
+        if (badgesContainer) {
+            badgesContainer.innerHTML = '<span style="color: var(--text-soft);">None selected</span>';
+        }
     } else {
-        summary.textContent = `${selectedCount} recipient(s) selected`;
+        if (summary) {
+            summary.textContent = `${selectedCount} recipient(s) selected`;
+        }
         
-        // Create badges
-        let badgesHtml = '';
-        people.forEach(person => {
-            if (selectedPeople.has(person.email)) {
-                badgesHtml += `
-                    <span class="recipient-badge">
-                        ${escapeHtml(person.rawName || person.name)}
-                        <button class="remove-badge" onclick="removeRecipient('${person.email}')">✕</button>
-                    </span>
-                `;
-            }
-        });
-        badgesContainer.innerHTML = badgesHtml;
+        // Create badges only if container exists
+        if (badgesContainer) {
+            let badgesHtml = '';
+            people.forEach(person => {
+                if (selectedPeople.has(person.email)) {
+                    badgesHtml += `
+                        <span class="recipient-badge">
+                            ${escapeHtml(person.rawName || person.name)}
+                            <button class="remove-badge" onclick="removeRecipient('${person.email}')">✕</button>
+                        </span>
+                    `;
+                }
+            });
+            badgesContainer.innerHTML = badgesHtml;
+        }
     }
 }
 
@@ -319,12 +333,17 @@ function updateMessageCount() {
 }
 
 function clearForm() {
-    document.getElementById('subject').value = '';
-    document.getElementById('message').value = '';
-    document.getElementById('subjectCount').textContent = '0/100';
-    document.getElementById('messageCount').textContent = '0/5000';
+    const subject = document.getElementById('subject');
+    const message = document.getElementById('message');
+    const subjectCount = document.getElementById('subjectCount');
+    const messageCount = document.getElementById('messageCount');
+    
+    if (subject) subject.value = '';
+    if (message) message.value = '';
+    if (subjectCount) subjectCount.textContent = '0/100';
+    if (messageCount) messageCount.textContent = '0/5000';
+    
     clearSelection();
-    showStatus('Form cleared', 'info');
 }
 
 async function sendBulkMail(event) {
@@ -384,7 +403,7 @@ async function sendBulkMail(event) {
         
         if (response.ok) {
             const result = await response.text();
-            if (result === 'true') {
+            if (result === 'True') {
                 showStatus(`Email sent successfully to ${recipients.length} recipient(s)!`, 'success');
                 clearForm();
             } else {
