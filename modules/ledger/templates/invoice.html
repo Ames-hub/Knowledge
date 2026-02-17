@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Invoice #INV-{{ invoice_id }} | Full view + payments</title>
+    <title>Invoice #INV-{{ invoice_id }} | Full view</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/ledger/css/ledger/sidebar.css">
     <link rel="stylesheet" href="/static/ledger/css/invoice/invoice.css">
 </head>
 <body>
-    <!-- Full Sidebar -->
-    <aside class="sidebar">
-        <h1>Ledger</h1>
-        <nav class="nav">
-            <a href="#"><i class="fas fa-arrow-left"></i> Go Back</a>
-            <a href="#"><i class="fas fa-chart-line"></i> Accounts</a>
-            <a href="#"><i class="fas fa-calendar-alt"></i> Financial Planning</a>
-            <a href="#"><i class="fas fa-hand-holding-usd"></i> Debts</a>
-            <a href="#" class="active"><i class="fas fa-file-invoice"></i> Invoices</a>
-            <a href="#"><i class="fas fa-tachometer-alt"></i> Odometer Tracking</a>
-        </nav>
-    </aside>
+    <!-- Sidebar - normalized to match invoices page -->
+  <aside class="sidebar">
+    <h1>Ledger</h1>
+    <nav class="nav">
+      <a href="/apps"><i class="fas fa-arrow-left"></i> Go Back</a>
+      <a href="/ledger"><i class="fas fa-chart-line"></i> Accounts</a>
+      <a href="/ledger/planning"><i class="fas fa-calendar-alt"></i> Financial Planning</a>
+      <a href="/ledger/debts"><i class="fas fa-hand-holding-usd"></i> Debts</a>
+      <a href="/ledger/invoices" class="active"><i class="fas fa-file-invoice"></i> Invoices</a>
+      <a href="/ledger/odometering"><i class="fas fa-tachometer-alt"></i> Odometer Tracking</a>
+    </nav>
+  </aside>
 
     <!-- Main Content -->
     <main class="main-content">

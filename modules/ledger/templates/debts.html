@@ -4,21 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Ledger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/ledger/css/debts/debts.css">
     <link rel="stylesheet" href="/static/ledger/css/ledger/sidebar.css">
 </head>
 <body>
-<aside class="sidebar">
+  <aside class="sidebar">
     <h1>Ledger</h1>
     <nav class="nav">
-        <a href="/apps"> ⬅️ Go Back</a>
-        <a href="/ledger">Accounts</a>
-        <a href="/ledger/planning">Financial Planning</a>
-        <a href="/ledger/debts" class="active">Debts</a>
-        <a href="/ledger/invoices">Invoices</a>
-        <a href="/ledger/odometering">Odometer Tracking</a>
+      <a href="/apps"><i class="fas fa-arrow-left"></i> Go Back</a>
+      <a href="/ledger"><i class="fas fa-chart-line"></i> Accounts</a>
+      <a href="/ledger/planning"><i class="fas fa-calendar-alt"></i> Financial Planning</a>
+      <a href="/ledger/debts" class="active"><i class="fas fa-hand-holding-usd"></i> Debts</a>
+      <a href="/ledger/invoices"><i class="fas fa-file-invoice"></i> Invoices</a>
+      <a href="/ledger/odometering"><i class="fas fa-tachometer-alt"></i> Odometer Tracking</a>
     </nav>
-</aside>
+  </aside>
 
 <!-- Track New Debt Modal -->
 <div class="modal" id="trackModal">

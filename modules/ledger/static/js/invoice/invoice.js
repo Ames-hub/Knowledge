@@ -87,38 +87,50 @@
         }
     }
     
-    // ===== PAYMENT FUNCTIONS (Mock for now - you'll need to create payment endpoints) =====
-    // Note: You'll need to create payment-related endpoints in your backend
     async function loadPayments() {
-        // This is a mock - you'll need to create an endpoint for payments
-        // For now, we'll keep using mock data but you should create:
-        // GET /api/ledger/invoices/{invoice_id}/payments
-        payments = [
-            { id: 1, invoiceId: INVOICE_ID, amount: 200.00, method: 'card', status: 'completed', date: '2025-02-12' },
-            { id: 2, invoiceId: INVOICE_ID, amount: 150.00, method: 'cash', status: 'completed', date: '2025-02-14' },
-            { id: 3, invoiceId: INVOICE_ID, amount: 80.00, method: 'transfer', status: 'pending', date: '2025-02-15' }
-        ];
+        try {
+            const response = await fetch(`/api/ledger/invoices/${INVOICE_ID}/payments`);
+            if (response.ok) {
+                payments = await response.json();
+            } else {
+                payments = [];
+                showToast('Error loading payments', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading payments:', error);
+            payments = [];
+            showToast('Failed to load payments', 'error');
+        }
         renderPayments();
     }
     
     async function recordPayment(amount, method, status) {
-        // Mock - you'll need to create:
-        // POST /api/ledger/invoices/{invoice_id}/payments
-        const newId = Date.now() + Math.floor(Math.random() * 1000);
-        const today = new Date().toISOString().slice(0,10);
-        
-        payments.push({
-            id: newId,
-            invoiceId: INVOICE_ID,
-            amount: amount,
-            method: method,
-            status: status,
-            date: today
-        });
-        
-        renderPayments();
-        renderInvoiceItems();
-        showToast('Payment recorded (demo)', 'success');
+        try {
+            const response = await fetch('/api/ledger/invoices/record-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    invoice_id: INVOICE_ID,
+                    amount: amount,
+                    payment_method: method,
+                    payment_status: status,
+                    notes: ''
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                await loadPayments(); // Reload all payments to get the updated list
+                renderInvoiceItems();
+                showToast('Payment recorded successfully', 'success');
+                paymentAmount.value = '';
+            } else {
+                showToast('Error recording payment', 'error');
+            }
+        } catch (error) {
+            console.error('Error recording payment:', error);
+            showToast('Failed to record payment', 'error');
+        }
     }
     
     // ===== HELPER FUNCTIONS =====
@@ -227,6 +239,56 @@
         balanceDueSpan.textContent = `$${totals.balance.toFixed(2)}`;
     }
     
+    async function togglePaymentStatus(paymentId) {
+        const payment = payments.find(p => p.id === paymentId);
+        if (!payment) return;
+        
+        const newStatus = payment.status === 'completed' ? 'pending' : 'completed';
+        
+        try {
+            const response = await fetch('/api/ledger/invoices/update-payment-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    payment_id: paymentId,
+                    payment_status: newStatus
+                })
+            });
+            
+            if (response.ok) {
+                await loadPayments();
+                renderInvoiceItems();
+                showToast('Payment status updated', 'success');
+            } else {
+                showToast('Error updating payment status', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating payment status:', error);
+            showToast('Failed to update payment status', 'error');
+        }
+    }
+    
+    async function deletePayment(paymentId) {
+        if (!confirm('Are you sure you want to delete this payment?')) return;
+        
+        try {
+            const response = await fetch(`/api/ledger/invoices/payments/${paymentId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                await loadPayments();
+                renderInvoiceItems();
+                showToast('Payment deleted', 'success');
+            } else {
+                showToast('Error deleting payment', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting payment:', error);
+            showToast('Failed to delete payment', 'error');
+        }
+    }
+
     // ===== PAYMENTS RENDERING =====
     function renderPayments() {
         const invoicePayments = payments.filter(p => p.invoiceId === INVOICE_ID);
@@ -256,26 +318,17 @@
             
             // Toggle status
             paymentList.querySelectorAll('.toggle-payment').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', async () => {
                     const id = parseInt(btn.dataset.id);
-                    const payment = payments.find(p => p.id === id);
-                    if (payment) {
-                        payment.status = payment.status === 'completed' ? 'pending' : 'completed';
-                        renderPayments();
-                        renderInvoiceItems(); // update totals
-                        showToast('Payment status updated', 'success');
-                    }
+                    await togglePaymentStatus(id);
                 });
             });
             
             // Delete payment
             paymentList.querySelectorAll('.delete-payment').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', async () => {
                     const id = parseInt(btn.dataset.id);
-                    payments = payments.filter(p => p.id !== id);
-                    renderPayments();
-                    renderInvoiceItems();
-                    showToast('Payment deleted', 'success');
+                    await deletePayment(id);
                 });
             });
         }

@@ -208,6 +208,18 @@ class database:
                 "item_id": "TEXT PRIMARY KEY",  # A service, like "Washed windows" or whatever.
                 "value": "REAL NOT NULL",
             },
+            "invoice_payments": {
+                "payment_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
+                "invoice_id": "INT NOT NULL",
+                "amount": "DECIMAL(10,2) NOT NULL",
+                "payment_method": "TEXT NOT NULL",
+                "payment_status": "TEXT NOT NULL",
+                "payment_date": "TEXT NOT NULL", # Iso format
+                "payment_time": "TEXT",
+                "reference_number": "TEXT",
+                "notes": "TEXT",
+                "recorded_by": "TEXT"  # who recorded payment
+            },
             "CF_hubbard_chard_of_eval": {  # Credit to L. Ron Hubbard for his work on this.
                 "cfid": "INT NOT NULL PRIMARY KEY",
                 "dianetic_evaluation": "INT",

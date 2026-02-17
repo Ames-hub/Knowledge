@@ -1230,6 +1230,269 @@ async def get_invoice_items(request: Request):
             conn.rollback()
             return JSONResponse(content={}, status_code=500)
 
+# ===== PAYMENT ENDPOINTS FOR INVOICES =====
+
+class payment_data(BaseModel):
+    invoice_id: int
+    amount: float
+    payment_method: str
+    payment_status: str
+    reference_number: str | None = None
+    notes: str | None = None
+
+@router.post("/api/ledger/invoices/record-payment")
+@set_permission(permission=["ledger", "invoices_modify"])
+async def record_payment(request: Request, data: payment_data):
+    token: str = route_prechecks(request)
+    user = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {user}) is recording a payment of ${data.amount} for invoice {data.invoice_id}.")
+    
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    current_time = datetime.datetime.now().strftime("%H:%M:%S")
+    
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            
+            # Insert the payment
+            cursor.execute(
+                """
+                INSERT INTO invoice_payments 
+                (invoice_id, amount, payment_method, payment_status, payment_date, payment_time, reference_number, notes, recorded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (data.invoice_id, data.amount, data.payment_method, data.payment_status, 
+                 current_date, current_time, data.reference_number, data.notes, user)
+            )
+            
+            payment_id = cursor.lastrowid
+            
+            # If payment is completed, check if invoice is now fully paid
+            if data.payment_status == "completed":
+                # Get total paid for this invoice
+                cursor.execute(
+                    """
+                    SELECT SUM(amount) FROM invoice_payments 
+                    WHERE invoice_id = ? AND payment_status = 'completed'
+                    """,
+                    (data.invoice_id,)
+                )
+                total_paid = cursor.fetchone()[0] or 0
+                
+                # Get invoice total
+                cursor.execute(
+                    "SELECT amount FROM invoices WHERE invoice_id = ?",
+                    (data.invoice_id,)
+                )
+                invoice_total = cursor.fetchone()[0]
+                
+                # Update is_paid status if fully paid
+                if total_paid >= invoice_total:
+                    cursor.execute(
+                        "UPDATE invoices SET is_paid = ? WHERE invoice_id = ?",
+                        (True, data.invoice_id)
+                    )
+            
+            conn.commit()
+            return JSONResponse(
+                content={"success": True, "payment_id": payment_id},
+                status_code=200
+            )
+            
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error recording payment: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(
+                content={"success": False, "error": "Database error recording payment"},
+                status_code=500
+            )
+
+@router.get("/api/ledger/invoices/{invoice_id}/payments")
+@set_permission(permission=["ledger", "invoices_view"])
+async def get_invoice_payments(request: Request, invoice_id: int):
+    token: str = route_prechecks(request)
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is fetching payments for invoice {invoice_id}.")
+    
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT payment_id, invoice_id, amount, payment_method, payment_status, 
+                       payment_date, payment_time, reference_number, notes, recorded_by
+                FROM invoice_payments
+                WHERE invoice_id = ?
+                ORDER BY payment_date DESC, payment_time DESC
+                """,
+                (invoice_id,)
+            )
+            
+            payments = cursor.fetchall()
+            parsed_payments = []
+            
+            for p in payments:
+                parsed_payments.append({
+                    "id": p[0],
+                    "invoiceId": p[1],
+                    "amount": p[2],
+                    "method": p[3],
+                    "status": p[4],
+                    "date": p[5],
+                    "time": p[6],
+                    "reference": p[7],
+                    "notes": p[8],
+                    "recordedBy": p[9]
+                })
+            
+            return JSONResponse(parsed_payments, status_code=200)
+            
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error fetching payments: {err}", exception=err)
+            return JSONResponse(
+                content={"error": "Database error fetching payments"},
+                status_code=500
+            )
+
+class update_payment_status_data(BaseModel):
+    payment_id: int
+    payment_status: str
+
+@router.post("/api/ledger/invoices/update-payment-status")
+@set_permission(permission=["ledger", "invoices_modify"])
+async def update_payment_status(request: Request, data: update_payment_status_data):
+    token: str = route_prechecks(request)
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is updating payment {data.payment_id} status to {data.payment_status}.")
+    
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            
+            # Get the payment details first
+            cursor.execute(
+                "SELECT invoice_id, amount FROM invoice_payments WHERE payment_id = ?",
+                (data.payment_id,)
+            )
+            payment = cursor.fetchone()
+            
+            if not payment:
+                return JSONResponse(
+                    content={"success": False, "error": "Payment not found"},
+                    status_code=404
+                )
+            
+            invoice_id, amount = payment
+            
+            # Update payment status
+            cursor.execute(
+                "UPDATE invoice_payments SET payment_status = ? WHERE payment_id = ?",
+                (data.payment_status, data.payment_id)
+            )
+            
+            # Recalculate invoice paid status
+            cursor.execute(
+                """
+                SELECT SUM(amount) FROM invoice_payments 
+                WHERE invoice_id = ? AND payment_status = 'completed'
+                """,
+                (invoice_id,)
+            )
+            total_paid = cursor.fetchone()[0] or 0
+            
+            cursor.execute(
+                "SELECT amount FROM invoices WHERE invoice_id = ?",
+                (invoice_id,)
+            )
+            invoice_total = cursor.fetchone()[0]
+            
+            # Update invoice paid status
+            is_fully_paid = total_paid >= invoice_total
+            cursor.execute(
+                "UPDATE invoices SET is_paid = ? WHERE invoice_id = ?",
+                (is_fully_paid, invoice_id)
+            )
+            
+            conn.commit()
+            return JSONResponse(
+                content={"success": True, "is_fully_paid": is_fully_paid},
+                status_code=200
+            )
+            
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error updating payment status: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(
+                content={"success": False, "error": "Database error updating payment"},
+                status_code=500
+            )
+
+@router.delete("/api/ledger/invoices/payments/{payment_id}")
+@set_permission(permission=["ledger", "invoices_modify"])
+async def delete_payment(request: Request, payment_id: int):
+    token: str = route_prechecks(request)
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is deleting payment {payment_id}.")
+    
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            cursor = conn.cursor()
+            
+            # Get invoice_id before deleting
+            cursor.execute(
+                "SELECT invoice_id FROM invoice_payments WHERE payment_id = ?",
+                (payment_id,)
+            )
+            result = cursor.fetchone()
+            
+            if not result:
+                return JSONResponse(
+                    content={"success": False, "error": "Payment not found"},
+                    status_code=404
+                )
+            
+            invoice_id = result[0]
+            
+            # Delete the payment
+            cursor.execute(
+                "DELETE FROM invoice_payments WHERE payment_id = ?",
+                (payment_id,)
+            )
+            
+            # Recalculate invoice paid status
+            cursor.execute(
+                """
+                SELECT SUM(amount) FROM invoice_payments 
+                WHERE invoice_id = ? AND payment_status = 'completed'
+                """,
+                (invoice_id,)
+            )
+            total_paid = cursor.fetchone()[0] or 0
+            
+            cursor.execute(
+                "SELECT amount FROM invoices WHERE invoice_id = ?",
+                (invoice_id,)
+            )
+            invoice_total = cursor.fetchone()[0]
+            
+            # Update invoice paid status
+            is_fully_paid = total_paid >= invoice_total
+            cursor.execute(
+                "UPDATE invoices SET is_paid = ? WHERE invoice_id = ?",
+                (is_fully_paid, invoice_id)
+            )
+            
+            conn.commit()
+            return JSONResponse(
+                content={"success": True, "is_fully_paid": is_fully_paid},
+                status_code=200
+            )
+            
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Database error deleting payment: {err}", exception=err)
+            conn.rollback()
+            return JSONResponse(
+                content={"success": False, "error": "Database error deleting payment"},
+                status_code=500
+            )
+
 class db_odometer:
     def get_last_odometer(user: str):
         """Returns the last odometer reading for the user, or None if none exist."""

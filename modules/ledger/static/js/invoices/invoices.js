@@ -383,7 +383,7 @@ class InvoiceManager {
       }
       
       return `
-      <div class="history-card">
+      <div class="history-card" data-invoice-id="${inv.id}" style="cursor: pointer;">
         <div class="history-info">
           <h4>${displayName}</h4>
           <div class="history-meta">
@@ -396,7 +396,7 @@ class InvoiceManager {
             ${inv.cfid ? `<span><i class="fas fa-id-card"></i> CFID: ${inv.cfid}</span>` : ''}
           </div>
         </div>
-        <div class="history-actions">
+        <div class="history-actions" onclick="event.stopPropagation()">
           <button class="btn btn-small btn-danger del-invoice" data-id="${inv.id}" title="Delete invoice">
             <i class="fas fa-trash"></i>
           </button>
@@ -413,7 +413,19 @@ class InvoiceManager {
       </div>
     `}).join('');
     
-    // Add event listeners
+    // Add click event listeners to the cards
+    this.historyList.querySelectorAll('.history-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Don't navigate if clicking on a button
+        if (e.target.closest('button')) {
+          return;
+        }
+        const invoiceId = card.dataset.invoiceId;
+        window.location.href = `/ledger/invoices/${invoiceId}`;
+      });
+    });
+    
+    // Add event listeners for buttons
     this.addInvoiceEventListeners();
   }
   
