@@ -13,10 +13,10 @@ if __name__ == "__main__":
         print("Question 1: Do you want us to use SSL? (It makes your connection secure and safer from hackers)\nAnswer 'Yes' or 'No'")
         if (use_ssl := input(">>> ").lower()) == "yes":
             print("Enabling SSL.")
-            settings.save("use_ssl", True)
+            settings.set.use_ssl(True)
         else:
             print("Keeping SSL Disabled.")
-            settings.save("use_ssl", False)
+            settings.set.use_ssl(False)
 
         while True:
             print("Question 2: What is your preferred port for the webserver? (Default: 8020)")
@@ -27,6 +27,7 @@ if __name__ == "__main__":
                 print("Invalid port type. Must be a number.")
                 continue
             WEB_PORT = int(WEB_PORT)
+            settings.set.web_port(WEB_PORT)
             break
 
         print("""
@@ -53,7 +54,7 @@ The data at
 risk may be:
 1. Internal finance documents
 2. The names, addresses, phone numbers, etc. of whoever is recorded in the "Central Files" Module
-3.  
+3. API Keys and Login details
 
 If you don't know if its secure, I'd honestly rather
 that you ask an AI than you ask nobody.

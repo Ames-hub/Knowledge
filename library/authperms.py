@@ -15,9 +15,12 @@ logbook = LogBookHandler("AUTH-PERMS")
 
 valid_perms = [
     'central_files',
+
     'mail_send',
     'mail_bulk_send',
     'mail_view',
+    'mail_login_view',  # See login account details
+    'mail_login_edit',
 
     'bulletin_archives',
     'app_logs',
@@ -48,7 +51,7 @@ valid_perms = [
     'ftp_server',
     'admin_panel',
     'signal_server',
-    'odometering'
+    'odometering',
 ]
 
 _settings_write_lock = Lock()

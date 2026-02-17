@@ -4,10 +4,9 @@ from library.logbook import LogBookHandler
 from fastapi import HTTPException, Request
 from cryptography.x509.oid import NameOID
 from library.authperms import AuthPerms
-from library.settings import get, save
+from library.settings import get, set
 from library.database import DB_PATH
 from cryptography import x509
-import subprocess
 import datetime
 import sqlite3
 import secrets
@@ -92,7 +91,7 @@ def generate_certbot_cert(
 
         # Save SSL expiration time
         expiration = datetime.datetime.now() + datetime.timedelta(days=90)
-        save("time_to_ssl_expiration", value=expiration.timestamp())
+        set.time_to_ssl_expiration(value=expiration.timestamp())
 
         return result.returncode == 0
 
@@ -105,12 +104,12 @@ def setup_certbot_ssl():
     if not domain:
         print("What is the domain of your website for this certificate? eg, google.com")
         domain = input(">>> ")
-        save("domain", domain)
+        set.domain(domain)
     email_address = get.domain_email()
     if not email_address:
         print("What's the email address you wish to use for the certificate?")
         email_address = input(">>> ")
-        save("domain_email", email_address)
+        set.domain_email(email_address)
 
     success = generate_certbot_cert(
         domain=domain,
@@ -224,7 +223,7 @@ def setup_selfsigned():
         if not common_name:  # Entered nothing.
             common_name = "localhost"
 
-        save("domain", common_name)
+        set.domain(common_name)
     else:
         common_name = get.domain()
 
@@ -259,7 +258,7 @@ def setup_selfsigned():
 
     # Remember the cert expires in 1 year
     one_yr_later = datetime.datetime.now() + datetime.timedelta(days=365)
-    save("time_to_ssl_expiration", one_yr_later.timestamp())
+    set.time_to_ssl_expiration(one_yr_later.timestamp())
 
     print("Warning: These certificates are self-signed. To get a trusted, free certificate, use cert bot.")
 

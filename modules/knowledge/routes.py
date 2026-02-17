@@ -161,12 +161,15 @@ class SettingsData(BaseModel):
 @set_permission(permission="admin_panel")
 async def load_settings(request: Request):
     token:str = route_prechecks(request)
-    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is loading settings.")
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {owner}) is loading settings.")
     try:
-        with open('settings.json', 'r') as f:
-            data = json.load(f)
+        data = settings.groupget.all()
         
-        del data['route_perms']  # Hide sensitive data
+        if not AuthPerms.check_allowed(owner, "mail_login_view"):
+            data['sys_email_password'] = "HIDDEN"
+            data['system_email'] = "HIDDEN"
+
         return JSONResponse(data)
     except Exception as err:
         logbook.error(f"Error loading settings: {err}", exception=err)
@@ -176,7 +179,8 @@ async def load_settings(request: Request):
 @set_permission(permission="admin_panel")
 async def save_settings(request: Request, data: SettingsData):
     token:str = route_prechecks(request)
-    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) is saving settings.")
+    owner = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host} (user: {owner}) is saving settings.")
     for setting, value in data.config.items():
         setting = str(setting).lower()
         if setting not in settings.valid_settings.keys():
@@ -185,7 +189,15 @@ async def save_settings(request: Request, data: SettingsData):
                 status_code=400
             )
         try:
-            settings.save(key=setting, value=value)
+            if not AuthPerms.check_allowed(owner, "mail_login_edit"):
+                if setting == "system_email":
+                    value = settings.get.system_email()
+                if setting == "sys_email_password":
+                    value = settings.get.sys_email_password()
+
+            encrypt = setting in ['sys_email_password', 'system_email', 'domain_email', 'dns_token']
+
+            settings.set.set(key=setting, value=value, encrypt=encrypt)
         except Exception as err:
             logbook.error(f"Error saving setting '{setting}': {err}", exception=err)
             return JSONResponse(

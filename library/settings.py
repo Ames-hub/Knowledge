@@ -1,4 +1,5 @@
 from library.logbook import LogBookHandler
+from library.encryption import encryption
 from datetime import datetime
 import json
 import os
@@ -7,6 +8,7 @@ import os
 
 logbook = LogBookHandler("settings")
 SETTINGS_PATH = "settings.json"
+keys = encryption("certs/encryption.key")
 
 valid_settings = {
     "new_week_stats_plan": True,
@@ -31,6 +33,28 @@ valid_settings = {
 def make_settings_file():
     with open(SETTINGS_PATH, "w") as f:
         json.dump(valid_settings, f, indent=4, separators=(",", ": "))
+
+class groupget:
+    @staticmethod
+    def all():
+        return {
+            "use_ssl": get.use_ssl(),
+            "reset_bp_plan_on_new_week": get.reset_bp_plan_on_new_week(),
+            "weekday_end": get.weekday_end(),
+            "allow_registration": get.allow_registration(),
+            "lookback_length": get.lookback_length(),
+            "web_port": get.web_port(),
+            "debts_overpay_payback_tracking": get.debts_overpay_payback_tracking(),
+            "do_bot_identification": get.do_bot_identification(),
+            "domain": get.domain(),
+            "time_to_ssl_expiration": get.time_to_ssl_expiration(json_compat=True),
+            "dns_provider": get.dns_provider(),
+            "dns_token": get.dns_token(),
+            "record_name": get.record_name(),
+            "domain_email": get.domain_email(),
+            "system_email": get.system_email(),
+            "sys_email_password": get.sys_email_password(),
+        }
 
 class get:
     @staticmethod
@@ -87,9 +111,12 @@ class get:
         return str(get.get("domain", None))
 
     @staticmethod
-    def time_to_ssl_expiration() -> datetime:
+    def time_to_ssl_expiration(json_compat:bool=False) -> datetime:
         data = get.get('time_to_ssl_expiration', datetime.now().timestamp())
-        expiration = datetime.fromtimestamp(float(data))
+        if not json_compat:
+            expiration = datetime.fromtimestamp(float(data))
+        else:
+            return data
         return expiration
     
     @staticmethod
@@ -98,7 +125,11 @@ class get:
 
     @staticmethod
     def dns_token():
-        return str(get.get("dns_token", None))
+        data = get.get("dns_token", None)
+        if data:
+            return keys.decrypt(data)
+        else:
+            return data
 
     @staticmethod
     def record_name():
@@ -107,26 +138,58 @@ class get:
     # The one used to register domains.
     @staticmethod
     def domain_email():
-        return str(get.get("domain_email", None))
-    
+        data = get.get("domain_email", None)
+        if data:
+            return keys.decrypt(data)
+        else:
+            return data    
+
     # The one used to send emails.
     @staticmethod
     def system_email():
-        return str(get.get("system_email", None))
-    
+        data = get.get("system_email", None)
+        if data:
+            return keys.decrypt(data)
+        else:
+            return data
+
     @staticmethod
     def sys_email_password():
-        return str(get.get("sys_email_password", None))
+        data = get.get("sys_email_password", None)
+        if data:
+            return keys.decrypt(data)
+        else:
+            return data
 
-def save(key, value):
-    settings = {}
+class set:
+    def set(key:str, value, encrypt:bool=False) -> bool:
+        if key not in valid_settings.keys():
+            raise KeyError("This is a bad key for settings!")
 
-    if key not in valid_settings.keys():
-        raise KeyError("This is a bad key for settings!")
+        if key == "allow_registration":
+            value = bool(value)
+        
+        with open(SETTINGS_PATH, "r") as f:
+            data = json.load(f)
 
-    if key == "allow_registration":
-        value = bool(value)
-    elif key == "weekday_end":
+        if not encrypt:
+            data[key] = value
+        else:
+            if type(value) is str:
+                data[key] = keys.encrypt(value)
+            else:
+                data[key] = value
+
+        with open(SETTINGS_PATH, "w") as f:
+            json.dump(data, f, indent=4)
+        
+        return True
+    
+    def use_ssl(value:bool):
+        return set.set("use_ssl", bool(value))
+    def reset_bp_plan_on_new_week(value:bool):
+        return set.set("reset_bp_plan_on_new_week", bool(value))
+    def weekday_end(value:str):
         ref_dict = {
             "monday": 1,
             "tuesday": 2,
@@ -137,20 +200,32 @@ def save(key, value):
             "sunday": 7,
         }
         value = ref_dict.get(value.lower(), 1)
-
-    # Load existing settings if a file exists
-    if os.path.exists(SETTINGS_PATH):
-        with open(SETTINGS_PATH, "r") as f:
-            try:
-                settings = json.load(f)
-            except json.JSONDecodeError:
-                logbook.warning("Settings file was corrupted. Overwriting.")
-
-    logbook.info(f"Saving setting '{key}' with value '{value}'")
-    settings[key] = value
-
-    # Write back updated settings
-    with open(SETTINGS_PATH, "w") as f:
-        json.dump(settings, f, indent=4)
-
-    return True
+        return set.set("weekday_end", value)
+    def allow_registration(value:bool):
+        return set.set("allow_registration", bool(value))
+    def lookback_length(value:int):
+        return set.set("lookback_length", int(value))
+    def web_port(value:int):
+        return set.set("web_port", int(value))
+    def debts_overpay_payback_tracking(value:bool):
+        return set.set("debts_overpay_payback_tracking", bool(value))
+    def do_bot_identification(value:bool):
+        return set.set("do_bot_identification", bool(value))
+    def domain(value:str):
+        return set.set("domain", value)
+    def time_to_ssl_expiration(value):
+        return set.set("time_to_ssl_expiration", value)
+    def dns_provider(value:str):
+        return set.set("dns_provider", str(value))
+    def dns_token(value:str):
+        return set.set("dns_token", str(value), encrypt=True)
+    def record_name(value:str):
+        return set.set("record_name", str(value))
+    # The one used to register domains.
+    def domain_email(value:str):
+        return set.set("domain_email", str(value), encrypt=True)
+    # The one used to send emails.
+    def system_email(value:str):
+        return set.set("system_email", str(value), encrypt=True)
+    def sys_email_password(value:str):
+        return set.set("sys_email_password", str(value), encrypt=True)
