@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Invoice #INV-{{ invoice_id }} | Full view + payments</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/ledger/css/invoice/invoice.css">
+</head>
+<body>
+    <!-- Full Sidebar -->
+    <aside class="sidebar">
+        <h1>Ledger</h1>
+        <nav class="nav">
+            <a href="#"><i class="fas fa-arrow-left"></i> Go Back</a>
+            <a href="#"><i class="fas fa-chart-line"></i> Accounts</a>
+            <a href="#"><i class="fas fa-calendar-alt"></i> Financial Planning</a>
+            <a href="#"><i class="fas fa-hand-holding-usd"></i> Debts</a>
+            <a href="#" class="active"><i class="fas fa-file-invoice"></i> Invoices</a>
+            <a href="#"><i class="fas fa-tachometer-alt"></i> Odometer Tracking</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="invoice-dashboard">
+            <!-- ITEMS CATALOG (left) -->
+            <section class="card items-section">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-box"></i> Item Catalog</h2>
+                    <span class="badge" id="item-count">3 items</span>
+                </div>
+                
+                <ul class="items-list" id="item-list">
+                    <!-- Items will be loaded here -->
+                </ul>
+                
+                <form id="add-item-form" class="add-item-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Item Name</label>
+                            <input type="text" id="new-item-name" class="form-input" placeholder="Service or product" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price ($)</label>
+                            <input type="number" id="new-item-price" class="form-input" placeholder="0.00" min="0" step="0.01" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-plus"></i> Add to Catalog
+                    </button>
+                </form>
+            </section>
+
+            <!-- INVOICE PREVIEW (center) -->
+            <section class="card preview-section">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-file-invoice"></i> Invoice #INV-{{ invoice_id }}</h2>
+                    <span class="badge" style="background: #d1fae5; color: #065f46;">CFID: <span id="cfid-display"></span></span>
+                </div>
+                
+                <table class="invoice-table">
+                    <thead>
+                        <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr>
+                    </thead>
+                    <tbody id="invoice-items-body">
+                        <!-- populated by JS -->
+                    </tbody>
+                </table>
+                
+                <div class="invoice-summary">
+                    <span style="font-weight: 600;">Subtotal:</span>
+                    <span id="subtotal-amount">$0.00</span>
+                </div>
+                
+                <div class="preview-actions">
+                    <button id="save-invoice" class="btn btn-success"><i class="fas fa-save"></i> Save Invoice</button>
+                    <button id="generate-pdf" class="btn btn-primary"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </section>
+
+            <!-- INVOICE DETAILS (right) - FULL FORM -->
+            <section class="card details-section">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-address-card"></i> Invoice Details</h2>
+                </div>
+                
+                <form id="details-form" class="details-form">
+                    <div class="form-group">
+                        <label class="form-label">CFID (Optional)</label>
+                        <input type="number" id="cfid-input" class="form-input" value="1001" placeholder="Enter CFID">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Billing Name *</label>
+                        <input type="text" id="billing-name" class="form-input" value="Acme Corp" placeholder="Customer/Company Name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Billing Address</label>
+                        <textarea id="billing-address" class="form-input" rows="2">123 Acme Ave, Tech City, 94105</textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="billing-email" class="form-input" value="billing@acme.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" id="billing-phone" class="form-input" value="+1 555-1234">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="invoice-notes" class="form-input" rows="2">Net 30 · Thank you for your business</textarea>
+                    </div>
+                </form>
+            </section>
+
+            <!-- PAYMENT HISTORY SECTION (for THIS invoice only) -->
+            <section class="payments-section">
+                <div class="payments-header">
+                    <h2 class="card-title"><i class="fas fa-credit-card"></i> Payments on Invoice #101</h2>
+                    <span class="badge" id="payment-count">3 payments</span>
+                </div>
+                
+                <!-- Payment list (specific to this invoice) -->
+                <div class="payment-list" id="payment-list">
+                    <!-- dynamic -->
+                </div>
+                
+                <!-- Add payment form (attached to this invoice) -->
+                <div class="add-payment-form">
+                    <h4 style="margin-bottom: 12px; display: flex; gap: 8px;"><i class="fas fa-plus-circle"></i> Record payment for this invoice</h4>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label class="form-label">Amount ($)</label>
+                            <input type="number" id="payment-amount" class="form-input" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="form-group" style="flex: 1.5;">
+                            <label class="form-label">Method</label>
+                            <select id="payment-method" class="form-input">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="transfer">Transfer</option>
+                                <option value="check">Check</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Status</label>
+                            <select id="payment-status" class="form-input">
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end; margin-bottom: 16px;">
+                            <button id="record-payment" class="btn btn-success"><i class="fas fa-check"></i> Record</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Balance summary (auto-updates) -->
+                <div class="balance-summary">
+                    <span class="label">Balance due</span>
+                    <span class="figure" id="balance-due">$0.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px; padding: 0 4px;">
+                    <span>Paid: <span id="paid-total">$0.00</span></span>
+                    <span>Subtotal: <span id="subtotal-ref">$0.00</span></span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/static/ledger/js/invoice/invoice.js"></script>
+</body>
+</html>

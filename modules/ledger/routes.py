@@ -1414,3 +1414,16 @@ async def set_fuel_rate(request: Request, data: put_fuel_rate):
         return HTMLResponse("ok", status_code=200)
     else:
         return HTMLResponse("not ok", status_code=400)
+    
+@router.get("/ledger/invoices/{invoice_id}")
+@set_permission(permission=["ledger", "invoices_view"])
+async def view_invoice(request: Request, invoice_id:int):
+    token:str = route_prechecks(request)
+    logbook.info(f"IP {request.client.host} (user: {authbook.token_owner(token)}) has accessed invoice {invoice_id}.")
+    return templates.TemplateResponse(
+        request,
+        "invoice.html",
+        {
+            "invoice_id": invoice_id,
+        }
+    )
