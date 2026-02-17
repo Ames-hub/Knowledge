@@ -1,45 +1,49 @@
 from library.logbook import LogBookHandler
-from library.auth import get_ssl_filepaths
 from email.mime.text import MIMEText
 from library.settings import get
-from typing import List, Dict
+from typing import List
 import smtplib
 import ssl
 
 logbook = LogBookHandler("emailing")
-
-cert_path, key_path = get_ssl_filepaths()
 ssl_context = ssl.create_default_context()
-ssl_context.load_cert_chain(certfile=cert_path, keyfile=key_path)
 
-class email:
-    def __init__(self, recipient: Dict[str, str, str] = None, recipients: List[Dict[str, str, str]] = None):  # dict is: recipient, subject line, message
-        if not recipient and recipients:
-            self.recipients = recipients
-        elif not recipients and recipient:
+class recipient_profile:
+    def __init__(self, email: str, subjectline: str, message: str):
+        self.email = email
+        self.subjectline = subjectline
+        self.message = message
+
+class client_email:
+    def __init__(self, recipient: recipient_profile = None, recipients: List[recipient_profile] = None):
+        if recipient:
             self.recipient = recipient
+        elif recipients:
+            self.recipients = recipients
+        else:
+            raise ValueError("No recipients provided")
 
     def send(self):
-        if self.recipient:
-            return self.__send_email()
+        if hasattr(self, 'recipient'):
+            return self.__send_email(self.recipient)
         else:
-            return self.__bulk_send_email
+            return self.__bulk_send_email()
 
-    def __send_email(self):
+    def __send_email(self, recipient_obj: recipient_profile):
         sender = get.system_email()
         password = get.sys_email_password()
 
-        msg = MIMEText(self.recipient['message'])
-        msg["Subject"] = self.recipient['subject_line']
+        msg = MIMEText(recipient_obj.message)
+        msg["Subject"] = recipient_obj.subjectline
         msg["From"] = sender
-        msg["To"] = self.recipient
+        msg["To"] = recipient_obj.email
 
         try:
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl_context) as server:
                 server.login(sender, password)
                 server.send_message(msg)
         except Exception as err:
-            logbook.error(f"Failed to send email to {self.recipient}: {err}", err)
+            logbook.error(f"Failed to send email to {recipient_obj.email}: {err}", err)
             return False
 
         logbook.info(f"Email sent to {msg['To']}!")
@@ -48,21 +52,22 @@ class email:
     def __bulk_send_email(self):
         sender = get.system_email()
         password = get.sys_email_password()
-        # Create SSL context
-        ssl_context = ssl.create_default_context()
-        ssl_context.load_cert_chain(certfile=cert_path, keyfile=key_path)
 
         results = {}
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl_context) as server:
             server.login(sender, password)
-            for recipient in self.recipients:
+            for rec in self.recipients:
+                if not rec.email:
+                    continue
                 try:
-                    msg = MIMEText(recipient['message'])
-                    msg["Subject"] = recipient['subject_line']
+                    msg = MIMEText(rec.message)
+                    msg["Subject"] = rec.subjectline
+                    msg["From"] = sender
+                    msg["To"] = rec.email
                     server.send_message(msg)
-                    results[recipient] = True
+                    results[rec.email] = True
                 except Exception as e:
-                    logbook.error(f"Failed to send email to {recipient}: {e}")
-                    results[recipient] = False
+                    logbook.error(f"Failed to send email to {rec.email}: {e}")
+                    results[rec.email] = False
 
         return results

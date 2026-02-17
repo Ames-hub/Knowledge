@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Central Files · sleek directory</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- modern font (Inter) & subtle icon library (Feather) via CDN (optional but clean) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/centralfiles/css/mailing.css">
+</head>
+<body>
+
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="app-logo">
+          <span>📁</span> Central
+        </div>
+      </div>
+      <div class="nav-section">
+        <a class="nav-item" href="/">
+          <span class="nav-icon">←</span> Back
+        </a>
+        <!--<div class="nav-label">directory</div>-->
+        <a class="nav-item" href="/files">
+          <span class="nav-icon">👥</span> People
+        </a>
+        <a class="nav-item active" href="/files/mailing">
+          <span class="nav-icon">📧</span> Mailing
+        </a>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-tag">
+          <div class="user-avatar"></div>
+          <div>
+            <div style="font-weight: 500;">{{ user }}</div>
+            {% if user_is_admin %}
+              <div style="font-size: 0.8rem;">admin</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN PANEL (all content) -->
+    <main class="main-panel">
+      <div class="top-bar">
+        <div class="page-title">
+          <h1>People directory</h1>
+          <div class="breadcrumb">central / people</div>
+        </div>
+      </div>
+
+      <div class="content-scroll">
+        <!-- Split View: People List + Email Compose -->
+        <div class="email-campaign-layout">
+          <!-- Left Panel: People Directory -->
+          <div class="people-panel">
+            <div class="panel-header">
+              <h3>
+                <span class="panel-icon">👥</span>
+                Recipients
+              </h3>
+              <div class="selection-stats" id="selectionStats">0 selected</div>
+            </div>
+
+            <!-- Search & Add Section -->
+            <div class="people-tools">
+              <div class="search-wrapper compact">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" placeholder="Search people..." oninput="filterNames()">
+              </div>
+              <div class="add-person-row">
+                <input type="text" id="name-input" placeholder="New person name">
+                <button class="btn-icon" id="add-person-btn" title="Add person">
+                  <span>➕</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- People List with Checkboxes -->
+            <div class="people-list-scroll">
+              <div id="people-list" class="people-grid compact">
+                <!-- dynamic cards populate here with checkboxes -->
+                <div class="empty-state small">
+                  <div class="empty-icon">👤</div>
+                  <p>No people yet. Add someone to get started.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="panel-footer">
+              <button class="btn-link" id="selectAllBtn">Select All</button>
+              <span class="separator">•</span>
+              <button class="btn-link" id="clearSelectionBtn">Clear</button>
+            </div>
+          </div>
+
+          <!-- Right Panel: Email Compose -->
+          <div class="compose-panel">
+            <div class="mail-client">
+              <div class="mail-header">
+                <div class="mail-icon">📧</div>
+                <div class="mail-header-content">
+                  <h2>Compose Message</h2>
+                  <p id="recipientSummary">No recipients selected</p>
+                </div>
+              </div>
+              
+              <div class="mail-body">
+                <form id="mailForm" class="mail-form">
+                  <!-- Selected Recipients Badges -->
+                  <div class="recipient-badges" id="recipientBadges">
+                    <span class="badge-label">To:</span>
+                    <div class="badge-container" id="selectedRecipientsList"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="subject" class="form-label">
+                      <i>📝</i> Subject Line
+                    </label>
+                    <div class="input-wrapper">
+                      <span class="input-icon">✉️</span>
+                      <input 
+                        type="text" 
+                        id="subject" 
+                        name="subject_line" 
+                        placeholder="What's this about?" 
+                        required
+                        maxlength="100"
+                      >
+                    </div>
+                    <div class="char-count" id="subjectCount">0/100</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="message" class="form-label">
+                      <i>💬</i> Message
+                    </label>
+                    <textarea 
+                      id="message" 
+                      name="message" 
+                      placeholder="Write your message here..." 
+                      required
+                      maxlength="5000"
+                    ></textarea>
+                    <div class="char-count" id="messageCount">0/5000</div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="sendEmailBtn">
+                      <i>📤</i> Send to <span id="selectedCount">0</span> recipient(s)
+                    </button>
+                    <button type="button" class="btn-outline" id="clearBtn">
+                      <i>🗑️</i> Clear
+                    </button>
+                  </div>
+                </form>
+                
+                <div id="status" class="status-message" style="display: none;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete confirmation modal (unchanged) -->
+      <div class="delete-modal" id="deleteModal">
+        <div class="modal-content">
+          <h3>Confirm deletion</h3>
+          <p>Remove <span id="delete-person-name" style="font-weight:600;"></span> from directory?</p>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" id="cancel-delete">Cancel</button>
+            <button class="btn btn-danger" id="confirm-delete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div class="delete-modal" id="deleteModal">
+    <div class="modal-content">
+      <h3>Confirm deletion</h3>
+      <p>Remove <span id="delete-person-name" style="font-weight:600;"></span> from directory?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancel-delete">Cancel</button>
+        <button class="btn btn-danger" id="confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/centralfiles/js/mailing/mailing.js"></script>
+</body>
+</html>

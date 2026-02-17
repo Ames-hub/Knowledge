@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{{ profile.name }} - Flags</title>
+  <title>{{ profile.name }} - Mail</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/static/centralfiles/css/flags.css">
+  <link rel="stylesheet" href="/static/centralfiles/css/mail.css">
   <link rel="stylesheet" href="/static/centralfiles/css/sidebar.css">
 </head>
 <body>
@@ -46,7 +46,7 @@
         <span>Agreements</span>
       </a>
       {% if profile.email_addr %}
-      <a href="/files/get/{{ profile.cfid }}/mail" class="nav-link">
+      <a href="/files/get/{{ profile.cfid }}/mail" class="nav-link active">
         <i>📧</i>
         <span>Mail</span>
       </a>
@@ -59,7 +59,7 @@
         <i>⚙️</i>
         <span>Settings</span>
       </a>
-      <a href="/files/get/{{ profile.cfid }}/flags" class="nav-link active">
+      <a href="/files/get/{{ profile.cfid }}/flags" class="nav-link">
         <i>🚩</i>
         <span>Flags</span>
       </a>
@@ -74,8 +74,13 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="page-title">
-        <h1>{{ profile.name }} - Flags</h1>
-        <p>Assign flags to the individuals folder.</p>
+        <h1>{{ profile.name }}</h1>
+        <p>Profile Details & Management</p>
+      </div>
+      <div class="header-actions">
+        <button id="export-btn" class="btn btn-secondary">
+          <i>📥</i> Export
+        </button>
       </div>
     </div>
 
@@ -88,6 +93,9 @@
           alt="{{ profile.name }}"
           onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9IjYwIiBjeT0iNjAiIHI9IjYwIiBmaWxsPSIjZTllY2VmIi8+CjxwYXRoIGQ9Ik02MCA2NkM2Ni42Mjc0IDY2IDcyIDYwLjYyNzQgNzIgNTRDNzIgNDcuMzcyNiA2Ni42Mjc0IDQyIDYwIDQyQzUzLjM3MjYgNDIgNDggNDcuMzcyNiA0OCA1NEM0OCA2MC42Mjc0IDUzLjM3MjYgNjYgNjAgNjZaIiBmaWxsPSIjNmM3NTdkIi8+CjxwYXRoIGQ9Ik04NCA3OEM4NCA4Mi40MTgzIDgwLjQxODMgODYgNzYgODZINDRDMTkuNTgxNyA4NiA4NCA2OS4xNjUgODQgNzhaIiBmaWxsPSIjNmM3NTdkIi8+Cjwvc3ZnPgo='"
         >
+        <button class="change-photo-btn" onclick="changeProfilePicture('{{ profile.cfid }}')">
+          Change Photo
+        </button>
       </div>
       <div class="profile-info">
         <h2 class="profile-name">{{ profile.name }}</h2>
@@ -109,44 +117,72 @@
       </div>
     </div>
 
-    <!-- Main Grid -->
-    <div class="main-grid">
-      <!-- Left Column -->
-      <div class="left-column">
-        <div class="card" style="margin-top: 1.5rem;">
-          <div class="card-header">
-            <h3 class="card-title">Personal Details</h3>
-          </div>
-          <div class="card-body">
-            <div class="detail-grid">
-              <div class="field">
-                <label title="Is this person undergoing Dianetics processing? If so, unlocks a few useful tools.">Is Dianetics PC</label>
-                <span id="field-is_dianetics" class="editable" onclick="makeEditable('field-is_dianetics', '{{ profile.cfid }}', 'bool')">
-                  {{ profile.is_dianetics_pc }}
-                </span>
-              </div>
-              <div class="field">
-                <label title="Is this person a registered staff member on the Knowledge App?">Organisation Staff</label>
-                <span id="field-is_staff">
-                  {{ profile.is_staff }}
-                </span>
-              </div>
-            </div>
-          </div>
+    {% if profile.email_addr %}
+    <div class="mail-client">
+      <div class="mail-header">
+        <div class="mail-icon">📧</div>
+        <div class="mail-header-content">
+          <h2>Compose Message</h2>
+          <p>Send an email to {{ profile.name }}</p>
         </div>
       </div>
+      
+      <div class="mail-body">
+        <form id="mailForm" class="mail-form">
+          <div class="form-group">
+            <label for="subject" class="form-label">
+              <i>📝</i> Subject Line
+            </label>
+            <div class="input-wrapper">
+              <span class="input-icon">✉️</span>
+              <input 
+                type="text" 
+                id="subject" 
+                name="subject_line" 
+                placeholder="What's this about?" 
+                required
+                maxlength="100"
+              >
+            </div>
+            <div class="char-count" id="subjectCount">0/100</div>
+          </div>
 
-      <!-- Right Column -->
-      <div class="right-column">
+          <div class="form-group">
+            <label for="message" class="form-label">
+              <i>💬</i> Message
+            </label>
+            <textarea 
+              id="message" 
+              name="message" 
+              placeholder="Write your message here..." 
+              required
+              maxlength="5000"
+            ></textarea>
+            <div class="char-count" id="messageCount">0/5000</div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              <i>📤</i> Send Email
+            </button>
+            <button type="button" class="btn-outline" id="clearBtn">
+              <i>🗑️</i> Clear
+            </button>
+          </div>
+        </form>
+        
+        <div id="status" class="status-message" style="display: none;"></div>
       </div>
     </div>
+    {% else %}
+    <div class="empty-state">
+      <i>📭</i>
+      <p>This user does not have an email address configured.</p>
+    </div>
+    {% endif %}
   </div>
 
-  <script>
-    const FileCFID = parseInt("{{ profile.cfid }}") 
-  </script>
+  <script src="/static/centralfiles/js/mail/mail.js"></script>
   <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
-  <script src="/static/centralfiles/js/shared/sidebar.js"></script>
-  <script src="/static/centralfiles/js/shared/make_editable.js"></script>
 </body>
 </html>

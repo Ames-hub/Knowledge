@@ -15,6 +15,10 @@ logbook = LogBookHandler("AUTH-PERMS")
 
 valid_perms = [
     'central_files',
+    'mail_send',
+    'mail_bulk_send',
+    'mail_view',
+
     'bulletin_archives',
     'app_logs',
 

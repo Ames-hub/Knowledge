@@ -45,6 +45,12 @@
         <i>🤝</i>
         <span>Agreements</span>
       </a>
+      {% if profile.email_addr %}
+      <a href="/files/get/{{ profile.cfid }}/mail" class="nav-link">
+        <i>📧</i>
+        <span>Mail</span>
+      </a>
+      {% endif %}
     </div>
     
     <div class="nav-section">

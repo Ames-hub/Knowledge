@@ -2,56 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Central Files</title>
-  <link rel="stylesheet" href="/static/centralfiles/css/index.css">
+  <title>Central Files · sleek directory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- modern font (Inter) & subtle icon library (Feather) via CDN (optional but clean) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/centralfiles/css/index.css">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <h1 class="app-title">Central Files</h1>
-      <a class="back-btn" href="/apps">
-        <span>←</span> Back to Dashboard
+
+<div class="app-frame">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="app-logo">
+        <span>📁</span> Central
+      </div>
+    </div>
+    <div class="nav-section">
+      <a class="nav-item" href="/">
+        <span class="nav-icon">←</span> Back
       </a>
-    </header>
-
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Search Section -->
-      <section class="search-section">
-        <div class="search-container">
-          <div class="search-icon">🔍</div>
-          <input type="text" id="search-input" placeholder="Search people..." oninput="filterNames()">
+      <!--<div class="nav-label">directory</div>-->
+      <a class="nav-item active" href="#">
+        <span class="nav-icon">👥</span> People
+      </a>
+      <a class="nav-item" href="/files/mailing">
+        <span class="nav-icon">📧</span> Mailing
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-tag">
+        <div class="user-avatar"></div>
+        <div>
+          <div style="font-weight: 500;">{{ user }}</div>
+          {% if user_is_admin %}
+            <div style="font-size: 0.8rem;">admin</div>
+          {% endif %}
         </div>
-      </section>
+      </div>
+    </div>
+  </aside>
 
-      <!-- People Section -->
-      <section class="people-section">
-        <h2 class="section-title">People Directory</h2>
+  <!-- MAIN PANEL (all content) -->
+  <main class="main-panel">
+    <div class="top-bar">
+      <div class="page-title">
+        <h1>People directory</h1>
+        <div class="breadcrumb">central / people</div>
+      </div>
+    </div>
+
+    <div class="content-scroll">
+      <!-- search section as inline elegant card -->
+      <div class="search-card">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Search by name..." oninput="filterNames()">
+        </div>
+        <div class="people-counter" id="people-counter">all</div>
+      </div>
+
+      <!-- People grid section -->
+      <section>
         <div id="people-list" class="people-grid">
-          <!-- Dynamic name cards will populate here -->
+          <!-- dynamic cards populate here -->
           <div class="empty-state">
-            <div class="empty-icon">👤</div>
-            <p>No people found. Add someone to get started.</p>
+            <div class="empty-icon">🧑‍💼</div>
+            <p>No people yet. Add someone below.</p>
           </div>
         </div>
       </section>
 
-      <!-- Controls Section -->
-      <section class="controls-section">
-        <h2 class="controls-title">Add/Remove People</h2>
-        <div class="controls-grid">
-          <input type="text" id="name-input" placeholder="Enter full name">
-          <button class="btn btn-primary">Add Person</button>
-          <!-- Remove Name button has been removed -->
+      <!-- controls (add only – remove via card) -->
+      <div class="controls-panel">
+        <div class="controls-title">➕ add new person</div>
+        <div class="add-row">
+          <input type="text" id="name-input" placeholder="e.g. Jordan Lee">
+          <button class="btn btn-primary" id="add-person-btn">Add person</button>
         </div>
-      </section>
-    </main>
-  </div>
+      </div>
+    </div><!-- content-scroll -->
+  </main>
+</div>
 
-  <script src="/static/centralfiles/js/index/people_manage.js"></script>
-  <script src="/static/centralfiles/js/index/filter_names.js"></script>
-  <script src="/static/centralfiles/js/shared/themecontrol.js"></script>
+<!-- Delete confirmation modal -->
+<div class="delete-modal" id="deleteModal">
+  <div class="modal-content">
+    <h3>Confirm deletion</h3>
+    <p>Remove <span id="delete-person-name" style="font-weight:600;"></span> from directory?</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="cancel-delete">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/centralfiles/js/index/people.js"></script>
+<script>const theme = localStorage.getItem("theme") || "dark"; document.documentElement.setAttribute("data-theme", theme);</script>
 </body>
 </html>

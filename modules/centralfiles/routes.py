@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 from library.database import DB_PATH
 from library.auth import authbook
 from typing import Dict, Optional
+from library.email import client_email
 from collections import Counter
 from pydantic import BaseModel
 import asyncio
@@ -1365,8 +1366,10 @@ class centralfiles:
 @set_permission(permission="central_files")
 async def show_reg(request: Request):
     token:str = route_prechecks(request)
-    logbook.info(f"IP {request.client.host}, User {authbook.token_owner(token)} has accessed the C/F Page.")
-    return templates.TemplateResponse(request, "index.html")
+    username = authbook.token_owner(token)
+    logbook.info(f"IP {request.client.host}, User {username} has accessed the C/F Page.")
+    is_admin = authbook.is_user_admin(username)
+    return templates.TemplateResponse(request, "index.html", {'user': username, 'user_is_admin': is_admin})
 
 @router.get("/files/dupecheck/{name}", response_class=HTMLResponse)
 @set_permission(permission="central_files")
@@ -1707,7 +1710,7 @@ class ProfileCache:
                 del self.timestamps[cfid]
 
 # Initialize cache
-profile_cache = ProfileCache()
+profile_cache = ProfileCache(ttl_seconds=30)
 
 async def get_cached_profile(cfid: int) -> Optional[Dict]:
     """Get profile from cache or database with caching"""
@@ -3399,3 +3402,83 @@ async def get_mind_class(request: Request, cfid):
             },
             status_code=200
         )
+    
+from library.email import client_email, recipient_profile
+
+@router.get("/files/get/{cfid}/mail", response_class=HTMLResponse)
+@set_permission(permission=['central_files', 'mail_view'])
+async def show_mail_page(request: Request, cfid:int):
+    token:str = route_prechecks(request)
+    logbook.info(f"IP {request.client.host}, User {authbook.token_owner(token)} has accessed the C/F Emailing page for {cfid}.")
+    return templates.TemplateResponse(
+        request,
+        "mail.html",
+        {
+            "profile": centralfiles.get_profile(cfid=cfid)
+        }
+    )
+
+class send_mail_data(BaseModel):
+    message: str
+    subject_line: str
+
+@router.post("/api/files/{cfid}/mail/send", response_class=HTMLResponse)
+@set_permission(permission=['central_files', 'mail_send', 'mail_view'])
+async def mail_user(request: Request, cfid:int, data: send_mail_data):
+    token:str = route_prechecks(request)
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is sending mail to CFID {cfid}")
+    profile = await get_cached_profile(cfid)
+    mail_address = profile['email_addr']
+
+    client = client_email(
+        recipient=recipient_profile(
+            email=mail_address,
+            subjectline=data.subject_line,
+            message=data.message
+        )
+    )
+    
+    result = client.send()
+    return HTMLResponse(str(result is not False), 200)
+
+@router.get("/files/mailing", response_class=HTMLResponse)
+@set_permission(permission=['central_files', 'mail_view'])
+async def show_mail_page(request: Request):
+    token:str = route_prechecks(request)
+    username = authbook.token_owner(token)
+    is_admin = authbook.is_user_admin(username)
+    logbook.info(f"IP {request.client.host}, User {username} has accessed the C/F Bulk Emailing page.")
+    return templates.TemplateResponse(
+        request,
+        "mailing.html",
+        {
+            'user': username,
+            'user_is_admin': is_admin
+        }
+    )
+
+class send_bulk_mail_data(BaseModel):
+    recipients: list
+
+@router.post("/api/files/mail/bulksend", response_class=HTMLResponse)
+@set_permission(permission=['central_files', 'mail_send', 'mail_bulk_send', 'mail_view'])
+async def mail_user(request: Request, data: send_bulk_mail_data):
+    token:str = route_prechecks(request)
+    logbook.info(f"{request.client.host} ({authbook.token_owner(token)}) Is bulk-mailing.")
+
+    recipients_list = []
+
+    for recipient in data.recipients:
+        recipient=recipient_profile(
+            email=recipient['email_address'],
+            subjectline=recipient['subject_line'],
+            message=recipient['message']
+        )
+        recipients_list.append(recipient)
+
+    client = client_email(
+        recipients=recipients_list
+    )
+    
+    result = client.send()
+    return HTMLResponse(str(result is not False), 200)

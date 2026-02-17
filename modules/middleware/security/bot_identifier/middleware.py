@@ -1,94 +1,142 @@
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import PlainTextResponse
+from collections import defaultdict, deque
+from library.logbook import LogBookHandler
 from fastapi import FastAPI, Request
-from collections import defaultdict
 import asyncio
 import time
+import re
 
 app = FastAPI()
+logbook = LogBookHandler("security.bot_identification")
 
-# Global client tracker
+CLIENT_TTL = 600  # 10 minutes
+CLEANUP_INTERVAL = 200  # every N requests
+request_counter = 0
+
+
+def make_client_id(request: Request):
+    ip = request.client.host if request.client else "unknown"
+    ua = request.headers.get("user-agent", "unknown")[:60]
+    return f"{ip}:{ua}"
+
+
 client_data = defaultdict(lambda: {
-    "timestamps": [],
-    "score": 0,
-    "called_login_api": False,
-    "normal_requests": 0,  # Track normal requests for decay
-    "last_request": 0.0  # Store timestamp of last request in seconds
+    "window_start": 0.0,
+    "request_count": 0,
+    "score": 2,
+    "normal_requests": 0,
+    "last_request": 0.0,
+    "reaction_threshold": 0.15,
+    "paths": deque(maxlen=6)
 })
 
+
 class BotDetectionMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, request_window: int = 60, decay_threshold: int = 10, reaction_threshold: float = 0.15):
+    def __init__(self, app, request_window: int = 60, decay_threshold: int = 12):
         super().__init__(app)
         self.request_window = request_window
         self.decay_threshold = decay_threshold
-        self.reaction_threshold = reaction_threshold  # 150ms
+
+    def cleanup_clients(self):
+        now = time.time()
+        to_delete = [
+            k for k, v in client_data.items()
+            if now - v["last_request"] > CLIENT_TTL
+        ]
+        for k in to_delete:
+            del client_data[k]
 
     async def dispatch(self, request: Request, call_next):
-        client_ip = request.client.host
+        global request_counter
+        request_counter += 1
+
+        if request_counter % CLEANUP_INTERVAL == 0:
+            self.cleanup_clients()
+
         path = request.url.path
 
-        #  Ignore static files, and API Calls (as API Calls can often be numerous even from a normal user)
         if path.startswith("/static/") or path == "/favicon.ico" or path.startswith("/api/"):
             return await call_next(request)
 
+        client_id = make_client_id(request)
         now = time.time()
-        data = client_data[client_ip]
+        data = client_data[client_id]
 
-        #  High request rate check with reaction threshold 
-        time_since_last = now - data["last_request"]
-        data["timestamps"] = [t for t in data["timestamps"] if now - t <= self.request_window]
-        data["timestamps"].append(now)
         triggered = False
+        time_since_last = now - data["last_request"]
 
-        # Only count as bot if last request was < reaction threshold
-        if len(data["timestamps"]) > 20 and time_since_last < self.reaction_threshold:
-            data["score"] = min(10, data["score"] + 3)
+        # Rolling window counter
+        if now - data["window_start"] > self.request_window:
+            data["window_start"] = now
+            data["request_count"] = 0
+
+        data["request_count"] += 1
+
+        # Reaction speed check
+        if data["request_count"] > 25 and time_since_last < data["reaction_threshold"]:
+            data["score"] = min(15, data["score"] + 3)
+            data["reaction_threshold"] = max(0.08, data["reaction_threshold"] - 0.01)
+            logbook.info(f"{client_id} | Fast reaction burst. score: {data['score']}")
             triggered = True
 
-        #  /api/user/login before /login 
-        if path == "/api/user/login":
-            data["called_login_api"] = True
-        if path == "/login" and data["called_login_api"]:
-            data["score"] = 10
-            triggered = True
+        # Backend / probe files
+        backend_files = [
+            "/robots.txt", "/.env", "/config.json", "/db.sql", "/backup.zip",
+            "/wp-admin", "/phpmyadmin", "/.git", "/.git/config",
+            "/server-status", "/openapi.json"
+        ]
 
-        #  Accessing backend files 
-        backend_files = ["/robots.txt", "/.env", "/config.json"]
         if path in backend_files:
-            data["score"] = 10
+            data["score"] += 8
+            logbook.info(f"{client_id} Accessed backend route. score: {data['score']}")
             triggered = True
 
-        #  Decay logic 
+        # Method signal
+        if request.method not in ("GET", "POST"):
+            data["score"] += 1
+            triggered = True
+
+        # Path randomness / entropy
+        if len(path) > 20 and re.search(r"[bcdfghjklmnpqrstvwxyz]{6,}", path.lower()):
+            data["score"] += 2
+            triggered = True
+
+        # Burst unique path detection
+        data["paths"].append(path)
+        if len(set(data["paths"])) == data["paths"].maxlen and time_since_last < 0.3:
+            data["score"] += 3
+            triggered = True
+
+        # Decay / reward logic
         if not triggered:
             data["normal_requests"] += 1
+            data["reaction_threshold"] = min(0.25, data["reaction_threshold"] + 0.002)
+
             if data["normal_requests"] >= self.decay_threshold:
                 data["score"] = max(0, data["score"] - 1)
                 data["normal_requests"] = 0
         else:
             data["normal_requests"] = 0
 
-        # Update last_request timestamp
         data["last_request"] = now
-        client_data[client_ip] = data
+        client_data[client_id] = data
 
-        # print(f"[BotDetection] {client_ip} score: {data['score']}, last_request_interval: {time_since_last:.3f}s")
-
-        # Block if score >=10, except for robots.txt
-        if data["score"] >= 10 and path != "/robots.txt":
+        # Hard block
+        if data["score"] >= 12 and path != "/robots.txt":
             return PlainTextResponse(
                 "You have been identified as a bot account and have been timed out from this webapp.",
                 status_code=403
             )
 
-        if data['score'] >= 5:
-            # At 5 or above, start to add 25ms of delay for each point of lag
-            additional_lag = data['score'] * 0.025
-            
-            # Start rate limiting
-            await asyncio.sleep(additional_lag)
+        # Soft lag curve
+        if data["score"] >= 5:
+            lag = (data["score"] ** 2) * 0.01
+            await asyncio.sleep(min(lag, 2.0))
 
         response = await call_next(request)
         return response
+
 
 def middleware(request: Request, call_next):
     blocker = BotDetectionMiddleware(request.app)
