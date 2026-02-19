@@ -151,6 +151,9 @@ async def modify_file(request: Request, data: ModifyFileData):
         elif data.field == "last_name":
             centralfiles.modify(data.cfid).last_name(data.value)
             success = True
+        elif data.field == "alias":
+            centralfiles.modify(data.cfid).alias(data.value)
+            success = True
         elif data.field == "phone_no":
             centralfiles.modify(data.cfid).phone_no(data.value)
             success = True

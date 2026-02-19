@@ -607,26 +607,6 @@ class centralfiles:
                 except TypeError:
                     on_chem_assist = False
 
-                # Names
-                try:
-                    cursor.execute(
-                        """
-                        SELECT first_name, middle_name, last_name, alias FROM cf_names WHERE cfid = ?
-                        """,
-                        (cfid,)
-                    )
-                    data = cursor.fetchone()
-                    first_name = data[0]
-                    middle_name = data[1]
-                    last_name = data[2]
-                    alias = data[3]
-                except sqlite3.OperationalError as err:
-                    logbook.error(f"Error getting the theta endowment for cfid {cfid}: {err}", exception=err)
-                    conn.rollback()
-                    theta_endowment = 0
-                except TypeError:
-                    theta_endowment = 0
-
             mind_class_map = {
                 0: "Undetermined",
                 1: "Class A",
@@ -649,10 +629,6 @@ class centralfiles:
                 "theta_endowment": theta_endowment,
                 "can_handle_life": can_handle_life,
                 "chem_assist": on_chem_assist,
-                "first_name": first_name,
-                "middle_name": middle_name,
-                "last_name": last_name,
-                "alias": alias
             }
 
     class modify:
@@ -883,6 +859,27 @@ class centralfiles:
                 return cursor.rowcount > 0
             except sqlite3.OperationalError as err:
                 logbook.error("Error updating last name!", exception=err)
+                conn.rollback()
+                return False
+            finally:
+                conn.close()
+
+        def alias(self, alias):
+            conn = sqlite3.connect(DB_PATH)
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    UPDATE cf_names
+                    SET alias = ?
+                    WHERE cfid = ?
+                    """,
+                    (alias, self.cfid)
+                )
+                conn.commit()
+                return cursor.rowcount > 0
+            except sqlite3.OperationalError as err:
+                logbook.error("Error updating alias!", exception=err)
                 conn.rollback()
                 return False
             finally:
@@ -1270,7 +1267,13 @@ class centralfiles:
                 """
                 INSERT INTO cf_occupations (cfid, occupation) VALUES (?, ?)
                 """,
-                (cfid, "Unemployed")
+                (cfid, "Unknown Occupation")
+            )
+            cursor.execute(
+                """
+                INSERT INTO cf_name_types (cfid, nametype) VALUES (?, ?)
+                """,
+                (cfid, profile_type)
             )
 
             conn.commit()
@@ -1483,6 +1486,32 @@ class centralfiles:
             except TypeError as err:
                 logbook.error("Something went wrong fetching the data for a profile!", exception=err)
                 raise err
+            
+            # Names
+            try:
+                cursor.execute(
+                    """
+                    SELECT first_name, middle_name, last_name, alias FROM cf_names WHERE cfid = ?
+                    """,
+                    (cfid,)
+                )
+                data = cursor.fetchone()
+                first_name = data[0]
+                middle_name = data[1]
+                last_name = data[2]
+                alias = data[3]
+            except sqlite3.OperationalError as err:
+                logbook.error(f"Error getting the names for cfid {cfid}: {err}", exception=err)
+                conn.rollback()
+                first_name = "ERR_FETCHING"
+                middle_name = "ERR_FETCHING"
+                last_name = "ERR_FETCHING"
+                alias = "ERR_FETCHING"
+            except TypeError:
+                first_name = "ERR_FETCHING"
+                middle_name = "ERR_FETCHING"
+                last_name = "ERR_FETCHING"
+                alias = "ERR_FETCHING"
 
         profile = {
             "cfid": cfid,
@@ -1500,7 +1529,11 @@ class centralfiles:
             "email_addr": email_addr,
             "home_addr": home_addr,
             "type": profile_type,
-            "is_staff": authbook.check_exists(cfid=cfid)
+            "is_staff": authbook.check_exists(cfid=cfid),
+            "first_name": first_name,
+            "middle_name": middle_name,
+            "last_name": last_name,
+            "alias": alias
         }
 
         return profile
