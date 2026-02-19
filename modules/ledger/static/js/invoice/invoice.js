@@ -49,17 +49,22 @@
     // ===== API CALLS =====
     async function loadInvoiceData() {
         try {
+            console.log('Loading invoice data for ID:', INVOICE_ID);
             const response = await fetch(`/api/ledger/invoices/get-invoice/${INVOICE_ID}`);
             if (response.ok) {
                 const invoice = await response.json();
+                console.log('Invoice data loaded:', invoice);
                 
-                // Populate invoice items
+                // Populate invoice items - FIXED: Include quantity from database
                 if (invoice.items && invoice.items.length > 0) {
                     invoiceItems = invoice.items.map(item => ({
                         name: item.name,
                         price: item.price,
-                        quantity: 1 // Default quantity, you might want to store this in DB
+                        quantity: item.quantity || 1 // Use quantity from DB if available
                     }));
+                    console.log('Invoice items loaded:', invoiceItems);
+                } else {
+                    invoiceItems = [];
                 }
                 
                 // Populate details form
@@ -69,31 +74,45 @@
                 billingEmail.value = invoice.billing_email_address || '';
                 billingPhone.value = invoice.billing_phone || '';
                 billingNotes.value = invoice.billing_notes || '';
+                
+                renderInvoiceItems();
+            } else {
+                console.error('Failed to load invoice:', response.status);
+                showToast('Failed to load invoice data', 'error');
             }
         } catch (error) {
             console.error('Error loading invoice:', error);
+            showToast('Error loading invoice data', 'error');
         }
     }
     
     async function loadCatalogItems() {
         try {
+            console.log('Loading catalog items...');
             const response = await fetch('/api/ledger/invoices/get-items');
             if (response.ok) {
                 catalogItems = await response.json();
+                console.log('Catalog items loaded:', catalogItems.length);
                 renderCatalog();
+            } else {
+                console.error('Failed to load catalog:', response.status);
             }
         } catch (error) {
             console.error('Error loading catalog:', error);
+            showToast('Error loading catalog items', 'error');
         }
     }
     
     async function loadPayments() {
         try {
+            console.log('Loading payments for invoice:', INVOICE_ID);
             const response = await fetch(`/api/ledger/invoices/${INVOICE_ID}/payments`);
             if (response.ok) {
                 payments = await response.json();
+                console.log('Payments loaded:', payments.length);
             } else {
                 payments = [];
+                console.error('Error loading payments:', response.status);
                 showToast('Error loading payments', 'error');
             }
         } catch (error) {
@@ -491,9 +510,14 @@
     
     // ===== INIT =====
     async function init() {
-        await loadInvoiceData();
-        await loadCatalogItems();
-        await loadPayments();
+        console.log('Initializing invoice page for ID:', INVOICE_ID);
+        // Load data in parallel for better performance
+        await Promise.all([
+            loadInvoiceData(),
+            loadCatalogItems(),
+            loadPayments()
+        ]);
+        console.log('Initialization complete');
     }
     
     init();

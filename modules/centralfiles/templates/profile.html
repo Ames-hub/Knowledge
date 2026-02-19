@@ -160,10 +160,17 @@
                 <label>Email Address</label>
                 <span id="field-email_addr" class="editable" onclick="makeEditable('field-email_addr', '{{ profile.cfid }}')">{{ profile.email_addr }}</span>
               </div>
+              {% if profile.type == 'Individual' or profile.type == 'Group Leader' %}
               <div class="field">
                 <label>Home Address</label>
                 <span id="field-home_addr" class="editable" onclick="makeEditable('field-home_addr', '{{ profile.cfid }}')">{{ profile.home_addr }}</span>
               </div>
+              {% elif profile.type == 'Business' %}
+              <div class="field">
+                <label>Business Address</label>
+                <span id="field-home_addr" class="editable" onclick="makeEditable('field-home_addr', '{{ profile.cfid }}')">{{ profile.home_addr }}</span>
+              </div>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -280,7 +287,7 @@
                 </thead>
                 <tbody>
                   {% for invoice in invoices %}
-                  <tr>
+                  <tr onclick="window.location.href='/ledger/invoices/{{ invoice.invoice_id }}'" style="cursor: pointer;">
                     <td>{{ invoice.invoice_id }}</td>
                     <td>{{ invoice.date }}</td>
                     <td>{{ invoice.amount }}</td>
