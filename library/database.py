@@ -42,6 +42,10 @@ class database:
             "cf_names": {
                 "cfid": "INTEGER PRIMARY KEY AUTOINCREMENT",  # Must add a name before anything else can be done
                 "name": "TEXT NOT NULL",
+                "first_name": "TEXT DEFAULT NULL",
+                "middle_name": "TEXT DEFAULT NULL",
+                "last_name": "TEXT DEFAULT NULL",
+                "alias": "TEXT DEFAULT NULL"
             },
             "cf_staff_usernames": {
                 "cfid": "INTEGER PRIMARY KEY",
@@ -70,7 +74,7 @@ class database:
             "cf_pc_contact_details": {
                 "cfid": "INTEGER NOT NULL PRIMARY KEY",
                 "phone_no": "TEXT DEFAULT NULL",
-                "email_addr": "TEXT DEFAULT NULL",
+                "email_addr": "TEXT DEFAULT NULL UNIQUE",  # No two people can have the same email address.
                 "home_addr": "TEXT DEFAULT NULL"
             },
             "cf_is_dianetics_pc": {
@@ -120,6 +124,7 @@ class database:
             "finance_accounts": {
                 "account_id": "INTEGER PRIMARY KEY AUTOINCREMENT",
                 "account_name": "TEXT NOT NULL",
+                "double_entries": "BOOLEAN NOT NULL DEFAULT FALSE",
                 "balance": "REAL NOT NULL DEFAULT 0.0",
                 "owner": "TEXT"
             },

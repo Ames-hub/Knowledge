@@ -273,6 +273,16 @@ if __name__ == "__main__":
         if setup_ssl:
             if settings.get.domain() is not None:
                 logbook.info(f"Running server under domain {settings.get.domain()}")
+            else:
+                print("What is the domain of your website for this certificate? eg, google.com")
+                domain = input(">>> ")
+                settings.set.domain(domain)
+
+            email_address = settings.get.domain_email()
+            if not email_address:
+                print("What's the email address you wish to use for the certificate?")
+                email_address = input(">>> ")
+                settings.set.domain_email(email_address)
 
             print("To setup server certificates, do you want to use certbot? (Recommended) (y/n)")
             use_certbot = input(">>> ") == "y"

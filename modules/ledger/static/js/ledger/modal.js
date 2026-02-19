@@ -183,6 +183,7 @@ document.getElementById("accountConfirm").addEventListener("click", async () => 
   try {
     if (mode === "create") {
       const accountName = document.getElementById("newAccountName").value.trim();
+      const doubleEntryBooking = document.getElementById("IsDoubleBooking").checked
       if (!accountName) {
         alert("Please enter an account name.");
         return;
@@ -191,7 +192,10 @@ document.getElementById("accountConfirm").addEventListener("click", async () => 
       const response = await fetch("/api/finances/account/make", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account_name: accountName })
+        body: JSON.stringify({
+          account_name: accountName,
+          double_entry_booking: doubleEntryBooking
+        })
       });
 
       if (!response.ok) throw await response.json();

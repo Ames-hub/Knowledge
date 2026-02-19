@@ -509,6 +509,12 @@
   }
 }
 
+@media screen and (max-width: 550px) {
+  .change-photo-btn-compact {
+    display: none;
+  }
+}
+
 /* Dark theme variables */
 :root.theme-dark {
   --bg: #111116;          /* deep solid background */

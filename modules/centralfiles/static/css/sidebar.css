@@ -113,8 +113,6 @@
   opacity: 1;
 }
 
-/* Responsive Design for Sidebar */
-
 /* Large Tablets */
 @media (max-width: 1024px) {
   .sidebar {

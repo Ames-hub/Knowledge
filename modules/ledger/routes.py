@@ -43,7 +43,7 @@ async def load_accounts(request: Request):
             cursor = conn.cursor()
 
             cursor.execute(
-                "SELECT account_id, account_name, balance FROM finance_accounts",
+                "SELECT account_id, account_name, double_entries, balance FROM finance_accounts",
             )
             data = cursor.fetchall()
 
@@ -52,10 +52,12 @@ async def load_accounts(request: Request):
                 parsed_data.append({
                     "account_id": item[0],
                     "account_name": item[1],
-                    "balance": item[2]
+                    "is_double_entry": bool(item[2]),
+                    "balance": item[3]
                 })
             return parsed_data
-        except sqlite3.OperationalError:
+        except sqlite3.OperationalError as err:
+            logbook.error("Error in loading accounts!", err)
             conn.rollback()
             return None
 
@@ -305,6 +307,7 @@ async def del_transaction(request: Request, data: transaction_delete):
 
 class make_account_data(BaseModel):
     account_name: str
+    double_entry_booking: bool
 
 @router.post("/api/finances/account/make", response_class=JSONResponse)
 @set_permission(permission=["accounts_add"])
@@ -316,12 +319,13 @@ async def make_account(request: Request, data: make_account_data):
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO finance_accounts (account_name, owner) VALUES (?, ?)",
-                (data.account_name, username)
+                "INSERT INTO finance_accounts (account_name, double_entries, owner) VALUES (?, ?, ?)",
+                (data.account_name, data.double_entry_booking, username)
             )
             conn.commit()
             return JSONResponse(content={"success": True}, status_code=200)
-        except sqlite3.OperationalError:
+        except sqlite3.OperationalError as err:
+            logbook.error(f"Error making {"double-entry-booking" if data.double_entry_booking else "single-entry-booking"} account! ")
             conn.rollback()
             return JSONResponse(content={"success": False, "error": "Database error occurred while making the account."}, status_code=500)
 

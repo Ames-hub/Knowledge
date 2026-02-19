@@ -79,12 +79,64 @@
       <div class="controls-panel">
         <div class="controls-title">➕ add new person</div>
         <div class="add-row">
-          <input type="text" id="name-input" placeholder="e.g. Jordan Lee">
-          <button class="btn btn-primary" id="add-person-btn">Add person</button>
+          <button class="btn btn-primary" id="open-add-modal-btn">Add new person</button>
         </div>
       </div>
     </div><!-- content-scroll -->
   </main>
+</div>
+
+<!-- Add Person Modal -->
+<div class="modal" id="addPersonModal">
+  <div class="modal-content add-person-modal">
+    <h3>Add New Person</h3>
+    
+    <div class="modal-field">
+      <label class="checkbox-label">
+        <input type="checkbox" id="isAliasCheckbox">
+        <span>This profile will go by an alias</span>
+      </label>
+    </div>
+
+    <div id="aliasFields" class="modal-field-group" style="display: none;">
+      <div class="modal-field">
+        <label for="aliasName">Alias name <span class="required">*</span></label>
+        <input type="text" id="aliasName" placeholder="e.g. 'The Doctor'">
+      </div>
+    </div>
+
+    <div id="standardNameFields">
+      <div class="modal-field">
+        <label for="firstName">First name <span class="required">*</span></label>
+        <input type="text" id="firstName" placeholder="e.g. Jordan">
+      </div>
+
+      <div class="modal-field">
+        <label for="middleName">Middle name</label>
+        <input type="text" id="middleName" placeholder="e.g. Michael">
+      </div>
+
+      <div class="modal-field">
+        <label for="lastName">Last name</label>
+        <input type="text" id="lastName" placeholder="e.g. Lee">
+      </div>
+    </div>
+
+    <div class="modal-field">
+      <label for="profileType">Profile type <span class="required">*</span></label>
+      <select id="profileType" class="profile-select">
+        <option value="">Select a type</option>
+        <option value="Individual">Individual</option>
+        <option value="Business">Business</option>
+        <option value="Group Leader">Group Leader</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="cancel-add">Cancel</button>
+      <button class="btn btn-primary" id="confirm-add">Add Person</button>
+    </div>
+  </div>
 </div>
 
 <!-- Delete confirmation modal -->

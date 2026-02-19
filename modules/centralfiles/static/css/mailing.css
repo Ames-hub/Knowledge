@@ -50,7 +50,7 @@ body {
   overflow: hidden;
 }
 
-/* ========= SIDEBAR (unchanged) ========= */
+/* ========= SIDEBAR ========= */
 .sidebar {
   width: 280px;
   background: var(--bg-sidebar);
@@ -196,8 +196,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  height: 100%; /* Take full height */
-  min-height: 0; /* Important for nested flex children */
+  height: 100%;
+  min-height: 0;
 }
 
 /* Section Header */
@@ -222,8 +222,8 @@ body {
   display: grid;
   grid-template-columns: 340px 1fr;
   gap: 24px;
-  flex: 1; /* Take remaining space */
-  min-height: 0; /* Important for nested flex children */
+  flex: 1;
+  min-height: 0;
 }
 
 /* People Panel */
@@ -233,8 +233,8 @@ body {
   border: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  height: 100%; /* Take full height of grid cell */
-  max-height: none; /* Remove max-height constraint */
+  height: 100%;
+  max-height: none;
   box-shadow: var(--card-shadow);
 }
 
@@ -326,9 +326,9 @@ body {
 }
 
 .people-list-scroll {
-  flex: 1; /* Take remaining space */
+  flex: 1;
   overflow-y: auto;
-  min-height: 0; /* Important for flex child scrolling */
+  min-height: 0;
   padding: 12px 16px;
 }
 
@@ -479,8 +479,8 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%; /* Take full height of grid cell */
-  min-height: 0; /* Important for nested flex children */
+  height: 100%;
+  min-height: 0;
 }
 
 .mail-client {
@@ -491,7 +491,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100%; /* Take full height */
+  height: 100%;
 }
 
 .mail-header {
@@ -529,9 +529,9 @@ body {
 
 .mail-body {
   padding: 24px;
-  flex: 1; /* Take remaining space */
-  overflow-y: auto; /* Enable scrolling if content overflows */
-  min-height: 0; /* Important for flex child scrolling */
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .mail-form {
@@ -552,7 +552,7 @@ body {
   gap: 8px;
   flex-wrap: wrap;
   min-height: 60px;
-  flex-shrink: 0; /* Don't shrink */
+  flex-shrink: 0;
 }
 
 .badge-label {
@@ -602,7 +602,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex-shrink: 0; /* Don't shrink form groups */
+  flex-shrink: 0;
 }
 
 .form-label {
@@ -647,7 +647,7 @@ body {
   transition: all 0.2s;
   background: #f8fafd;
   resize: vertical;
-  min-height: 180px; /* Slightly larger default */
+  min-height: 180px;
   max-height: 300px;
   font-family: inherit;
 }
@@ -670,10 +670,10 @@ body {
 .form-actions {
   display: flex;
   gap: 12px;
-  margin-top: auto; /* Push to bottom */
+  margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--border-light);
-  flex-shrink: 0; /* Don't shrink */
+  flex-shrink: 0;
 }
 
 .btn-primary {
@@ -873,7 +873,7 @@ body {
   }
 }
 
-/* Responsive */
+/* ========= EXISTING RESPONSIVE (KEPT) ========= */
 @media (max-width: 900px) {
   .email-campaign-layout {
     grid-template-columns: 1fr;
@@ -884,33 +884,358 @@ body {
   }
 }
 
+/* ========= ENHANCED MOBILE-FRIENDLY STYLES ========= */
 @media (max-width: 768px) {
-  .content-scroll {
-    padding: 20px;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .btn-primary, .btn-outline {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 600px) {
-  .app-frame {
-    height: 100vh;
-    border-radius: 0;
-  }
-  
   body {
     padding: 0;
   }
-  
-  .mail-header {
+
+  .app-frame {
     flex-direction: column;
-    text-align: center;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  /* Transform sidebar to top navbar */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 12px 16px;
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sidebar-header {
+    padding: 0;
+    border-bottom: none;
+    margin-right: auto;
+  }
+
+  .app-logo {
+    font-size: 1.2rem;
+  }
+
+  .app-logo span {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .nav-section {
+    padding: 0;
+    flex-direction: row;
+    margin: 0;
+    gap: 4px;
+    margin-right: 12px;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    gap: 6px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .nav-icon {
+    font-size: 1.1rem;
+    width: auto;
+  }
+
+  .sidebar-footer {
+    padding: 0;
+    border-top: none;
+    margin: 0;
+  }
+
+  .user-tag {
+    gap: 6px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-tag > div:last-child {
+    display: none;
+  }
+
+  /* Adjust main content */
+  .main-panel {
+    height: calc(100vh - 70px);
+  }
+
+  .top-bar {
+    padding: 16px 20px;
+  }
+
+  .page-title h1 {
+    font-size: 1.4rem;
+  }
+
+  .content-scroll {
+    padding: 16px 20px;
+  }
+
+  .email-campaign-layout {
+    gap: 16px;
+  }
+
+  .panel-header {
+    padding: 12px 16px;
+  }
+
+  .people-tools {
+    padding: 12px 16px;
+  }
+
+  /* ----- Compose section improvements ----- */
+  .mail-client {
+    border-radius: var(--radius-md); /* Slightly smaller radius on mobile */
+  }
+
+  .mail-header {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .mail-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .mail-header-content h2 {
+    font-size: 1.1rem;
+  }
+
+  .mail-header-content p {
+    font-size: 0.8rem;
+  }
+
+  .mail-body {
+    padding: 16px;
+  }
+
+  .form-group {
+    gap: 6px;
+  }
+
+  .form-label {
+    font-size: 0.85rem;
+  }
+
+  #subject,
+  #message {
+    font-size: 1rem; /* Slightly larger for readability */
+    padding: 14px 16px; /* Increase touch target */
+  }
+
+  #subject {
+    padding-left: 40px; /* Keep icon space */
+  }
+
+  .input-icon {
+    left: 16px;
+    font-size: 1.1rem;
+  }
+
+  .recipient-badges {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .badge-label {
+    font-size: 0.8rem;
+  }
+
+  .recipient-badge {
+    padding: 6px 12px 6px 16px; /* Larger tap area */
+    font-size: 0.85rem;
+  }
+
+  .recipient-badge .remove-badge {
+    font-size: 1.2rem;
+    padding: 2px 8px;
+  }
+
+  .form-actions {
+    gap: 10px;
+    padding-top: 14px;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    padding: 14px 20px; /* Taller buttons */
+    font-size: 1rem;
+    flex: 1; /* Make buttons share space equally */
+    justify-content: center;
+  }
+
+  .char-count {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    padding: 8px 12px;
+  }
+
+  .nav-item {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .app-logo span {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav-section {
+    gap: 2px;
+    margin-right: 8px;
+  }
+
+  .top-bar {
+    padding: 12px 16px;
+  }
+
+  .page-title h1 {
+    font-size: 1.2rem;
+  }
+
+  .breadcrumb {
+    font-size: 0.8rem;
+  }
+
+  .content-scroll {
+    padding: 12px 16px;
+  }
+
+  .email-campaign-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .people-panel {
+    max-height: 400px;
+  }
+
+  /* Further tighten compose on very small screens */
+  .mail-header {
+    padding: 12px;
+  }
+
+  .mail-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .mail-header-content h2 {
+    font-size: 1rem;
+  }
+
+  .mail-body {
+    padding: 12px;
+  }
+
+  #subject,
+  #message {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+
+  #subject {
+    padding-left: 38px;
+  }
+
+  .input-icon {
+    left: 14px;
+    font-size: 1rem;
+  }
+
+  .recipient-badges {
+    padding: 8px 10px;
+  }
+
+  .recipient-badge {
+    padding: 4px 10px 4px 12px;
+    font-size: 0.8rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+    padding: 14px 16px;
+  }
+}
+
+/* Small height screens */
+@media (max-height: 600px) and (max-width: 768px) {
+  .people-panel {
+    max-height: 300px;
+  }
+
+  .mail-body {
+    padding: 12px;
+  }
+
+  #message {
+    min-height: 100px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 896px) and (orientation: landscape) {
+  .sidebar {
+    padding: 6px 16px;
+  }
+
+  .people-panel {
+    max-height: 250px;
+  }
+
+  .content-scroll {
+    padding: 12px 20px;
+  }
+
+  .mail-client {
+    max-height: 400px;
+  }
+}
+
+/* Optional: Add a mobile menu toggle for very small screens */
+@media (max-width: 360px) {
+  .sidebar {
+    flex-wrap: wrap;
+  }
+
+  .nav-section {
+    order: 3;
+    width: 100%;
+    margin-top: 8px;
+    justify-content: center;
+  }
+
+  .sidebar-footer {
+    margin-left: auto;
   }
 }

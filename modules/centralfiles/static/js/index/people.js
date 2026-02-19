@@ -4,17 +4,104 @@ const modal = document.getElementById('deleteModal');
 const deletePersonNameSpan = document.getElementById('delete-person-name');
 const cancelBtn = document.getElementById('cancel-delete');
 const confirmBtn = document.getElementById('confirm-delete');
-const addBtn = document.getElementById('add-person-btn');
+const openAddModalBtn = document.getElementById('open-add-modal-btn');
+const addModal = document.getElementById('addPersonModal');
+const cancelAddBtn = document.getElementById('cancel-add');
+const confirmAddBtn = document.getElementById('confirm-add');
+const isAliasCheckbox = document.getElementById('isAliasCheckbox');
+const aliasFields = document.getElementById('aliasFields');
+const standardNameFields = document.getElementById('standardNameFields');
+const aliasNameInput = document.getElementById('aliasName');
+const firstNameInput = document.getElementById('firstName');
+const middleNameInput = document.getElementById('middleName');
+const lastNameInput = document.getElementById('lastName');
+const profileTypeSelect = document.getElementById('profileType');
 
 let deletePersonData = { card: null, cfid: null, name: null };
 
+// Close delete modal
 function closeModal() {
   modal.style.display = 'none';
   deletePersonData = { card: null, cfid: null, name: null };
 }
 
+// Close add modal
+function closeAddModal() {
+  addModal.style.display = 'none';
+  resetAddForm();
+}
+
+// Reset the add form
+function resetAddForm() {
+  isAliasCheckbox.checked = false;
+  aliasNameInput.value = '';
+  firstNameInput.value = '';
+  middleNameInput.value = '';
+  lastNameInput.value = '';
+  profileTypeSelect.value = '';
+  toggleAliasFields();
+}
+
+// Toggle between alias and standard name fields
+function toggleAliasFields() {
+  if (isAliasCheckbox.checked) {
+    aliasFields.style.display = 'block';
+    standardNameFields.style.display = 'none';
+  } else {
+    aliasFields.style.display = 'none';
+    standardNameFields.style.display = 'block';
+  }
+}
+
+// Validate the add form
+function validateAddForm() {
+  if (!profileTypeSelect.value) {
+    alert('Please select a profile type');
+    return false;
+  }
+
+  if (isAliasCheckbox.checked) {
+    if (!aliasNameInput.value.trim()) {
+      alert('Please enter an alias name');
+      return false;
+    }
+  } else {
+    if (!firstNameInput.value.trim()) {
+      alert('Please enter a first name');
+      return false;
+    }
+  }
+  return true;
+}
+
+// Construct name based on form input
+function constructName() {
+  if (isAliasCheckbox.checked) {
+    return aliasNameInput.value.trim();
+  } else {
+    const parts = [];
+    if (firstNameInput.value.trim()) parts.push(firstNameInput.value.trim());
+    if (middleNameInput.value.trim()) parts.push(middleNameInput.value.trim());
+    if (lastNameInput.value.trim()) parts.push(lastNameInput.value.trim());
+    return parts.join(' ');
+  }
+}
+
+// Event listeners
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 cancelBtn.addEventListener('click', closeModal);
+
+addModal.addEventListener('click', (e) => { if (e.target === addModal) closeAddModal(); });
+cancelAddBtn.addEventListener('click', closeAddModal);
+
+isAliasCheckbox.addEventListener('change', toggleAliasFields);
+
+openAddModalBtn.addEventListener('click', () => {
+  resetAddForm();
+  addModal.style.display = 'flex';
+});
+
+confirmAddBtn.addEventListener('click', addName);
 
 confirmBtn.addEventListener('click', async () => {
   if (deletePersonData.card && deletePersonData.cfid) {
@@ -102,22 +189,62 @@ async function deletePerson(cfid, cardEl) {
 }
 
 async function addName() {
-  const name = input.value.trim();
-  if (!name) return;
+  if (!validateAddForm()) return;
+  
+  const profileType = profileTypeSelect.value;
+  
+  // Prepare the post data according to CreateNamePostData structure
+  let postData;
+  
+  if (isAliasCheckbox.checked) {
+    // Alias case: only alias and profile_type
+    postData = {
+      alias: aliasNameInput.value.trim(),
+      profile_type: profileType,
+      first_name: null,
+      middle_name: null,
+      last_name: null
+    };
+  } else {
+    // Standard name case: first_name (required), middle_name, last_name, and profile_type
+    postData = {
+      first_name: firstNameInput.value.trim() || null,
+      middle_name: middleNameInput.value.trim() || null,
+      last_name: lastNameInput.value.trim() || null,
+      alias: null,
+      profile_type: profileType
+    };
+  }
+  
+  // For dupecheck, we need to construct the full name for display purposes
+  const displayName = constructName();
+  
   try {
-    const dupe = await fetch(`/files/dupecheck/${encodeURIComponent(name)}`).then(r => r.ok ? r.json() : { exists: false });
+    const dupe = await fetch(`/files/dupecheck/${encodeURIComponent(displayName)}`).then(r => r.ok ? r.json() : { exists: false });
     if (dupe.exists) {
-      if (!confirm(`Name exists (cfids: ${dupe.cfids}). Add anyway?`)) { input.value = ''; return; }
+      if (!confirm(`Name exists (cfids: ${dupe.cfids}). Add anyway?`)) { 
+        closeAddModal();
+        return; 
+      }
     }
-    const data = await fetchJSON('/api/files/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+    
+    const data = await fetchJSON('/api/files/create', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(postData) 
+    });
+    
     if (data.success && data.cfid) {
       if (list.querySelector('.empty-state')) list.innerHTML = '';
-      const card = await createPersonCard(name, data.cfid);
+      // Use displayName for the card, which will show the full constructed name
+      const card = await createPersonCard(displayName, data.cfid);
       list.appendChild(card);
       loadOccupation(card, data.cfid);
-      input.value = '';
-    } else alert('Server error');
-  } catch { alert('Error adding'); }
+      closeAddModal();
+    } else alert('Server error: ' + (data.error || 'Unknown error'));
+  } catch (err) {
+    alert('Error adding: ' + err.message);
+  }
 }
 
 async function Get_Names() {
@@ -159,5 +286,4 @@ window.filterNames = function() {
 
 document.addEventListener('DOMContentLoaded', () => {
   Get_Names();
-  if (addBtn) addBtn.addEventListener('click', addName);
 });

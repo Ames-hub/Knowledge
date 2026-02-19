@@ -100,19 +100,9 @@ def generate_certbot_cert(
         return False
 
 def setup_certbot_ssl():
-    domain = get.domain()
-    if not domain:
-        print("What is the domain of your website for this certificate? eg, google.com")
-        domain = input(">>> ")
-        set.domain(domain)
     email_address = get.domain_email()
-    if not email_address:
-        print("What's the email address you wish to use for the certificate?")
-        email_address = input(">>> ")
-        set.domain_email(email_address)
-
     success = generate_certbot_cert(
-        domain=domain,
+        domain=get.domain(),
         email=email_address
     )
     print(f"SSL Setup success: {success}")
@@ -550,13 +540,7 @@ class authbook:
 
                 # Create a CF Entry for the staff member too
                 from modules.centralfiles.routes import centralfiles
-                cfid = centralfiles.add_name(username)
-
-                # Assosciate CFID with profile
-                cur.execute(
-                    "INSERT INTO cf_staff_usernames (cfid, username) VALUES (?, ?)",
-                    (cfid, username),
-                )
+                centralfiles.add_name(alias=username, profile_type="individual", staff_username=username)
 
                 return True
         except sqlite3.IntegrityError as err:

@@ -554,6 +554,7 @@ main {
   color: var(--text);
   font-size: 1rem;
   width: 100%;
+  min-width: 65px;
   max-width: 250px;
   transition: border var(--transition), background var(--transition);
 }
@@ -753,4 +754,284 @@ footer {
   color: var(--accent);
   border-radius: 12px;
   border: 1px solid rgba(var(--accent), 0.3);
+}
+
+/* ======== Mobile Responsive Additions ======== */
+/* Add these styles at the END of your existing CSS file */
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+  /* Improve tap targets */
+  .tab-btn,
+  .nav-btn,
+  .btn,
+  .user-list-item,
+  .save-btn,
+  .permission-item {
+    min-height: 44px; /* Apple's recommended minimum touch target size */
+  }
+
+  /* Make forms more touch-friendly */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 12px !important;
+  }
+
+  /* Improve checkbox tap area */
+  input[type="checkbox"] {
+    width: 44px;
+    height: 44px;
+    transform: scale(0.8);
+    margin: 10px auto;
+  }
+
+  /* Prevent horizontal overflow */
+  .auth-layout {
+    grid-template-columns: 1fr; /* Stack on mobile */
+    gap: 1rem;
+  }
+
+  /* Make user list horizontally scrollable on mobile */
+  .user-list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    padding: 0.5rem;
+    gap: 0.5rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .user-list-item {
+    flex: 0 0 auto;
+    width: 160px;
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    scroll-snap-align: start;
+    background: var(--surface-light);
+    border-radius: 8px;
+    margin-bottom: 0;
+  }
+
+  .user-list-item:last-child {
+    border-right: none;
+  }
+
+  /* Adjust detail panel for mobile */
+  .user-detail {
+    min-height: auto;
+    padding: 1rem;
+  }
+
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+
+  /* Stack detail grid on mobile */
+  .user-detail-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 1rem;
+  }
+
+  .detail-column {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  /* Permission grid adjustments */
+  .permissions-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .permission-item {
+    padding: 0.5rem;
+  }
+
+  .permission-label {
+    font-size: 0.7rem;
+  }
+
+  /* Hide tooltips on mobile (they don't work well with touch) */
+  .permission-tooltip {
+    display: none;
+  }
+
+  /* Settings cards full width */
+  .config-card {
+    padding: 1rem;
+  }
+
+  .config-card input,
+  .config-card select {
+    max-width: 100%;
+  }
+
+  /* Better footer spacing */
+  footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  /* Adjust toast for mobile */
+  .toast {
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    width: auto;
+    text-align: center;
+  }
+
+  .toast.show {
+    bottom: 20px;
+  }
+}
+
+/* Extra small devices (phones under 480px) */
+@media (max-width: 480px) {
+  .header-left {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .header-tabs {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .tab-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.25rem;
+  }
+
+  /* Hide emoji on very small screens to save space */
+  .tab-btn span {
+    display: none;
+  }
+
+  .nav-btn {
+    width: 100%;
+  }
+
+  .user-list-item {
+    width: 140px;
+  }
+
+  .permissions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-meta {
+    flex-wrap: wrap;
+  }
+
+  .notice-box {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Small tablets (between 481px and 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .user-list {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .permissions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Landscape mode optimization */
+@media (max-height: 600px) and (orientation: landscape) {
+  .user-detail {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .detail-column {
+    max-height: 250px;
+  }
+
+  .toast.show {
+    bottom: 10px;
+  }
+}
+
+/* Prevent zoom on input focus for iOS */
+@media screen and (-webkit-min-device-pixel-ratio: 0) { 
+  select,
+  textarea,
+  input {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area insets for modern phones */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    main {
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+    }
+
+    footer {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .toast.show {
+      bottom: max(20px, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* Touch-friendly active states */
+@media (hover: none) and (pointer: coarse) {
+  .tab-btn:active,
+  .nav-btn:active,
+  .btn:active,
+  .user-list-item:active,
+  .permission-item:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+  }
+
+  /* Disable hover effects on touch devices */
+  .config-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .user-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .permission-item:hover {
+    background: rgba(var(--text), 0.04);
+    border-color: transparent;
+  }
+
+  .permission-item:hover .permission-tooltip {
+    opacity: 0;
+  }
 }

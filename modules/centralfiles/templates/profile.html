@@ -121,13 +121,37 @@
     <div class="main-grid">
       <!-- Left Column -->
       <div class="left-column">
-        <!-- Personal Details Card -->
         <div class="card">
           <div class="card-header">
-            <h3 class="card-title">Contact Details</h3>
+            <h3 class="card-title">Name & Contact Details</h3>
           </div>
           <div class="card-body">
             <div class="detail-grid">
+              <div class="field">
+                <label>Name</label>
+                <span id="field-name" class="editable" onclick="makeEditable('field-name', '{{ profile.cfid }}')">{{ profile.name }}</span>
+              </div>
+              <div class="field">
+                <label>First Name</label>
+                <span id="field-first_name" class="editable" onclick="makeEditable('field-first_name', '{{ profile.cfid }}')">{{ profile.first_name }}</span>
+              </div>
+              <div class="field">
+                <label>Middle Name</label>
+                <span id="field-middle_name" class="editable" onclick="makeEditable('field-middle_name', '{{ profile.cfid }}')">{{ profile.middle_name }}</span>
+              </div>
+              <div class="field">
+                <label>Last Name</label>
+                <span id="field-last_name" class="editable" onclick="makeEditable('field-last_name', '{{ profile.cfid }}')">{{ profile.last_name }}</span>
+              </div>
+              <div class="field">
+                <label>Profile Type</label>
+                <span
+                  id="field-prof_type"
+                  class="editable"
+                  onclick="makeEditable('field-prof_type', '{{ profile.cfid }}', 'dropdown-text', ['Individual', 'Business', 'Group Leader'])">
+                    {{ profile.type }}
+                </span>
+              </div>
               <div class="field">
                 <label>Phone Number</label>
                 <span id="field-phone_no" class="editable" onclick="makeEditable('field-phone_no', '{{ profile.cfid }}', 'number')">{{ profile.phone_no }}</span>
@@ -139,15 +163,6 @@
               <div class="field">
                 <label>Home Address</label>
                 <span id="field-home_addr" class="editable" onclick="makeEditable('field-home_addr', '{{ profile.cfid }}')">{{ profile.home_addr }}</span>
-              </div>
-              <div class="field">
-                <label>Profile Type</label>
-                <span
-                  id="field-prof_type"
-                  class="editable"
-                  onclick="makeEditable('field-prof_type', '{{ profile.cfid }}', 'dropdown-text', ['Business', 'Individual', 'Group Leader'])">
-                    {{ profile.type }}
-                </span>
               </div>
             </div>
           </div>
@@ -162,10 +177,6 @@
               <div class="field">
                 <label>Central File ID</label>
                 <span id="field-cfid">{{ profile.cfid }}</span>
-              </div>
-              <div class="field">
-                <label>Name</label>
-                <span id="field-name" class="editable" onclick="makeEditable('field-name', '{{ profile.cfid }}')">{{ profile.name }}</span>
               </div>
               <div class="field">
                 <label>Date of Birth</label>

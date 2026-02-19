@@ -22,6 +22,9 @@
   --transition: all 0.2s ease;
   --danger: #ef4444;
   --danger-soft: #fee2e2;
+  --success: #10b981;
+  --success-soft: #d1fae5;
+  --warning: #f59e0b;
 }
 
 body {
@@ -50,7 +53,7 @@ body {
   backdrop-filter: blur(2px);
 }
 
-/* ========= SIDEBAR ========= */
+/* ========= SIDEBAR (exactly from mailing.css) ========= */
 .sidebar {
   width: 280px;
   background: var(--bg-sidebar);
@@ -160,7 +163,7 @@ body {
   background-repeat: no-repeat;
 }
 
-/* ========= MAIN CONTENT ========= */
+/* ========= MAIN CONTENT (unchanged from your index.css) ========= */
 .main-panel {
   flex: 1;
   display: flex;
@@ -537,9 +540,382 @@ body {
   border: none;
 }
 
-/* responsiveness */
-@media (max-width: 800px) {
-  .app-frame { flex-direction: column; height: auto; max-height: none; border-radius: 24px; }
-  .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-light); padding: 16px; }
-  .main-panel { overflow-y: visible; }
+/* Add Person Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(6px);
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.add-person-modal {
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-field-group {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.modal-field {
+  margin-bottom: 20px;
+}
+
+.modal-field:last-child {
+  margin-bottom: 0;
+}
+
+.modal-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.modal-field input[type="text"],
+.modal-field select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  background: white;
+  transition: 0.2s;
+}
+
+.modal-field input[type="text"]:focus,
+.modal-field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.checkbox-label span {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.required {
+  color: var(--danger);
+  margin-left: 4px;
+}
+
+.profile-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 48px;
+}
+
+/* Animation for modal */
+.modal-content {
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .add-person-modal {
+    padding: 20px;
+  }
+  
+  .modal-field-group {
+    padding: 12px;
+  }
+  
+  .modal-field input[type="text"],
+  .modal-field select {
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .email-campaign-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .people-panel {
+    max-height: 450px;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+  }
+
+  .app-frame {
+    flex-direction: column;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  /* Transform sidebar to top navbar */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 12px 16px;
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sidebar-header {
+    padding: 0;
+    border-bottom: none;
+    margin-right: auto;
+  }
+
+  .app-logo {
+    font-size: 1.2rem;
+  }
+
+  .app-logo span {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  .nav-section {
+    padding: 0;
+    flex-direction: row;
+    margin: 0;
+    gap: 4px;
+    margin-right: 12px;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    gap: 6px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .nav-icon {
+    font-size: 1.1rem;
+    width: auto;
+  }
+
+  .sidebar-footer {
+    padding: 0;
+    border-top: none;
+    margin: 0;
+  }
+
+  .user-tag {
+    gap: 6px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-tag > div:last-child {
+    display: none; /* Hide username on mobile */
+  }
+
+  /* Adjust main content */
+  .main-panel {
+    height: calc(100vh - 70px);
+  }
+
+  .top-bar {
+    padding: 16px 20px;
+  }
+
+  .page-title h1 {
+    font-size: 1.4rem;
+  }
+
+  .content-scroll {
+    padding: 16px 20px;
+  }
+
+  .email-campaign-layout {
+    gap: 16px;
+  }
+
+  .panel-header {
+    padding: 12px 16px;
+  }
+
+  .people-tools {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    padding: 8px 12px;
+  }
+
+  .nav-item {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .app-logo span {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav-section {
+    gap: 2px;
+    margin-right: 8px;
+  }
+
+  .top-bar {
+    padding: 12px 16px;
+  }
+
+  .page-title h1 {
+    font-size: 1.2rem;
+  }
+
+  .breadcrumb {
+    font-size: 0.8rem;
+  }
+
+  .content-scroll {
+    padding: 12px 16px;
+  }
+
+  .email-campaign-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .people-panel {
+    max-height: 400px;
+  }
+
+  .mail-header {
+    padding: 16px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .mail-body {
+    padding: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary, .btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .recipient-badges {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .badge-label {
+    padding-top: 0;
+  }
+}
+
+/* Small height screens */
+@media (max-height: 600px) and (max-width: 768px) {
+  .people-panel {
+    max-height: 300px;
+  }
+
+  .mail-body {
+    padding: 12px;
+  }
+
+  #message {
+    min-height: 100px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 896px) and (orientation: landscape) {
+  .sidebar {
+    padding: 6px 16px;
+  }
+
+  .people-panel {
+    max-height: 250px;
+  }
+
+  .content-scroll {
+    padding: 12px 20px;
+  }
+
+  .mail-client {
+    max-height: 400px;
+  }
+}
+
+/* Optional: Add a mobile menu toggle for very small screens */
+@media (max-width: 360px) {
+  .sidebar {
+    flex-wrap: wrap;
+  }
+
+  .nav-section {
+    order: 3;
+    width: 100%;
+    margin-top: 8px;
+    justify-content: center;
+  }
+
+  .sidebar-footer {
+    margin-left: auto;
+  }
 }

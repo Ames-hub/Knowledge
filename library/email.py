@@ -1,3 +1,4 @@
+from modules.centralfiles.classes import centralfiles
 from library.logbook import LogBookHandler
 from email.mime.text import MIMEText
 from library.settings import get
@@ -71,3 +72,20 @@ class client_email:
                     results[rec.email] = False
 
         return results
+
+    def parse_mail(self, text:str, recipient_email:str):
+        """
+        Docstring for parse_mail
+        
+        Parses the placeholders you may find in mail.
+
+        :param text: The email text
+        :type text: str
+        :param recipient_email: The email of the person its being sent to.
+        :type recipient_email: str
+        """
+        profile = centralfiles.get_profile(cfid=centralfiles.get_cfid_by_email(recipient_email))
+
+        placeholders = {
+            "<first_name>": profile['name'].split(" ")[0]
+        }

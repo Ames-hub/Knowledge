@@ -305,3 +305,172 @@ body {
     padding: 0.6rem 1rem;
   }
 }
+
+/* ===== SINGLE-ENTRY BOOKKEEPING STYLES ===== */
+.account-row.single-entry .entry-row {
+  grid-template-columns: 1fr; /* Single column for combined entry */
+}
+
+.account-row.single-entry .incoming,
+.account-row.single-entry .outgoing {
+  display: none; /* Hide individual incoming/outgoing */
+}
+
+.account-row.single-entry .combined-entry {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: #e8f0fe; /* Light blue for combined */
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.account-row.single-entry .combined-entry span::before {
+  content: "↔️";
+  margin-right: 0.3rem;
+}
+
+.account-row.single-entry .combined-entry span {
+  font-weight: 500;
+  color: #333;
+  min-width: 70px;
+}
+
+.account-row.single-entry .input-group {
+  display: flex;
+  gap: 0;
+  flex: 1;
+}
+
+.account-row.single-entry .combined-input {
+  border-radius: 9999px 0 0 9999px;
+  border: 1px solid #ccc;
+  border-right: none;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.95rem;
+  width: 120px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.account-row.single-entry .combined-input:focus {
+  border-color: #0077cc;
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 119, 204, 0.25);
+}
+
+.account-row.single-entry .combined-btn {
+  border-radius: 0 9999px 9999px 0;
+  border: 1px solid #0077cc;
+  border-left: none;
+  padding: 0.55rem 1rem;
+  background-color: #0077cc;
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.account-row.single-entry .combined-btn:hover {
+  background-color: #005fa3;
+  transform: translateY(-1px);
+}
+
+.account-row.single-entry .combined-input,
+.account-row.single-entry .combined-btn {
+  height: 40px;
+}
+
+/* Transaction type selector for single entry */
+.account-row.single-entry .transaction-type-select {
+  border-radius: 0;
+  border: 1px solid #ccc;
+  border-left: none;
+  border-right: none;
+  padding: 0.55rem 0.5rem;
+  font-size: 0.95rem;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  outline: none;
+  min-width: 90px;
+  height: 40px;
+}
+
+.account-row.single-entry .transaction-type-select:hover {
+  background-color: #e9ecef;
+}
+
+.account-row.single-entry .transaction-type-select:focus {
+  border-color: #0077cc;
+  box-shadow: 0 0 5px rgba(0, 119, 204, 0.25);
+  z-index: 1;
+}
+
+/* Single entry transactions view - combined list */
+.account-row.single-entry .transactions {
+  grid-template-columns: 1fr; /* Single column for all transactions */
+}
+
+.account-row.single-entry .incoming-list,
+.account-row.single-entry .outgoing-list {
+  display: block; /* Show both but in one column */
+}
+
+.account-row.single-entry .incoming-list h4,
+.account-row.single-entry .outgoing-list h4 {
+  display: none; /* Hide the headers for cleaner look */
+}
+
+.account-row.single-entry .incoming-list ul,
+.account-row.single-entry .outgoing-list ul {
+  display: block;
+}
+
+.account-row.single-entry .incoming-list li,
+.account-row.single-entry .outgoing-list li {
+  color: #333; /* Neutral color for all transactions */
+  border-left: 3px solid transparent;
+}
+
+.account-row.single-entry .incoming-list li {
+  border-left-color: #1a7f37; /* Green indicator for income */
+}
+
+.account-row.single-entry .outgoing-list li {
+  border-left-color: #c92a2a; /* Red indicator for expenses */
+}
+
+/* Mobile adjustments for single entry */
+@media (max-width: 768px) {
+  .account-row.single-entry .combined-entry {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .account-row.single-entry .input-group {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .account-row.single-entry .combined-input,
+  .account-row.single-entry .transaction-type-select,
+  .account-row.single-entry .combined-btn {
+    width: 100%;
+    border-radius: 10px;
+    margin-bottom: 0.25rem;
+  }
+  
+  .account-row.single-entry .combined-input {
+    border-right: 1px solid #ccc;
+    border-radius: 10px;
+  }
+  
+  .account-row.single-entry .transaction-type-select {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+  }
+  
+  .account-row.single-entry .combined-btn {
+    border-left: 1px solid #0077cc;
+    border-radius: 10px;
+  }
+}
