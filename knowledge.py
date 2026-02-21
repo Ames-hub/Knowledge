@@ -49,9 +49,8 @@ with yours.
   for any breaches, data loss, or misuse.
 - Running this app on an exposed network or with incorrect 
   settings may put your data and users at risk.
-              
-The data at
-risk may be:
+
+The data at risk may be:
 1. Internal finance documents
 2. The names, addresses, phone numbers, etc. of whoever is recorded in the "Central Files" Module
 3. API Keys and Login details
@@ -63,6 +62,7 @@ For any questions or inquiries about Knowledge app:
 My discord is: @friendlyfox.exe
               
 Please make sure your system is secure before going live.
+By using Knowledge, you agree to abide by the conditions here.
 ============================================================
         """)
         print("Configuration Complete. Further configuration available in 'settings' module of web app.\n")

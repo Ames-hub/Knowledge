@@ -438,7 +438,54 @@ body {
   border-left-color: #c92a2a; /* Red indicator for expenses */
 }
 
-/* Mobile adjustments for single entry */
+/* Combined list for single-entry accounts */
+.account-row.single-entry .combined-list {
+  padding: 1rem 1.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.account-row.single-entry .combined-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.account-row.single-entry .combined-list li {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  transition: background 0.2s;
+}
+
+.account-row.single-entry .combined-list li:hover {
+  background-color: #f0f4f8;
+}
+
+.account-row.single-entry .combined-list li.income-item {
+  border-left-color: #1a7f37; /* Green for income */
+}
+
+.account-row.single-entry .combined-list li.expense-item {
+  border-left-color: #c92a2a; /* Red for expenses */
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .account-row.single-entry .combined-list {
+    padding: 0.5rem 1rem;
+  }
+  
+  .account-row.single-entry .combined-list li {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.5rem;
+  }
+}
+
 @media (max-width: 768px) {
   .account-row.single-entry .combined-entry {
     flex-direction: column;

@@ -1055,8 +1055,6 @@ async def save_invoice(request: Request, data: save_invoice_data):
     billing_phone = data.details.get("billing_phone", "")
     billing_notes = data.details.get("billing_notes", "")
 
-    print(data.details)
-
     with sqlite3.connect(DB_PATH) as conn:
         try:
             cur = conn.cursor()

@@ -122,6 +122,20 @@ class BotDetectionMiddleware(BaseHTTPMiddleware):
         data["last_request"] = now
         client_data[client_id] = data
 
+        # Track if this is their first request ever
+        is_first_request = data["request_count"] == 1
+
+        response = await call_next(request)
+
+        # If FIRST request is 404 → instant bot
+        if is_first_request and response.status_code == 404:
+            data["score"] = 15
+            logbook.info(f"{client_id} | First request was 404. Instant bot flag.")
+            return PlainTextResponse(
+                "You have been identified as a bot account and have been timed out from this webapp.",
+                status_code=403
+            )
+
         # Hard block
         if data["score"] >= 12 and path != "/robots.txt":
             return PlainTextResponse(
@@ -134,7 +148,6 @@ class BotDetectionMiddleware(BaseHTTPMiddleware):
             lag = (data["score"] ** 2) * 0.01
             await asyncio.sleep(min(lag, 2.0))
 
-        response = await call_next(request)
         return response
 
 

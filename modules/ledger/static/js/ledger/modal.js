@@ -1,38 +1,5 @@
 // Modals.js
 
-// Handle click on "submit" buttons in incoming/outgoing
-document.addEventListener("click", (e) => {
-  if (e.target.matches(".incoming button, .outgoing button")) {
-    e.preventDefault();
-    const modal = document.getElementById("transactionModal");
-    modal.style.display = "flex";
-
-    // Store type + account for later use
-    const type = e.target.dataset.type;
-    const accountId = e.target.dataset.account;
-    modal.dataset.type = type;
-    modal.dataset.accountId = accountId;
-
-    // Update modal title
-    const title = modal.querySelector("h3");
-    title.textContent = type === "incoming" ? "Inflow Transaction" : "Expenses Transaction";
-
-    // Grab the amount from the corresponding input box
-    const accountRow = e.target.closest(".account-row");
-    const amountInput = accountRow.querySelector(
-      type === "incoming" ? ".incoming input" : ".outgoing input"
-    );
-    const amount = amountInput.value.trim() || "0.00";
-
-    // Update the modal’s little text field
-    const moneyText = modal.querySelector("#moneyText");
-    moneyText.textContent = "Amount: $" + amount;
-
-    // Also store amount in modal (so saveBtn can access it)
-    modal.dataset.amount = amount;
-  }
-});
-
 // Close modal (cancel)
 document.getElementById("cancelBtn").addEventListener("click", () => {
   const modal = document.getElementById("transactionModal");
@@ -44,8 +11,10 @@ document.getElementById("cancelBtn").addEventListener("click", () => {
 document.getElementById("saveBtn").addEventListener("click", async () => {
   const modal = document.getElementById("transactionModal");
   const desc = document.getElementById("transactionDesc").value.trim();
-  const type = modal.dataset.type; // "incoming" or "outgoing"
+  
+  // Get data from modal.dataset (set by accounts.js)
   const accountId = modal.dataset.accountId;
+  const type = modal.dataset.transactionType; // Note: this is "transactionType" not "type"
   const amount = modal.dataset.amount || "0.00";
 
   if (!desc) {
@@ -64,8 +33,8 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 
   if (receiptInput.files && receiptInput.files[0]) {
     const file = receiptInput.files[0];
-    const buffer = await file.arrayBuffer(); // get raw bytes
-    receiptBytes = Array.from(new Uint8Array(buffer)); // convert to array of numbers
+    const buffer = await file.arrayBuffer();
+    receiptBytes = Array.from(new Uint8Array(buffer));
   }
 
   try {
@@ -76,31 +45,14 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
         account_id: parseInt(accountId),
         amount: parseFloat(amount),
         description: desc,
-        is_expense: type === "outgoing",
-        receipt_bytes: receiptBytes // include this in the payload
+        is_expense: type === "outgoing", // Now using correct variable
+        receipt_bytes: receiptBytes
       })
     });
 
     if (!response.ok) throw await response.json();
 
-    // Add transaction visually
-    const accountRow = document.querySelector(
-      `.account-row .incoming button[data-account="${accountId}"]`
-    ).closest(".account-row");
-
-    const list = accountRow.querySelector(
-      type === "incoming" ? ".incoming-list ul" : ".outgoing-list ul"
-    );
-
-    const li = document.createElement("li");
-    li.textContent = `${type === "incoming" ? "+ " : "- "}$${amount} — ${desc}`;
-    list.appendChild(li);
-
     // Reset inputs
-    const amountInput = accountRow.querySelector(
-      type === "incoming" ? ".incoming input" : ".outgoing input"
-    );
-    amountInput.value = "";
     document.getElementById("transactionDesc").value = "";
     receiptInput.value = "";
 
