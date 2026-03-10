@@ -3,6 +3,7 @@ from library.auth import authbook, autherrors, UserLogin
 from fastapi.templating import Jinja2Templates
 from library.logbook import LogBookHandler
 from fastapi import APIRouter, Request
+from library.settings import get
 from pydantic import BaseModel
 import os
 
@@ -20,7 +21,14 @@ class LoginData(BaseModel):
 @router.get("/login", response_class=HTMLResponse)
 async def show_login(request: Request):
     logbook.info(f"IP {request.client.host} accessed the login page.")
-    return templates.TemplateResponse(request, "index.html")
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {
+            "domain": get.domain().strip(),
+            "https_txt": "http" if not os.path.exists("certs/cert.pem") else "https"
+        }
+    )
 
 @router.post("/api/token/check")
 async def verify_token(request: Request, data: TokenData):

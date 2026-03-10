@@ -1,10 +1,10 @@
 from fastapi.responses import JSONResponse, HTMLResponse, StreamingResponse
-from decimal import Decimal, ROUND_HALF_UP, getcontext
 from fastapi.templating import Jinja2Templates
 from library.authperms import set_permission
 from fastapi.exceptions import HTTPException
 from library.logbook import LogBookHandler
 from library.auth import route_prechecks
+from decimal import Decimal, getcontext
 from fastapi import APIRouter, Request
 from library.database import DB_PATH
 from library.auth import authbook
